@@ -76,6 +76,8 @@ int WifiCmdClient::SendCmdToDriver(const std::string &ifName, int commandId, con
         ret = StartMldLinkSwitch(ifName, param);
     } else if (commandId == CMD_SET_FOLD_STATUS) {
         ret = SetFoldStatus(ifName, param);
+    } else if (commandId == CMD_GAME_OPT) {
+        ret = SetGameSceneOpt(ifName, param);
     } else {
         WIFI_LOGD("%{public}s not supported command", __FUNCTION__);
     }
@@ -259,6 +261,19 @@ int WifiCmdClient::SetFoldStatus(const std::string &ifName, const std::string &p
         return -1;
     }
     std::string cmdParm = CMD_UPDATE_UNFOLD_STATE;
+    cmdParm.append(param);
+    return SendCommandToDriverByInterfaceName(ifName, cmdParm);
+}
+
+int WifiCmdClient::SetGameSceneOpt(const std::string &ifName, const std::string &param) const
+{
+    WIFI_LOGD("%{public}s enter, param: %{public}s", __FUNCTION__, param.c_str());
+    if (param.size() + strlen(SET_GAME_SCENE_OPT) > TINY_BUFF_SIZE) {
+        WIFI_LOGE("%{public}s invalid input param", __FUNCTION__);
+        return -1;
+    }
+    std::string cmdParm = SET_GAME_SCENE_OPT;
+    cmdParm.append(" ");
     cmdParm.append(param);
     return SendCommandToDriverByInterfaceName(ifName, cmdParm);
 }

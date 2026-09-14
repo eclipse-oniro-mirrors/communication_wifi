@@ -235,3 +235,11 @@ HWTEST_F(WifiCmdClientTest, SetFoldStatusTest002, TestSize.Level1)
     int result = wifiCmdClient_->SendCmdToDriver(ifName, CMD_SET_FOLD_STATUS, param);
     EXPECT_EQ(result, -1);
 }
+
+HWTEST_F(WifiCmdClientTest, SetGameSceneOpt001, TestSize.Level1)
+{
+    std::string ifName = "ifName";
+    std::string param = "param";
+    int result = wifiCmdClient_->SetGameSceneOpt(ifName, param);
+    EXPECT_EQ(result, -1);
+}
