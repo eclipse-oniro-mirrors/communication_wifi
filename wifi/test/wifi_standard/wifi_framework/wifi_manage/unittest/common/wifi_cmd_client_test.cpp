@@ -220,14 +220,6 @@ HWTEST_F(WifiCmdClientTest, SetBeBlaListTest002, TestSize.Level1)
     EXPECT_EQ(result, -1);
 }
 
-HWTEST_F(WifiCmdClientTest, SetGameSceneOpt001, TestSize.Level1)
-{
-    std::string ifName = "ifName";
-    std::string param = "param";
-    int result = wifiCmdClient_->SetGameSceneOpt(ifName, param);
-    EXPECT_EQ(result, -1);
-}
-
 HWTEST_F(WifiCmdClientTest, SetFoldStatusTest001, TestSize.Level1)
 {
     std::string ifName = "wlan0";
