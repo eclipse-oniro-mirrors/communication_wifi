@@ -269,7 +269,7 @@ int WifiCmdClient::SetFoldStatus(const std::string &ifName, const std::string &p
 int WifiCmdClient::SetGameSceneOpt(const std::string &ifName, const std::string &param) const
 {
     WIFI_LOGD("%{public}s enter, param: %{public}s", __FUNCTION__, param.c_str());
-    if (param.size() + strlen(CMD_SET_GAME_SCENE_OPT) > TINY_BUFF_SIZE) {
+    if (param.size() + strlen(CMD_SET_GAME_SCENE_OPT) + 1 > TINY_BUFF_SIZE) {
         WIFI_LOGE("%{public}s invalid input param", __FUNCTION__);
         return -1;
     }
