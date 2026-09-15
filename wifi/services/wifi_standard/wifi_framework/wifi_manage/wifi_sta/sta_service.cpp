@@ -928,6 +928,15 @@ void StaService::NotifyDeviceConfigChange(ConfigChange value, WifiDeviceConfig c
         return;
     }
     pEnhanceService->OnWifiDeviceConfigChange(static_cast<int32_t>(value), config, isRemoveAll);
+    if (value == ConfigChange::CONFIG_REMOVE) {
+        std::string ssid = config.ssid;
+        std::string bssid = config.bssid;
+        IpCacheInfo ipCacheInfo;
+        if ((strncpy_s(ipCacheInfo.bssid, MAC_ADDR_MAX_LEN, bssid.c_str(), bssid.length()) == EOK) &&
+            (strncpy_s(ipCacheInfo.ssid, SSID_MAX_LEN, ssid.c_str(), ssid.length()) == EOK)) {
+            DealWifiDhcpCache(WIFI_DHCP_CACHE_NETWORK_REMOVED, ipCacheInfo);
+        }
+    }
 #endif
 }
 
