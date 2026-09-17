@@ -144,6 +144,26 @@ void WifiP2pStub::InitHandleMapExPart4()
         [this](uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) {
             OnQueryLocalP2pServices(code, data, reply, option);
         };
+    handleFuncMap[static_cast<uint32_t>(P2PInterfaceCode::WIFI_SVR_CMD_P2P_ADD_SERVICE_REQUEST)] =
+        [this](uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) {
+            OnAddP2pServiceRequest(code, data, reply, option);
+        };
+    handleFuncMap[static_cast<uint32_t>(P2PInterfaceCode::WIFI_SVR_CMD_P2P_REMOVE_SERVICE_REQUEST)] =
+        [this](uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) {
+            OnRemoveP2pServiceRequest(code, data, reply, option);
+        };
+    handleFuncMap[static_cast<uint32_t>(P2PInterfaceCode::WIFI_SVR_CMD_P2P_CLEAR_SERVICE_REQUESTS)] =
+        [this](uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) {
+            OnClearP2pServiceRequests(code, data, reply, option);
+        };
+    handleFuncMap[static_cast<uint32_t>(P2PInterfaceCode::WIFI_SVR_CMD_P2P_ADD_TYPED_SERVICE_REQUEST)] =
+        [this](uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) {
+            OnAddTypedServiceRequest(code, data, reply, option);
+        };
+    handleFuncMap[static_cast<uint32_t>(P2PInterfaceCode::WIFI_SVR_CMD_P2P_QUERY_SERVICE_REQUESTS)] =
+        [this](uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) {
+            OnQueryP2pServiceRequests(code, data, reply, option);
+        };
 }
 
 void WifiP2pStub::InitHandleMap()
@@ -674,6 +694,91 @@ void WifiP2pStub::OnQueryLocalP2pServices(uint32_t code, MessageParcel &data,
     return;
 }
 
+void WifiP2pStub::OnAddP2pServiceRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    WIFI_LOGD("run %{public}s code %{public}u, datasize %{public}zu", __func__, code, data.GetRawDataSize());
+    WifiP2pServiceRequest request;
+    if (!ReadWifiP2pServiceRequestOnly(data, request)) {
+        reply.WriteInt32(0);
+        reply.WriteInt32(WIFI_OPT_INVALID_PARAM);
+        return;
+    }
+    ErrCode ret = AddP2pServiceRequest(request);
+    reply.WriteInt32(0);
+    reply.WriteInt32(ret);
+}
+
+void WifiP2pStub::OnRemoveP2pServiceRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    WIFI_LOGD("run %{public}s code %{public}u, datasize %{public}zu", __func__, code, data.GetRawDataSize());
+    WifiP2pServiceRequest request;
+    if (!ReadWifiP2pServiceRequestOnly(data, request)) {
+        reply.WriteInt32(0);
+        reply.WriteInt32(WIFI_OPT_INVALID_PARAM);
+        return;
+    }
+    ErrCode ret = RemoveP2pServiceRequest(request);
+    reply.WriteInt32(0);
+    reply.WriteInt32(ret);
+}
+
+void WifiP2pStub::OnClearP2pServiceRequests(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    WIFI_LOGD("run %{public}s code %{public}u, datasize %{public}zu", __func__, code, data.GetRawDataSize());
+    ErrCode ret = ClearP2pServiceRequests();
+    reply.WriteInt32(0);
+    reply.WriteInt32(ret);
+}
+
+ErrCode WifiP2pStub::ParseAndAddDnsSdServiceRequest(MessageParcel &data)
+{
+    const char *instanceName = data.ReadCString();
+    const char *serviceType = data.ReadCString();
+    return AddDnsSdServiceRequest((instanceName != nullptr) ? instanceName : "",
+        (serviceType != nullptr) ? serviceType : "");
+}
+
+ErrCode WifiP2pStub::ParseAndAddUpnpServiceRequest(MessageParcel &data)
+{
+    const char *searchTarget = data.ReadCString();
+    return AddUpnpServiceRequest((searchTarget != nullptr) ? searchTarget : "");
+}
+
+void WifiP2pStub::OnAddTypedServiceRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    WIFI_LOGD("run %{public}s code %{public}u, datasize %{public}zu", __func__, code, data.GetRawDataSize());
+    int buildType = data.ReadInt32();
+    ErrCode ret = WIFI_OPT_INVALID_PARAM;
+    if (buildType == static_cast<int32_t>(P2pBuildServiceType::BUILD_DNS_SD)) {
+        ret = ParseAndAddDnsSdServiceRequest(data);
+    } else if (buildType == static_cast<int32_t>(P2pBuildServiceType::BUILD_UPNP)) {
+        ret = ParseAndAddUpnpServiceRequest(data);
+    }
+    reply.WriteInt32(0);
+    reply.WriteInt32(ret);
+}
+
+void WifiP2pStub::OnQueryP2pServiceRequests(uint32_t code, MessageParcel &data,
+    MessageParcel &reply, MessageOption &option)
+{
+    WIFI_LOGD("run %{public}s code %{public}u, datasize %{public}zu", __func__, code, data.GetRawDataSize());
+    std::vector<WifiP2pServiceRequest> requests;
+    ErrCode ret = QueryP2pServiceRequests(requests);
+    reply.WriteInt32(0);
+    reply.WriteInt32(ret);
+    if (ret == WIFI_OPT_SUCCESS) {
+        int size = static_cast<int>(requests.size());
+        reply.WriteInt32(size);
+        for (int i = 0; i < size; ++i) {
+            WriteWifiP2pServiceRequestOnly(reply, requests[i]);
+        }
+    }
+}
+
 void WifiP2pStub::OnDiscoverPeers(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     WIFI_LOGD("run %{public}s code %{public}u, datasize %{public}zu", __func__, code, data.GetRawDataSize());
@@ -728,18 +833,22 @@ bool WifiP2pStub::ReadWifiP2pServiceInfo(MessageParcel &data, WifiP2pServiceInfo
 
 bool WifiP2pStub::ReadWifiP2pServiceRequest(MessageParcel &data, WifiP2pDevice &device, WifiP2pServiceRequest &request)
 {
-    constexpr int MAX_QUERY_SIZE = 256;
     ReadWifiP2pDeviceData(data, device);
+    return ReadWifiP2pServiceRequestOnly(data, request);
+}
+
+bool WifiP2pStub::ReadWifiP2pServiceRequestOnly(MessageParcel &data, WifiP2pServiceRequest &request)
+{
+    constexpr int MAX_QUERY_SIZE = 256;
     request.SetProtocolType(static_cast<P2pServicerProtocolType>(data.ReadInt32()));
     request.SetTransactionId(data.ReadInt32());
     int size = data.ReadInt32();
-    if (size > MAX_QUERY_SIZE) {
+    if (size < 0 || size > MAX_QUERY_SIZE) {
         return false;
     }
     std::vector<unsigned char> query;
     for (int i = 0; i < size; i++) {
-        unsigned char chr = data.ReadInt8();
-        query.push_back(chr);
+        query.push_back(static_cast<unsigned char>(data.ReadInt8()));
     }
     request.SetQuery(query);
     return true;
@@ -756,6 +865,17 @@ void WifiP2pStub::WriteWifiP2pServiceInfo(MessageParcel &reply, const WifiP2pSer
         reply.WriteCString((*it).c_str());
     }
     return;
+}
+
+void WifiP2pStub::WriteWifiP2pServiceRequestOnly(MessageParcel &reply, const WifiP2pServiceRequest &request)
+{
+    reply.WriteInt32(static_cast<int>(request.GetProtocolType()));
+    reply.WriteInt32(request.GetTransactionId());
+    std::vector<unsigned char> query = request.GetQuery();
+    reply.WriteInt32(static_cast<int>(query.size()));
+    for (std::size_t i = 0; i < query.size(); i++) {
+        reply.WriteInt8(query[i]);
+    }
 }
 
 void WifiP2pStub::ReadWifiP2pDeviceData(MessageParcel &data, WifiP2pDevice &device)

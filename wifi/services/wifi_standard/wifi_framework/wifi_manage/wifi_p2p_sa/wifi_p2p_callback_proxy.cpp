@@ -355,5 +355,49 @@ void WifiP2pCallbackProxy::OnP2pChrErrCodeReport(const int errCode)
     }
     return;
 }
+
+void WifiP2pCallbackProxy::WriteP2pServiceDiscoveryInfo(MessageParcel &data, const P2pServiceDiscoveryInfo &info)
+{
+    data.WriteInt32(static_cast<int32_t>(info.type));
+    data.WriteString(info.dnsSdName);
+    data.WriteString(info.dnsSdRegistrationType);
+    data.WriteInt32(static_cast<int32_t>(info.dnsSdTxtRecord.size()));
+    for (const auto &item : info.dnsSdTxtRecord) {
+        data.WriteString(item.first);
+        data.WriteString(item.second);
+    }
+    data.WriteInt32(static_cast<int32_t>(info.upnpUniqueServiceNames.size()));
+    for (const auto &name : info.upnpUniqueServiceNames) {
+        data.WriteString(name);
+    }
+    data.WriteInt32(static_cast<int32_t>(info.protocolType));
+    data.WriteInt32(static_cast<int32_t>(info.responseData.size()));
+    for (unsigned char byte : info.responseData) {
+        data.WriteUint8(byte);
+    }
+}
+
+void WifiP2pCallbackProxy::OnP2pServiceDiscoveryResult(const P2pServiceDiscoveryInfo &info,
+    const WifiP2pDevice &device)
+{
+    WIFI_LOGD("WifiP2pCallbackProxy::OnP2pServiceDiscoveryResult, type=%{public}d", static_cast<int>(info.type));
+    MessageOption option = {MessageOption::TF_ASYNC};
+    MessageParcel data;
+    MessageParcel reply;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        WIFI_LOGE("Write interface token error: %{public}s", __func__);
+        return;
+    }
+    data.WriteInt32(0);
+    WriteP2pServiceDiscoveryInfo(data, info);
+    WriteWifiP2pDeviceData(data, device);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(P2PInterfaceCode::WIFI_CBK_CMD_SERVICE_DISCOVERY_RESULT), data, reply, option);
+    if (error != ERR_NONE) {
+        WIFI_LOGE("Set Attr(%{public}d) failed,error code %{public}d",
+            static_cast<int32_t>(P2PInterfaceCode::WIFI_CBK_CMD_SERVICE_DISCOVERY_RESULT), error);
+        return;
+    }
+}
 }  // namespace Wifi
 }  // namespace OHOS

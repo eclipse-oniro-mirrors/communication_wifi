@@ -22,6 +22,7 @@
 #ifdef WIFI_FEATURE_SUPPORT_API_METRICS
 #include "histogram_plugin_macros.h"
 #endif
+#include "securec.h"
 
 namespace OHOS {
 namespace Wifi {
@@ -588,6 +589,123 @@ NO_SANITIZE("cfi") napi_value RemoveLocalP2pService(napi_env env, napi_callback_
     WIFI_NAPI_RETURN(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
 }
 
+static void ServiceRequestToJs(const napi_env& env, const WifiP2pServiceRequest& request, napi_value& result)
+{
+    SetValueInt32(env, "protocolType", static_cast<int>(request.GetProtocolType()), result);
+    const std::vector<unsigned char>& query = request.GetQuery();
+    void *bufferData = nullptr;
+    napi_value arrayBuffer = nullptr;
+    napi_create_arraybuffer(env, query.size(), &bufferData, &arrayBuffer);
+    if (bufferData != nullptr && !query.empty()) {
+        if (memcpy_s(bufferData, query.size(), query.data(), query.size()) != EOK) {
+            WIFI_LOGE("ServiceRequestToJs memcpy_s failed");
+        }
+    }
+    napi_value queryArray = nullptr;
+    napi_create_typedarray(env, napi_uint8_array, query.size(), arrayBuffer, 0, &queryArray);
+    napi_set_named_property(env, result, "query", queryArray);
+}
+
+static bool JsObjToServiceRequest(const napi_env& env, napi_value object, WifiP2pServiceRequest& request)
+{
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, object, &valueType);
+    if (valueType != napi_object) {
+        return false;
+    }
+    int protocolType = 0;
+    JsObjectToInt(env, object, "protocolType", protocolType);
+    request.SetProtocolType(static_cast<P2pServicerProtocolType>(protocolType));
+
+    bool hasProperty = false;
+    napi_has_named_property(env, object, "query", &hasProperty);
+    if (!hasProperty) {
+        return true;
+    }
+    std::vector<uint8_t> queryBytes = JsObjectToU8Vector(env, object, "query");
+    std::vector<unsigned char> query(queryBytes.begin(), queryBytes.end());
+    request.SetQuery(query);
+    return true;
+}
+
+static napi_value MakeServiceRequestResult(napi_env env, const WifiP2pServiceRequest& request)
+{
+    napi_value result = nullptr;
+    napi_create_object(env, &result);
+    ServiceRequestToJs(env, request, result);
+    return result;
+}
+
+NO_SANITIZE("cfi") napi_value AddDnsSdServiceRequest(napi_env env, napi_callback_info info)
+{
+    TRACE_FUNC_CALL;
+    size_t argc = 2;
+    napi_value argv[2] = {nullptr, nullptr};
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
+    WIFI_NAPI_ASSERT(env, wifiP2pPtr != nullptr, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
+
+    /* 接口层顺序：(serviceType = "", instanceName = "")；底层仍为 (instanceName, serviceType) */
+    std::string serviceType;
+    std::string instanceName;
+    if (argc >= 1) {
+        WIFI_NAPI_ASSERT(env, ParseJsString(env, argv[0], serviceType), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+    }
+    if (argc >= 2) {
+        WIFI_NAPI_ASSERT(env, ParseJsString(env, argv[1], instanceName), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+    }
+
+    ErrCode ret = wifiP2pPtr->AddDnsSdServiceRequest(instanceName, serviceType);
+    WIFI_NAPI_RETURN(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
+}
+
+NO_SANITIZE("cfi") napi_value AddUpnpServiceRequest(napi_env env, napi_callback_info info)
+{
+    TRACE_FUNC_CALL;
+    size_t argc = 1;
+    napi_value argv[1] = {nullptr};
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
+    WIFI_NAPI_ASSERT(env, wifiP2pPtr != nullptr, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
+
+    std::string searchTarget;
+    if (argc == 0) {
+        /* match all UPnP */
+    } else {
+        WIFI_NAPI_ASSERT(env, ParseJsString(env, argv[0], searchTarget), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+    }
+
+    ErrCode ret = wifiP2pPtr->AddUpnpServiceRequest(searchTarget);
+    WIFI_NAPI_RETURN(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
+}
+
+NO_SANITIZE("cfi") napi_value RemoveP2pServiceRequest(napi_env env, napi_callback_info info)
+{
+    TRACE_FUNC_CALL;
+    size_t argc = 1;
+    napi_value argv[1];
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
+    WIFI_NAPI_ASSERT(env, argc == 1 && wifiP2pPtr != nullptr, WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+    WifiP2pServiceRequest request;
+    WIFI_NAPI_ASSERT(env, JsObjToServiceRequest(env, argv[0], request), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+    ErrCode ret = wifiP2pPtr->RemoveP2pServiceRequest(request);
+    WIFI_NAPI_RETURN(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
+}
+
+NO_SANITIZE("cfi") napi_value ClearP2pServiceRequests(napi_env env, napi_callback_info info)
+{
+    TRACE_FUNC_CALL;
+    WIFI_NAPI_ASSERT(env, wifiP2pPtr != nullptr, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
+    ErrCode ret = wifiP2pPtr->ClearP2pServiceRequests();
+    WIFI_NAPI_RETURN(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
+}
+
+NO_SANITIZE("cfi") napi_value DiscoverServices(napi_env env, napi_callback_info info)
+{
+    TRACE_FUNC_CALL;
+    WIFI_NAPI_ASSERT(env, wifiP2pPtr != nullptr, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
+    ErrCode ret = wifiP2pPtr->DiscoverServices();
+    WIFI_NAPI_RETURN(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
+}
+
 NO_SANITIZE("cfi") napi_value GetLocalP2pServices(napi_env env, napi_callback_info info)
 {
     TRACE_FUNC_CALL;
@@ -602,6 +720,23 @@ NO_SANITIZE("cfi") napi_value GetLocalP2pServices(napi_env env, napi_callback_in
         napi_value item = nullptr;
         napi_create_object(env, &item);
         ServiceInfoToJs(env, each, item);
+        napi_set_element(env, arrayResult, idx++, item);
+    }
+    return arrayResult;
+}
+
+NO_SANITIZE("cfi") napi_value GetP2pServiceRequest(napi_env env, napi_callback_info info)
+{
+    TRACE_FUNC_CALL;
+    WIFI_NAPI_ASSERT(env, wifiP2pPtr != nullptr, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
+    std::vector<WifiP2pServiceRequest> requests;
+    ErrCode ret = wifiP2pPtr->QueryP2pServiceRequests(requests);
+    WIFI_NAPI_ASSERT(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
+    napi_value arrayResult = nullptr;
+    napi_create_array_with_length(env, requests.size(), &arrayResult);
+    uint32_t idx = 0;
+    for (auto& each : requests) {
+        napi_value item = MakeServiceRequestResult(env, each);
         napi_set_element(env, arrayResult, idx++, item);
     }
     return arrayResult;

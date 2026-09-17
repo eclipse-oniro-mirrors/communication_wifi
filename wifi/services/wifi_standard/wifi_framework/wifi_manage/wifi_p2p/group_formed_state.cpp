@@ -329,14 +329,18 @@ bool GroupFormedState::ProcessCmdDiscServices(const InternalMessagePtr msg) cons
 
     p2pStateMachine.CancelSupplicantSrvDiscReq();
     std::string reqId;
-    WifiP2pServiceRequest request;
+    std::vector<unsigned char> tlvs;
+    if (!p2pStateMachine.serviceManager.GetPendingServiceRequestTlvs(tlvs)) {
+        WifiP2pServiceRequest request;
+        request.SetProtocolType(P2pServicerProtocolType::SERVICE_TYPE_ALL);
+        request.SetTransactionId(p2pStateMachine.serviceManager.GetTransId());
+        tlvs = request.GetTlv();
+    }
     WifiP2pDevice device;
     device.SetDeviceAddress(std::string("00:00:00:00:00:00"));
-    request.SetProtocolType(P2pServicerProtocolType::SERVICE_TYPE_ALL);
-    request.SetTransactionId(p2pStateMachine.serviceManager.GetTransId());
 
     WifiErrorNo retCode =
-        WifiP2PHalInterface::GetInstance().ReqServiceDiscovery(device.GetDeviceAddress(), request.GetTlv(), reqId);
+        WifiP2PHalInterface::GetInstance().ReqServiceDiscovery(device.GetDeviceAddress(), tlvs, reqId);
     if (WifiErrorNo::WIFI_HAL_OPT_OK != retCode) {
         WIFI_LOGI("Failed to schedule the P2P service discovery request.");
         p2pStateMachine.BroadcastActionResult(P2pActionCallback::DiscoverServices, ErrCode::WIFI_OPT_FAILED);

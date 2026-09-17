@@ -222,7 +222,40 @@ public:
      */
     virtual bool UpdateServiceName(const std::string &devAddr, const WifiP2pServiceResponse &svrInfo);
 
+    /**
+     * @Description Add a pending service discovery request.
+     * @return true adding succeeded
+     * @return false adding failed (already exists)
+     */
+    virtual bool AddPendingServiceRequest(const WifiP2pServiceRequest &req);
+
+    /**
+     * @Description Remove a pending service discovery request that is already in the list.
+     * @return true removal succeeded
+     * @return false removal failed (not found)
+     */
+    virtual bool RemovePendingServiceRequest(const WifiP2pServiceRequest &req);
+
+    /**
+     * @Description Clear all pending service discovery requests.
+     */
+    virtual void ClearPendingServiceRequests();
+
+    /**
+     * @Description Get TLV bytes from pending service discovery requests.
+     * @return true if pending requests exist, false if empty
+     */
+    virtual bool GetPendingServiceRequestTlvs(std::vector<unsigned char> &tlvs);
+
+    /**
+     * @Description Obtains a deep copy of the pending service discovery request list.
+     *
+     * @param requests - output pending WifiP2pServiceRequest list
+     */
+    virtual void GetPendingServiceRequestList(std::vector<WifiP2pServiceRequest> &requests);
+
 private:
+    WifiP2pServiceRequestList pendingServiceRequests;
     /* non-zero service transaction ID */
     unsigned char transId;
     /**

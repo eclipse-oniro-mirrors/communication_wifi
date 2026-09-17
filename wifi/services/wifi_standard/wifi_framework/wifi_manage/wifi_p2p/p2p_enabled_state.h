@@ -197,6 +197,27 @@ private:
     virtual bool ProcessCmdRequestService(InternalMessagePtr msg) const;
 
     /**
+     * @Description Process the add service request command received by the state machine
+     * @param msg - Message body sent by the state machine
+     * @return - bool true:handle   false:not handle
+     */
+    virtual bool ProcessCmdAddServiceRequest(InternalMessagePtr msg) const;
+
+    /**
+     * @Description Process the remove service request command received by the state machine
+     * @param msg - Message body sent by the state machine
+     * @return - bool true:handle   false:not handle
+     */
+    virtual bool ProcessCmdRemoveServiceRequest(InternalMessagePtr msg) const;
+
+    /**
+     * @Description Process the clear service requests command received by the state machine
+     * @param msg - Message body sent by the state machine
+     * @return - bool true:handle   false:not handle
+     */
+    virtual bool ProcessCmdClearServiceRequests(InternalMessagePtr msg) const;
+
+    /**
      * @Description Process the service discover request message received by the state machine
      * @param msg - Message body sent by the state machine
      * @return - bool true:handle   false:not handle

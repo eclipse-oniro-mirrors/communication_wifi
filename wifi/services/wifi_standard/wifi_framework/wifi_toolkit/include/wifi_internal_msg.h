@@ -205,6 +205,7 @@ struct WifiEventCallbackMsg {
     GcInfo gcInfo;
     std::string privateWfdInfo;
     int errCode;
+    P2pServiceDiscoveryInfo p2pServiceDiscoveryInfo; /* P2P service discovery response */
     WifiEventCallbackMsg()
     {
         msgCode = 0;

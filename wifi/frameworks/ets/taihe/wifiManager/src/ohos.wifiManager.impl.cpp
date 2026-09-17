@@ -1204,6 +1204,72 @@ void RemoveLocalP2pService(::ohos::wifiManager::WifiP2pServiceInfo const& srvInf
     }
 }
 
+void AddDnsSdServiceRequest(
+    ::taihe::optional_view<::taihe::string> serviceType,
+    ::taihe::optional_view<::taihe::string> instanceName)
+{
+    if (g_wifiP2pPtr == nullptr) {
+        WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
+        return;
+    }
+    /* 接口层顺序为 (serviceType, instanceName)；底层仍为 (instanceName, serviceType) */
+    ErrCode ret = g_wifiP2pPtr->AddDnsSdServiceRequest(
+        (instanceName != nullptr) ? std::string(*instanceName) : "",
+        (serviceType != nullptr) ? std::string(*serviceType) : "");
+    if (ret != WIFI_OPT_SUCCESS) {
+        WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, ret, SYSCAP_WIFI_P2P);
+    }
+}
+
+void AddUpnpServiceRequest(::taihe::optional_view<::taihe::string> searchTarget)
+{
+    if (g_wifiP2pPtr == nullptr) {
+        WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
+        return;
+    }
+    ErrCode ret = g_wifiP2pPtr->AddUpnpServiceRequest(
+        (searchTarget != nullptr) ? std::string(*searchTarget) : "");
+    if (ret != WIFI_OPT_SUCCESS) {
+        WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, ret, SYSCAP_WIFI_P2P);
+    }
+}
+
+void RemoveP2pServiceRequest(::ohos::wifiManager::WifiP2pServiceRequest const& request)
+{
+    if (g_wifiP2pPtr == nullptr) {
+        WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
+        return;
+    }
+    ErrCode ret = g_wifiP2pPtr->RemoveP2pServiceRequest(ConvertWifiP2pServiceRequest(request));
+    if (ret != WIFI_OPT_SUCCESS) {
+        WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, ret, SYSCAP_WIFI_P2P);
+    }
+}
+
+void ClearP2pServiceRequests()
+{
+    if (g_wifiP2pPtr == nullptr) {
+        WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
+        return;
+    }
+    ErrCode ret = g_wifiP2pPtr->ClearP2pServiceRequests();
+    if (ret != WIFI_OPT_SUCCESS) {
+        WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, ret, SYSCAP_WIFI_P2P);
+    }
+}
+
+void DiscoverServices()
+{
+    if (g_wifiP2pPtr == nullptr) {
+        WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
+        return;
+    }
+    ErrCode ret = g_wifiP2pPtr->DiscoverServices();
+    if (ret != WIFI_OPT_SUCCESS) {
+        WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, ret, SYSCAP_WIFI_P2P);
+    }
+}
+
 ::taihe::array<::ohos::wifiManager::WifiP2pServiceInfo> GetLocalP2pServicesSync()
 {
     if (g_wifiP2pPtr == nullptr) {
@@ -1221,6 +1287,26 @@ void RemoveLocalP2pService(::ohos::wifiManager::WifiP2pServiceInfo const& srvInf
         result.emplace_back(MakeWifiP2pServiceInfo(info));
     }
     return ::taihe::array<::ohos::wifiManager::WifiP2pServiceInfo>(
+        taihe::copy_data_t{}, result.data(), result.size());
+}
+
+::taihe::array<::ohos::wifiManager::WifiP2pServiceRequest> GetP2pServiceRequestSync()
+{
+    if (g_wifiP2pPtr == nullptr) {
+        WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
+        return {};
+    }
+    std::vector<WifiP2pServiceRequest> requests;
+    ErrCode ret = g_wifiP2pPtr->QueryP2pServiceRequests(requests);
+    if (ret != WIFI_OPT_SUCCESS) {
+        WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, ret, SYSCAP_WIFI_P2P);
+        return {};
+    }
+    std::vector<::ohos::wifiManager::WifiP2pServiceRequest> result;
+    for (WifiP2pServiceRequest& request : requests) {
+        result.emplace_back(MakeWifiP2pServiceRequest(request));
+    }
+    return ::taihe::array<::ohos::wifiManager::WifiP2pServiceRequest>(
         taihe::copy_data_t{}, result.data(), result.size());
 }
 
@@ -1846,6 +1932,49 @@ void OffP2pDiscoveryChange(::taihe::optional_view<::taihe::callback<void(int)>> 
     }
 }
 
+void OnP2pServiceDiscovery(::taihe::callback_view<void(
+    ::ohos::wifiManager::P2pServiceDiscoveryInfo const&)> callback)
+{
+    std::unique_lock<std::shared_mutex> guard(g_wifiP2pServiceDiscoveryLock);
+    auto cb = ::taihe::optional<::taihe::callback<void(
+        ::ohos::wifiManager::P2pServiceDiscoveryInfo const&)>>{std::in_place_t{}, callback};
+    std::vector<std::string> event = {EVENT_P2P_SERVICE_DISCOVERY};
+    if (g_wifiP2pPtr == nullptr) {
+        WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
+        return;
+    }
+    if (g_wifiP2pServiceDiscoveryVec.size() > REGISTERINFO_MAX_NUM) {
+        WIFI_LOGE("RegisterInfo Exceeding the maximum value!");
+        return;
+    }
+    ErrCode ret = g_wifiP2pPtr->RegisterCallBack(wifiP2pCallback, event);
+    if (ret != WIFI_OPT_SUCCESS) {
+        WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, ret, SYSCAP_WIFI_P2P);
+        return;
+    }
+    g_wifiP2pServiceDiscoveryVec.emplace_back(cb);
+}
+
+void OffP2pServiceDiscovery(::taihe::optional_view<::taihe::callback<void(
+    ::ohos::wifiManager::P2pServiceDiscoveryInfo const&)>> callback)
+{
+    std::unique_lock<std::shared_mutex> guard(g_wifiP2pServiceDiscoveryLock);
+    if (g_wifiP2pServiceDiscoveryVec.empty()) {
+        WIFI_LOGE("Unregister type not registered!");
+        return;
+    }
+    if (callback != nullptr) {
+        for (int i = static_cast<int>(g_wifiP2pServiceDiscoveryVec.size()) - 1; i >= 0; --i) {
+            if (g_wifiP2pServiceDiscoveryVec[i] == callback) {
+                g_wifiP2pServiceDiscoveryVec.erase(g_wifiP2pServiceDiscoveryVec.begin() + i);
+            }
+        }
+    } else {
+        WIFI_LOGW("Unregister all relevant subscribe for: p2pServiceDiscovery");
+        g_wifiP2pServiceDiscoveryVec.clear();
+    }
+}
+
 bool IsWlanSupported()
 {
     bool isSupported = false;
@@ -1962,7 +2091,15 @@ TH_EXPORT_CPP_API_GetCurrentGroupSync(GetCurrentGroupSync);
 TH_EXPORT_CPP_API_AddDnsSdLocalP2pService(AddDnsSdLocalP2pService);
 TH_EXPORT_CPP_API_AddUpnpLocalP2pService(AddUpnpLocalP2pService);
 TH_EXPORT_CPP_API_RemoveLocalP2pService(RemoveLocalP2pService);
+TH_EXPORT_CPP_API_AddDnsSdServiceRequest(AddDnsSdServiceRequest);
+TH_EXPORT_CPP_API_AddUpnpServiceRequest(AddUpnpServiceRequest);
+TH_EXPORT_CPP_API_RemoveP2pServiceRequest(RemoveP2pServiceRequest);
+TH_EXPORT_CPP_API_ClearP2pServiceRequests(ClearP2pServiceRequests);
+TH_EXPORT_CPP_API_DiscoverServices(DiscoverServices);
 TH_EXPORT_CPP_API_GetLocalP2pServicesSync(GetLocalP2pServicesSync);
+TH_EXPORT_CPP_API_GetP2pServiceRequestSync(GetP2pServiceRequestSync);
+TH_EXPORT_CPP_API_OnP2pServiceDiscovery(OnP2pServiceDiscovery);
+TH_EXPORT_CPP_API_OffP2pServiceDiscovery(OffP2pServiceDiscovery);
 TH_EXPORT_CPP_API_OnWifiStateChange(OnWifiStateChange);
 TH_EXPORT_CPP_API_OffWifiStateChange(OffWifiStateChange);
 TH_EXPORT_CPP_API_OnWifiConnectionChange(OnWifiConnectionChange);

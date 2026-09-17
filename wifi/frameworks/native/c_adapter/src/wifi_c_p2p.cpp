@@ -485,6 +485,15 @@ void WifiP2pCEventCallback::OnP2pChrErrCodeReport(const int errCode)
     }
 }
 
+void WifiP2pCEventCallback::OnP2pServiceDiscoveryResult(const OHOS::Wifi::P2pServiceDiscoveryInfo &info,
+    const OHOS::Wifi::WifiP2pDevice &device)
+{
+    WIFI_LOGI("%{public}s, received p2p service discovery result, type=%{public}d", __func__,
+        static_cast<int>(info.type));
+    (void)info;
+    (void)device;
+}
+
 OHOS::sptr<OHOS::IRemoteObject> WifiP2pCEventCallback::AsObject()
 {
     return nullptr;

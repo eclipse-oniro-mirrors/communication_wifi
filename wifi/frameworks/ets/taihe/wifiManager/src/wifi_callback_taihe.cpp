@@ -14,6 +14,7 @@
  */
 
 #include "wifi_callback_taihe.h"
+#include "wifi_utils_taihe.h"
 
 namespace OHOS {
 namespace Wifi {
@@ -87,6 +88,11 @@ std::shared_mutex g_wifiP2pPersistentGroupChangeLock;
 std::vector<::taihe::optional<::taihe::callback<void(int)>>>
     g_wifiP2pDiscoveryChangeVec = {};
 std::shared_mutex g_wifiP2pDiscoveryChangeLock;
+
+std::vector<::taihe::optional<::taihe::callback<void(
+    ::ohos::wifiManager::P2pServiceDiscoveryInfo const&)>>>
+    g_wifiP2pServiceDiscoveryVec = {};
+std::shared_mutex g_wifiP2pServiceDiscoveryLock;
 
 // device
 void WifiIdlDeviceEventCallback::OnWifiStateChanged(int state)
@@ -351,6 +357,85 @@ void WifiIdlP2pEventCallback::OnP2pPrivatePeersChanged(const std::string &priWfd
 void WifiIdlP2pEventCallback::OnP2pChrErrCodeReport(const int errCode)
 {
     WIFI_LOGI("received OnP2pChrErrCodeReport event");
+}
+
+static void NotifyP2pServiceDiscovery(const ::ohos::wifiManager::P2pServiceDiscoveryInfo &result)
+{
+    for (auto callback : g_wifiP2pServiceDiscoveryVec) {
+        (*callback)(result);
+    }
+}
+
+static void NotifyDnsSdService(const P2pServiceDiscoveryInfo &info, const WifiP2pDevice &device)
+{
+    ::ohos::wifiManager::P2pDnsSdInfo arm {
+        info.dnsSdName,
+        info.dnsSdRegistrationType,
+        MakeWifiP2pDevice(device),
+    };
+    NotifyP2pServiceDiscovery(::ohos::wifiManager::P2pServiceDiscoveryInfo::make_dnsSd(std::move(arm)));
+}
+
+static void NotifyDnsSdTxtRecord(const P2pServiceDiscoveryInfo &info, const WifiP2pDevice &device)
+{
+    ::taihe::map<::taihe::string, ::taihe::string> txtMap;
+    txtMap.reserve(info.dnsSdTxtRecord.size());
+    for (const auto &item : info.dnsSdTxtRecord) {
+        txtMap.emplace(::taihe::string(item.first), ::taihe::string(item.second));
+    }
+    ::ohos::wifiManager::P2pDnsSdTxtInfo arm {
+        info.dnsSdName,
+        txtMap,
+        MakeWifiP2pDevice(device),
+    };
+    NotifyP2pServiceDiscovery(::ohos::wifiManager::P2pServiceDiscoveryInfo::make_dnsSdTxt(std::move(arm)));
+}
+
+static void NotifyUpnpService(const P2pServiceDiscoveryInfo &info, const WifiP2pDevice &device)
+{
+    std::vector<::taihe::string> names;
+    for (const auto &name : info.upnpUniqueServiceNames) {
+        names.emplace_back(name);
+    }
+    auto nameArray = ::taihe::array<::taihe::string>(taihe::copy_data_t{}, names.data(), names.size());
+    ::ohos::wifiManager::P2pUpnpInfo arm {
+        nameArray,
+        MakeWifiP2pDevice(device),
+    };
+    NotifyP2pServiceDiscovery(::ohos::wifiManager::P2pServiceDiscoveryInfo::make_upnp(std::move(arm)));
+}
+
+static void NotifyGenericService(const P2pServiceDiscoveryInfo &info, const WifiP2pDevice &device)
+{
+    ::taihe::array<uint8_t> dataArray(taihe::copy_data_t{}, info.responseData.data(), info.responseData.size());
+    ::ohos::wifiManager::P2pGenericInfo arm {
+        static_cast<::ohos::wifiManager::P2pServiceProtocolType::key_t>(info.protocolType),
+        dataArray,
+        MakeWifiP2pDevice(device),
+    };
+    NotifyP2pServiceDiscovery(::ohos::wifiManager::P2pServiceDiscoveryInfo::make_generic(std::move(arm)));
+}
+
+void WifiIdlP2pEventCallback::OnP2pServiceDiscoveryResult(const OHOS::Wifi::P2pServiceDiscoveryInfo &info,
+    const WifiP2pDevice &device)
+{
+    std::shared_lock<std::shared_mutex> guard(g_wifiP2pServiceDiscoveryLock);
+    WIFI_LOGI("received OnP2pServiceDiscoveryResult, type=%{public}d", static_cast<int>(info.type));
+    switch (info.type) {
+        case P2pServiceDiscoveryResultType::DNS_SD_SERVICE:
+            NotifyDnsSdService(info, device);
+            break;
+        case P2pServiceDiscoveryResultType::DNS_SD_TXT_RECORD:
+            NotifyDnsSdTxtRecord(info, device);
+            break;
+        case P2pServiceDiscoveryResultType::UPNP_SERVICE:
+            NotifyUpnpService(info, device);
+            break;
+        case P2pServiceDiscoveryResultType::GENERIC_SERVICE:
+        default:
+            NotifyGenericService(info, device);
+            break;
+    }
 }
 
 OHOS::sptr<OHOS::IRemoteObject> WifiIdlP2pEventCallback::AsObject()

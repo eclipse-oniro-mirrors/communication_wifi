@@ -80,6 +80,36 @@ ErrCode P2pInterface::RequestService(const WifiP2pDevice &device, const WifiP2pS
     return WIFI_OPT_SUCCESS;
 }
 
+ErrCode P2pInterface::AddP2pServiceRequest(const WifiP2pServiceRequest &request)
+{
+    (void)request;
+    return WIFI_OPT_SUCCESS;
+}
+
+ErrCode P2pInterface::RemoveP2pServiceRequest(const WifiP2pServiceRequest &request)
+{
+    (void)request;
+    return WIFI_OPT_SUCCESS;
+}
+
+ErrCode P2pInterface::ClearP2pServiceRequests()
+{
+    return WIFI_OPT_SUCCESS;
+}
+
+ErrCode P2pInterface::AddDnsSdServiceRequest(const std::string &instanceName, const std::string &serviceType)
+{
+    (void)instanceName;
+    (void)serviceType;
+    return WIFI_OPT_SUCCESS;
+}
+
+ErrCode P2pInterface::AddUpnpServiceRequest(const std::string &searchTarget)
+{
+    (void)searchTarget;
+    return WIFI_OPT_SUCCESS;
+}
+
 ErrCode P2pInterface::StartP2pListen(int period, int interval)
 {
     return WIFI_OPT_SUCCESS;
@@ -171,6 +201,11 @@ ErrCode P2pInterface::QueryP2pServices(std::vector<WifiP2pServiceInfo> &services
 }
 
 ErrCode P2pInterface::QueryLocalP2pServices(std::vector<WifiP2pServiceInfo> &services)
+{
+    return WIFI_OPT_SUCCESS;
+}
+
+ErrCode P2pInterface::QueryP2pServiceRequests(std::vector<WifiP2pServiceRequest> &requests)
 {
     return WIFI_OPT_SUCCESS;
 }

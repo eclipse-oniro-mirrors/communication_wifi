@@ -824,7 +824,9 @@ int32_t OnEventServDiscReq(struct IWpaCallback *self,
         cbInfo.mac = address;
 
         if (servDiscReqInfoParam->tlvsLen > 0 && servDiscReqInfoParam->tlvs != nullptr) {
-            OHOS::Wifi::Char2Vec(servDiscReqInfoParam->tlvs, servDiscReqInfoParam->tlvsLen, cbInfo.tlvList);
+            /* Do not use Char2Vec: MAX_CHAR_LEN is 128, P2P TLV can be up to 256. */
+            cbInfo.tlvList.assign(servDiscReqInfoParam->tlvs,
+                servDiscReqInfoParam->tlvs + servDiscReqInfoParam->tlvsLen);
         }
         cbk.onP2pServDiscReq(cbInfo);
     }
@@ -841,8 +843,10 @@ int32_t OnEventServDiscResp(struct IWpaCallback *self,
     const OHOS::Wifi::P2pHalCallback &cbk = OHOS::Wifi::WifiP2PHalInterface::GetInstance().GetP2pCallbackInst();
     if (cbk.onServiceDiscoveryResponse) {
         std::vector<unsigned char> tlvList;
-        if (servDiscRespParam->tlvs != nullptr) {
-            OHOS::Wifi::Char2Vec(servDiscRespParam->tlvs, servDiscRespParam->tlvsLen, tlvList);
+        /* Do not use Char2Vec here: MAX_CHAR_LEN is 128, while P2P TLV can be up to 256. */
+        if (servDiscRespParam->tlvs != nullptr && servDiscRespParam->tlvsLen > 0) {
+            tlvList.assign(servDiscRespParam->tlvs,
+                servDiscRespParam->tlvs + servDiscRespParam->tlvsLen);
         }
         char address[WIFI_HDI_STR_MAC_LENGTH + 1] = {0};
         ConvertMacArr2String(servDiscRespParam->srcAddress, servDiscRespParam->srcAddressLen,

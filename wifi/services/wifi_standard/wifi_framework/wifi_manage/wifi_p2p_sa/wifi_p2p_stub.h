@@ -77,6 +77,13 @@ private:
     void OnQueryP2pGroups(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnQueryP2pServices(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnQueryLocalP2pServices(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    void OnAddP2pServiceRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    void OnRemoveP2pServiceRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    void OnClearP2pServiceRequests(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    void OnAddTypedServiceRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
+    ErrCode ParseAndAddDnsSdServiceRequest(MessageParcel &data);
+    ErrCode ParseAndAddUpnpServiceRequest(MessageParcel &data);
+    void OnQueryP2pServiceRequests(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnRegisterCallBack(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnGetSupportedFeatures(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnSetP2pDeviceName(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
@@ -96,7 +103,9 @@ private:
     void OnHid2dSetUpperScene(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     bool ReadWifiP2pServiceInfo(MessageParcel &data, WifiP2pServiceInfo &info);
     bool ReadWifiP2pServiceRequest(MessageParcel &data, WifiP2pDevice &device, WifiP2pServiceRequest &request);
+    bool ReadWifiP2pServiceRequestOnly(MessageParcel &data, WifiP2pServiceRequest &request);
     void WriteWifiP2pServiceInfo(MessageParcel &reply, const WifiP2pServiceInfo &info);
+    void WriteWifiP2pServiceRequestOnly(MessageParcel &reply, const WifiP2pServiceRequest &request);
     void ReadWifiP2pDeviceData(MessageParcel &data, WifiP2pDevice &device);
     void WriteWifiP2pDeviceData(MessageParcel &reply, const WifiP2pDevice &device);
     bool ReadWifiP2pGroupData(MessageParcel &data, WifiP2pGroupInfo &info);

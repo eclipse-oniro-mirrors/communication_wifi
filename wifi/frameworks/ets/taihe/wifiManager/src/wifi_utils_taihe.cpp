@@ -651,6 +651,36 @@ int GetSecurityTypeFromKeyMgmt(KeyMgmt keyMgmt)
     };
 }
 
+WifiP2pDevice ConvertWifiP2pDeviceFromTaihe(const ::ohos::wifiManager::WifiP2pDevice& device)
+{
+    WifiP2pDevice dev;
+    dev.SetDeviceName(static_cast<std::string>(device.deviceName));
+    dev.SetDeviceAddress(static_cast<std::string>(device.deviceAddress));
+    dev.SetDeviceAddressType(static_cast<int>(device.deviceAddressType));
+    dev.SetPrimaryDeviceType(static_cast<std::string>(device.primaryDeviceType));
+    dev.SetP2pDeviceStatus(static_cast<P2pDeviceStatus>(static_cast<int>(device.deviceStatus)));
+    dev.SetGroupCapabilitys(device.groupCapabilities);
+    return dev;
+}
+
+::ohos::wifiManager::WifiP2pServiceRequest MakeWifiP2pServiceRequest(const WifiP2pServiceRequest& request)
+{
+    const std::vector<unsigned char>& query = request.GetQuery();
+    return {
+        static_cast<::ohos::wifiManager::P2pServiceProtocolType::key_t>(request.GetProtocolType()),
+        ::taihe::array<uint8_t>(taihe::copy_data_t{}, query.data(), query.size())
+    };
+}
+
+WifiP2pServiceRequest ConvertWifiP2pServiceRequest(const ::ohos::wifiManager::WifiP2pServiceRequest& request)
+{
+    WifiP2pServiceRequest req;
+    req.SetProtocolType(static_cast<P2pServicerProtocolType>(static_cast<int>(request.protocolType)));
+    std::vector<unsigned char> query(request.query.begin(), request.query.end());
+    req.SetQuery(query);
+    return req;
+}
+
 WifiP2pConfig ConvertWifiP2pConfig(const ::ohos::wifiManager::WifiP2PConfig &config)
 {
     WifiP2pConfig newConfig;

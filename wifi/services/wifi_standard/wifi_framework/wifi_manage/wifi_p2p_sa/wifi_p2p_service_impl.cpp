@@ -951,6 +951,120 @@ ErrCode WifiP2pServiceImpl::QueryLocalP2pServices(std::vector<WifiP2pServiceInfo
     return pService->QueryLocalP2pServices(services);
 }
 
+ErrCode WifiP2pServiceImpl::QueryP2pServiceRequests(std::vector<WifiP2pServiceRequest> &requests)
+{
+    WIFI_LOGI("QueryP2pServiceRequests");
+    if (WifiPermissionUtils::VerifyGetWifiInfoInternalPermission() == PERMISSION_DENIED) {
+        WIFI_LOGE("QueryP2pServiceRequests:VerifyGetWifiInfoInternalPermission PERMISSION_DENIED!");
+        return WIFI_OPT_PERMISSION_DENIED;
+    }
+    if (!IsP2pServiceRunning()) {
+        WIFI_LOGE("P2pService is not running!");
+        return WIFI_OPT_P2P_NOT_OPENED;
+    }
+    IP2pService *pService = WifiServiceManager::GetInstance().GetP2pServiceInst();
+    if (pService == nullptr) {
+        WIFI_LOGE("Get P2P service failed!");
+        return WIFI_OPT_P2P_NOT_OPENED;
+    }
+    return pService->QueryP2pServiceRequests(requests);
+}
+
+ErrCode WifiP2pServiceImpl::AddP2pServiceRequest(const WifiP2pServiceRequest &request)
+{
+    WIFI_LOGI("AddP2pServiceRequest");
+    if (WifiPermissionUtils::VerifyGetWifiInfoInternalPermission() == PERMISSION_DENIED) {
+        WIFI_LOGE("AddP2pServiceRequest:VerifyGetWifiInfoInternalPermission PERMISSION_DENIED!");
+        return WIFI_OPT_PERMISSION_DENIED;
+    }
+    if (!IsP2pServiceRunning()) {
+        WIFI_LOGE("P2pService is not running!");
+        return WIFI_OPT_P2P_NOT_OPENED;
+    }
+    IP2pService *pService = WifiServiceManager::GetInstance().GetP2pServiceInst();
+    if (pService == nullptr) {
+        WIFI_LOGE("Get P2P service failed!");
+        return WIFI_OPT_P2P_NOT_OPENED;
+    }
+    return pService->AddP2pServiceRequest(request);
+}
+
+ErrCode WifiP2pServiceImpl::RemoveP2pServiceRequest(const WifiP2pServiceRequest &request)
+{
+    WIFI_LOGI("RemoveP2pServiceRequest");
+    if (WifiPermissionUtils::VerifyGetWifiInfoInternalPermission() == PERMISSION_DENIED) {
+        WIFI_LOGE("RemoveP2pServiceRequest:VerifyGetWifiInfoInternalPermission PERMISSION_DENIED!");
+        return WIFI_OPT_PERMISSION_DENIED;
+    }
+    if (!IsP2pServiceRunning()) {
+        WIFI_LOGE("P2pService is not running!");
+        return WIFI_OPT_P2P_NOT_OPENED;
+    }
+    IP2pService *pService = WifiServiceManager::GetInstance().GetP2pServiceInst();
+    if (pService == nullptr) {
+        WIFI_LOGE("Get P2P service failed!");
+        return WIFI_OPT_P2P_NOT_OPENED;
+    }
+    return pService->RemoveP2pServiceRequest(request);
+}
+
+ErrCode WifiP2pServiceImpl::ClearP2pServiceRequests(void)
+{
+    WIFI_LOGI("ClearP2pServiceRequests");
+    if (WifiPermissionUtils::VerifyGetWifiInfoInternalPermission() == PERMISSION_DENIED) {
+        WIFI_LOGE("ClearP2pServiceRequests:VerifyGetWifiInfoInternalPermission PERMISSION_DENIED!");
+        return WIFI_OPT_PERMISSION_DENIED;
+    }
+    if (!IsP2pServiceRunning()) {
+        WIFI_LOGE("P2pService is not running!");
+        return WIFI_OPT_P2P_NOT_OPENED;
+    }
+    IP2pService *pService = WifiServiceManager::GetInstance().GetP2pServiceInst();
+    if (pService == nullptr) {
+        WIFI_LOGE("Get P2P service failed!");
+        return WIFI_OPT_P2P_NOT_OPENED;
+    }
+    return pService->ClearP2pServiceRequests();
+}
+
+ErrCode WifiP2pServiceImpl::AddDnsSdServiceRequest(const std::string &instanceName, const std::string &serviceType)
+{
+    WIFI_LOGI("AddDnsSdServiceRequest");
+    if (WifiPermissionUtils::VerifyGetWifiInfoInternalPermission() == PERMISSION_DENIED) {
+        WIFI_LOGE("AddDnsSdServiceRequest:VerifyGetWifiInfoInternalPermission PERMISSION_DENIED!");
+        return WIFI_OPT_PERMISSION_DENIED;
+    }
+    if (!IsP2pServiceRunning()) {
+        WIFI_LOGE("P2pService is not running!");
+        return WIFI_OPT_P2P_NOT_OPENED;
+    }
+    IP2pService *pService = WifiServiceManager::GetInstance().GetP2pServiceInst();
+    if (pService == nullptr) {
+        WIFI_LOGE("Get P2P service failed!");
+        return WIFI_OPT_P2P_NOT_OPENED;
+    }
+    return pService->AddDnsSdServiceRequest(instanceName, serviceType);
+}
+
+ErrCode WifiP2pServiceImpl::AddUpnpServiceRequest(const std::string &searchTarget)
+{
+    WIFI_LOGI("AddUpnpServiceRequest");
+    if (WifiPermissionUtils::VerifyGetWifiInfoInternalPermission() == PERMISSION_DENIED) {
+        WIFI_LOGE("AddUpnpServiceRequest:VerifyGetWifiInfoInternalPermission PERMISSION_DENIED!");
+        return WIFI_OPT_PERMISSION_DENIED;
+    }
+    if (!IsP2pServiceRunning()) {
+        WIFI_LOGE("P2pService is not running!");
+        return WIFI_OPT_P2P_NOT_OPENED;
+    }
+    IP2pService *pService = WifiServiceManager::GetInstance().GetP2pServiceInst();
+    if (pService == nullptr) {
+        WIFI_LOGE("Get P2P service failed!");
+        return WIFI_OPT_P2P_NOT_OPENED;
+    }
+    return pService->AddUpnpServiceRequest(searchTarget);
+}
+
 ErrCode WifiP2pServiceImpl::RegisterCallBack(const sptr<IWifiP2pCallback> &callback,
     const std::vector<std::string> &event)
 {

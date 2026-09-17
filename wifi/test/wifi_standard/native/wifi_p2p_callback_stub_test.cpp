@@ -129,6 +129,13 @@ public:
         WIFI_LOGI("OnP2pChrErrCodeReport Mock");
     }
 
+    void OnP2pServiceDiscoveryResult(const P2pServiceDiscoveryInfo &info, const WifiP2pDevice &device) override
+    {
+        WIFI_LOGI("OnP2pServiceDiscoveryResult Mock");
+        (void)info;
+        (void)device;
+    }
+
     OHOS::sptr<OHOS::IRemoteObject> AsObject() override
     {
         return nullptr;

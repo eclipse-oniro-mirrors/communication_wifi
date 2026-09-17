@@ -338,6 +338,12 @@ public:
 
     void OnP2pChrErrCodeReport(const int errCode) override {}
 
+    void OnP2pServiceDiscoveryResult(const P2pServiceDiscoveryInfo &info, const WifiP2pDevice &device) override
+    {
+        (void)info;
+        (void)device;
+    }
+
     OHOS::sptr<OHOS::IRemoteObject> AsObject() override
     {
         return nullptr;
