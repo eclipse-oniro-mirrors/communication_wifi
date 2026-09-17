@@ -356,7 +356,7 @@ public:
      * @param requests - pending WifiP2pServiceRequest list
      * @return ErrCode - operation result
      */
-     virtual ErrCode QueryP2pServiceRequests(std::vector<WifiP2pServiceRequest> &requests) = 0;
+    virtual ErrCode QueryP2pServiceRequests(std::vector<WifiP2pServiceRequest> &requests) = 0;
 
     /**
      * @Description Add a pending P2P service discovery request.

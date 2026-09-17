@@ -242,6 +242,7 @@ static void FillDnsSdServiceResult(const napi_env& env, const P2pServiceDiscover
 
 static void FillDnsSdTxtRecordResult(const napi_env& env, const P2pServiceDiscoveryInfo& info, napi_value result)
 {
+    constexpr size_t MAP_SET_ARGC = 2;
     SetValueUtf8String(env, "wholeDomainName", info.dnsSdName, result);
     napi_value global = nullptr;
     napi_value mapCtor = nullptr;
@@ -256,8 +257,8 @@ static void FillDnsSdTxtRecordResult(const napi_env& env, const P2pServiceDiscov
         napi_value value = nullptr;
         napi_create_string_utf8(env, item.first.c_str(), NAPI_AUTO_LENGTH, &key);
         napi_create_string_utf8(env, item.second.c_str(), NAPI_AUTO_LENGTH, &value);
-        napi_value argv[2] = {key, value};
-        napi_call_function(env, txtMap, setFn, 2, argv, nullptr);
+        napi_value argv[MAP_SET_ARGC] = {key, value};
+        napi_call_function(env, txtMap, setFn, MAP_SET_ARGC, argv, nullptr);
     }
     napi_set_named_property(env, result, "txtRecord", txtMap);
 }

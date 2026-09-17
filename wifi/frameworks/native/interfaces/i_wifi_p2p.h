@@ -486,7 +486,6 @@ public:
      */
     virtual ErrCode Hid2dSetGroupType(GroupLiveType groupType) = 0;
 
-
     /**
      * @Description Add a pending P2P service discovery request.
      *

@@ -103,12 +103,6 @@ void P2pEnabledState::Init()
         [this](InternalMessagePtr msg) { return this->ProcessCmdStopDiscServices(msg); }));
     mProcessFunMap.insert(std::make_pair(P2P_STATE_MACHINE_CMD::CMD_REQUEST_SERVICE,
         [this](InternalMessagePtr msg) { return this->ProcessCmdRequestService(msg); }));
-    mProcessFunMap.insert(std::make_pair(P2P_STATE_MACHINE_CMD::CMD_ADD_SERVICE_REQUEST,
-        [this](InternalMessagePtr msg) { return this->ProcessCmdAddServiceRequest(msg); }));
-    mProcessFunMap.insert(std::make_pair(P2P_STATE_MACHINE_CMD::CMD_REMOVE_SERVICE_REQUEST,
-        [this](InternalMessagePtr msg) { return this->ProcessCmdRemoveServiceRequest(msg); }));
-    mProcessFunMap.insert(std::make_pair(P2P_STATE_MACHINE_CMD::CMD_CLEAR_SERVICE_REQUESTS,
-        [this](InternalMessagePtr msg) { return this->ProcessCmdClearServiceRequests(msg); }));
     mProcessFunMap.insert(std::make_pair(P2P_STATE_MACHINE_CMD::P2P_EVENT_SERV_DISC_REQ,
         [this](InternalMessagePtr msg) { return this->ProcessServiceDiscReqEvt(msg); }));
     mProcessFunMap.insert(std::make_pair(P2P_STATE_MACHINE_CMD::P2P_EVENT_SERV_DISC_RESP,
@@ -150,6 +144,12 @@ void P2pEnabledState::InitProcessMsg()
     mProcessFunMap.insert(std::make_pair(P2P_STATE_MACHINE_CMD::UNTRUST_INVITATION_RESULT,
         [this](InternalMessagePtr msg) { return this->ProcessUntrustInvitationDialogResult(msg); }));
 #endif
+    mProcessFunMap.insert(std::make_pair(P2P_STATE_MACHINE_CMD::CMD_ADD_SERVICE_REQUEST,
+        [this](InternalMessagePtr msg) { return this->ProcessCmdAddServiceRequest(msg); }));
+    mProcessFunMap.insert(std::make_pair(P2P_STATE_MACHINE_CMD::CMD_REMOVE_SERVICE_REQUEST,
+        [this](InternalMessagePtr msg) { return this->ProcessCmdRemoveServiceRequest(msg); }));
+    mProcessFunMap.insert(std::make_pair(P2P_STATE_MACHINE_CMD::CMD_CLEAR_SERVICE_REQUESTS,
+        [this](InternalMessagePtr msg) { return this->ProcessCmdClearServiceRequests(msg); }));
 }
 
 bool P2pEnabledState::ProcessCmdDisable(InternalMessagePtr msg) const
