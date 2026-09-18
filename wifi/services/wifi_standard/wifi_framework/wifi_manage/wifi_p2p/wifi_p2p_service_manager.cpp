@@ -178,7 +178,6 @@ bool WifiP2pServiceManager::AddDeviceService(const WifiP2pServiceResponse &rsp, 
     WifiP2pServiceInfo service;
     service.SetServicerProtocolType(rsp.GetProtocolType());
     service.SetDeviceAddress(dev.GetDeviceAddress());
-    /* Store as hex: raw DNS/TLV bytes often contain '\0', which JS UTF-8 strings truncate. */
     std::vector<std::string> queryList;
     queryList.push_back(WifiP2pServiceInfo::Bin2HexStr(rsp.GetData()));
     service.SetQueryList(queryList);

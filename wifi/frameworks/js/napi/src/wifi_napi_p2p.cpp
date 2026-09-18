@@ -648,10 +648,10 @@ NO_SANITIZE("cfi") napi_value AddDnsSdServiceRequest(napi_env env, napi_callback
     std::string serviceType;
     std::string instanceName;
     if (argc >= 1) {
-        WIFI_NAPI_ASSERT(env, ParseJsString(env, argv[0], serviceType), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+        WIFI_NAPI_ASSERT(env, JsToString(env, argv[0], serviceType), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
     }
     if (argc >= 2) {
-        WIFI_NAPI_ASSERT(env, ParseJsString(env, argv[1], instanceName), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+        WIFI_NAPI_ASSERT(env, JsToString(env, argv[1], instanceName), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
     }
 
     ErrCode ret = wifiP2pPtr->AddDnsSdServiceRequest(instanceName, serviceType);
@@ -670,7 +670,7 @@ NO_SANITIZE("cfi") napi_value AddUpnpServiceRequest(napi_env env, napi_callback_
     if (argc == 0) {
         /* match all UPnP */
     } else {
-        WIFI_NAPI_ASSERT(env, ParseJsString(env, argv[0], searchTarget), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+        WIFI_NAPI_ASSERT(env, JsToString(env, argv[0], searchTarget), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
     }
 
     ErrCode ret = wifiP2pPtr->AddUpnpServiceRequest(searchTarget);

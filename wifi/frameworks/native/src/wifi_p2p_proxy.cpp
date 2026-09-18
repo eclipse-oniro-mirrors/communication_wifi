@@ -1345,10 +1345,10 @@ ErrCode WifiP2pProxy::QueryLocalP2pServices(std::vector<WifiP2pServiceInfo> &ser
     if (ErrCode(ret) != WIFI_OPT_SUCCESS) {
         return ErrCode(ret);
     }
+    const size_t MAX_LOCAL_P2P_SERVICES = 512;
 
-    constexpr int MAX_SIZE = 512;
     int size = reply.ReadInt32();
-    if (size > MAX_SIZE) {
+    if (size > static_cast<int>(MAX_LOCAL_P2P_SERVICES)) {
         WIFI_LOGE("Get local p2p service size error: %{public}d", size);
         return WIFI_OPT_FAILED;
     }

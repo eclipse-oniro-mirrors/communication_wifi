@@ -824,7 +824,6 @@ int32_t OnEventServDiscReq(struct IWpaCallback *self,
         cbInfo.mac = address;
 
         if (servDiscReqInfoParam->tlvsLen > 0 && servDiscReqInfoParam->tlvs != nullptr) {
-            /* Do not use Char2Vec: MAX_CHAR_LEN is 128, P2P TLV can be up to 256. */
             cbInfo.tlvList.assign(servDiscReqInfoParam->tlvs,
                 servDiscReqInfoParam->tlvs + servDiscReqInfoParam->tlvsLen);
         }
@@ -843,7 +842,6 @@ int32_t OnEventServDiscResp(struct IWpaCallback *self,
     const OHOS::Wifi::P2pHalCallback &cbk = OHOS::Wifi::WifiP2PHalInterface::GetInstance().GetP2pCallbackInst();
     if (cbk.onServiceDiscoveryResponse) {
         std::vector<unsigned char> tlvList;
-        /* Do not use Char2Vec here: MAX_CHAR_LEN is 128, while P2P TLV can be up to 256. */
         if (servDiscRespParam->tlvs != nullptr && servDiscRespParam->tlvsLen > 0) {
             tlvList.assign(servDiscRespParam->tlvs,
                 servDiscRespParam->tlvs + servDiscRespParam->tlvsLen);

@@ -256,7 +256,7 @@ public:
     /**
      * @Description Query local registered P2P services
      *
-     * @param services - local WifiP2pServiceInfo list
+     * @param services - Get result vector of WifiP2pServiceInfo
      * @return ErrCode - operation result
      */
     ErrCode QueryLocalP2pServices(std::vector<WifiP2pServiceInfo> &services) override;

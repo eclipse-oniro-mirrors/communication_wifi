@@ -157,22 +157,6 @@ ErrCode WifiMockP2pService::ClearP2pServiceRequests()
     return WIFI_OPT_SUCCESS;
 }
 
-ErrCode WifiMockP2pService::AddDnsSdLocalP2pService(const std::string &instanceName, const std::string &serviceType,
-    const std::map<std::string, std::string> &txtMap, const std::string &serviceName)
-{
-    LOGI("Mock_p2p:AddDnsSdLocalP2pService instanceName=%s serviceType=%s serviceName=%s txtSize=%zu",
-        instanceName.c_str(), serviceType.c_str(), serviceName.c_str(), txtMap.size());
-    return WIFI_OPT_SUCCESS;
-}
-
-ErrCode WifiMockP2pService::AddUpnpLocalP2pService(const std::string &uuid, const std::string &device,
-    const std::vector<std::string> &services, const std::string &serviceName)
-{
-    LOGI("Mock_p2p:AddUpnpLocalP2pService uuid=%s device=%s serviceName=%s services=%zu",
-        uuid.c_str(), device.c_str(), serviceName.c_str(), services.size());
-    return WIFI_OPT_SUCCESS;
-}
-
 ErrCode WifiMockP2pService::AddDnsSdServiceRequest(const std::string &instanceName, const std::string &serviceType)
 {
     LOGI("Mock_p2p:AddDnsSdServiceRequest instanceName=%s serviceType=%s",
@@ -197,6 +181,22 @@ ErrCode WifiMockP2pService::PutLocalP2pService(const WifiP2pServiceInfo &srvInfo
     LOGI("srvInfo.GetServicerProtocolType() = %d", static_cast<int>(srvInfo.GetServicerProtocolType()));
     services.emplace_back(srvInfo);
     mCallback.OnP2pServicesChangedEvent(services);
+    return WIFI_OPT_SUCCESS;
+}
+
+ErrCode WifiMockP2pService::AddDnsSdLocalP2pService(const std::string &instanceName, const std::string &serviceType,
+    const std::map<std::string, std::string> &txtMap, const std::string &serviceName)
+{
+    LOGI("Mock_p2p:AddDnsSdLocalP2pService instanceName=%s serviceType=%s serviceName=%s txtSize=%zu",
+        instanceName.c_str(), serviceType.c_str(), serviceName.c_str(), txtMap.size());
+    return WIFI_OPT_SUCCESS;
+}
+
+ErrCode WifiMockP2pService::AddUpnpLocalP2pService(const std::string &uuid, const std::string &device,
+    const std::vector<std::string> &services, const std::string &serviceName)
+{
+    LOGI("Mock_p2p:AddUpnpLocalP2pService uuid=%s device=%s serviceName=%s services=%zu",
+        uuid.c_str(), device.c_str(), serviceName.c_str(), services.size());
     return WIFI_OPT_SUCCESS;
 }
 
