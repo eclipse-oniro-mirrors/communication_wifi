@@ -33,9 +33,9 @@ inline const int CMD_EMLSR_MODE = 222;
 inline const int CMD_MLD_LINK_SWITCH = 223;
 inline const int CMD_GAME_OPT = 224;
  
-enum class GameSceneOptScene {
-    SCENE_11K = 0,           /* bit0: 禁止 11k 能力 */
-    SCENE_LOCK_CPU_FREQ = 1, /* bit1: 禁止中大核锁最高频 */
+enum class SceneOpt {
+    SCENE_11K = 0,           /* bit0: 禁止11k Beacon Response能力 */
+    SCENE_LOCK_CPU_FREQ = 1, /* bit1: 禁止超大核锁最高频 */
 };
 
 struct WifiPrivCmd {
@@ -49,6 +49,8 @@ public:
     static WifiCmdClient &GetInstance();
     int SendCmdToDriver(const std::string &ifName, int commandId, const std::string &param) const;
     std::string VoWifiDetectInternal(std::string cmd);
+    uint32_t GetSceneOptValue();
+    void SetSceneOptValue(uint32_t sceneOptValue);
 
 private:
     int SendCommandToDriverByInterfaceName(const std::string &ifName, const std::string &cmdParm,
@@ -61,7 +63,9 @@ private:
     int SetEmlsrMode(const std::string &ifName, const std::string &param) const;
     int StartMldLinkSwitch(const std::string &ifName, const std::string &param) const;
     int SetFoldStatus(const std::string &ifName, const std::string &param) const;
-    int SetGameSceneOpt(const std::string &ifName, const std::string &param) const;
+    int SetSceneOpt(const std::string &ifName, const std::string &param) const;
+private:
+    std::atomic<uint32_t> sceneOptValue_ = 0;
 };
 } // namespace Wifi
 } // namespace OHOS
