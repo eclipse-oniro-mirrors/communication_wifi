@@ -44,7 +44,7 @@ static const auto CMD_SET_BE_BLA_LIST = "SET_BE_BLACKLIST";
 static const auto CMD_SET_EMLSR_MODE = "SET_EMLSR_SWITCH";
 static const auto CMD_SET_MLSR_LINK_SWITCH = "SET_MLSR_LINK_SWITCH ";
 static const auto CMD_UPDATE_UNFOLD_STATE = "UPDATE_UNFOLD_STATE "; // The trailing space is a pre-defined format
-static const auto CMD_SET_GAME_SCENE_OPT = "SET_GAME_SCENE_OPT";
+static const auto CMD_SET_SCENE_OPT = "SET_SCENE_OPT";
 
 #define MSS_SOFTAP_MAX_IFNAMESIZE 5
 #define MSS_SOFTAP_CMDSIZE 30
@@ -78,7 +78,7 @@ int WifiCmdClient::SendCmdToDriver(const std::string &ifName, int commandId, con
     } else if (commandId == CMD_SET_FOLD_STATUS) {
         ret = SetFoldStatus(ifName, param);
     } else if (commandId == CMD_GAME_OPT) {
-        ret = SetGameSceneOpt(ifName, param);
+        ret = SetSceneOpt(ifName, param);
     } else {
         WIFI_LOGD("%{public}s not supported command", __FUNCTION__);
     }
@@ -266,17 +266,26 @@ int WifiCmdClient::SetFoldStatus(const std::string &ifName, const std::string &p
     return SendCommandToDriverByInterfaceName(ifName, cmdParm);
 }
 
-int WifiCmdClient::SetGameSceneOpt(const std::string &ifName, const std::string &param) const
+int WifiCmdClient::SetSceneOpt(const std::string &ifName, const std::string &param) const
 {
     WIFI_LOGD("%{public}s enter, param: %{public}s", __FUNCTION__, param.c_str());
-    if (param.size() + strlen(CMD_SET_GAME_SCENE_OPT) > TINY_BUFF_SIZE) {
+    if (param.size() + strlen(CMD_SET_SCENE_OPT) > TINY_BUFF_SIZE) {
         WIFI_LOGE("%{public}s invalid input param", __FUNCTION__);
         return -1;
     }
-    std::string cmdParm = CMD_SET_GAME_SCENE_OPT;
+    std::string cmdParm = CMD_SET_SCENE_OPT;
     cmdParm.append(" ");
     cmdParm.append(param);
     return SendCommandToDriverByInterfaceName(ifName, cmdParm);
+}
+ 
+uint32_t WifiCmdClient::GetSceneOptValue()
+{
+    return sceneOptValue_.load();
+}
+void WifiCmdClient::SetSceneOptValue(uint32_t sceneOptValue)
+{
+    sceneOptValue_.store(sceneOptValue);
 }
 
 } // namespace Wifi
