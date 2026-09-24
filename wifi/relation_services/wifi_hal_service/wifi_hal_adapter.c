@@ -147,37 +147,40 @@ void ReleaseWifiHalVendorInterface(void)
     return;
 }
 
-static int IsSafeCmd(const char *szCmd)
+static int CopyFileToWpaDir(const char *srcPath, const char *configName)
 {
-    if (szCmd == NULL) {
-        return 0;
+    char dstPath[BUFF_SIZE] = {0};
+    if (snprintf_s(dstPath, sizeof(dstPath), sizeof(dstPath) - 1, "%s/wpa_supplicant/%s",
+        CONFIG_ROOR_DIR, configName) < 0) {
+        LOGE("snprintf_s dstPath failed.");
+        return HAL_FAILURE;
     }
-    const char *dangerousChar = ";|&$`<>\\\"'\n";
-    for (const char *p = szCmd; *p != '\0'; ++p) {
-        if (strchr(dangerousChar, *p) != NULL) {
-            return 0;
+    FILE *src = fopen(srcPath, "rb");
+    if (src == NULL) {
+        LOGE("open src %{public}s failed.", srcPath);
+        return HAL_FAILURE;
+    }
+    FILE *dst = fopen(dstPath, "wb");
+    if (dst == NULL) {
+        LOGE("open dst %{public}s failed.", dstPath);
+        (void)fclose(src);
+        return HAL_FAILURE;
+    }
+    char buf[BUFF_SIZE] = {0};
+    size_t n = 0;
+    int ret = HAL_SUCCESS;
+    while ((n = fread(buf, 1, sizeof(buf), src)) > 0) {
+        if (fwrite(buf, 1, n, dst) != n) {
+            LOGE("write dst %{public}s failed.", dstPath);
+            ret = HAL_FAILURE;
+            break;
         }
     }
-    return 1;
-}
-
-int ExcuteCmd(const char *szCmd)
-{
-    if (!IsSafeCmd(szCmd)) {
-        LOGE("Execute cmd contains illegal character, reject!");
-        return HAL_FAILURE;
+    if (fclose(dst) != 0) {
+        ret = HAL_FAILURE;
     }
-    LOGI("Execute cmd: %{private}s", szCmd);
-    int ret = system(szCmd);
-    if (ret == -1) {
-        LOGE("Execute system cmd %{private}s failed!", szCmd);
-        return HAL_FAILURE;
-    }
-    if (WIFEXITED(ret) && (WEXITSTATUS(ret) == 0)) {
-        return HAL_SUCCESS;
-    }
-    LOGE("Execute system cmd %{private}s failed: %{private}d", szCmd, WEXITSTATUS(ret));
-    return HAL_FAILURE;
+    (void)fclose(src);
+    return ret;
 }
 
 int FileIsExisted(const char* file)
@@ -193,6 +196,29 @@ int FileIsExisted(const char* file)
     return HAL_FAILURE;
 }
 
+static int HandleExistingConfig(const char *srcPath, const char *configName)
+{
+    char dstPath[BUFF_SIZE] = P2P_CONFIG_DIR;
+    if (strcat_s(dstPath, sizeof(dstPath), configName) != EOK) {
+        LOGE("%{public}s: failed to strcat_s %{public}s", __func__, configName);
+        return -1;
+    }
+    LOGD("%{public}s: destination is %{public}s", __func__, dstPath);
+    if ((strcmp(dstPath, P2P_WPA_CONFIG_FILE) == 0) && (FileIsExisted(dstPath) == HAL_SUCCESS)) {
+        LOGW("%{public}s: dstPath is existed", __func__);
+        if (memset_s(dstPath, sizeof(dstPath), 0x0, sizeof(dstPath)) != EOK) {
+            LOGE("CopyConfigFile 1 memset_s dstPath failed.");
+            return -1;
+        }
+        return 0;
+    }
+    if (memset_s(dstPath, sizeof(dstPath), 0x0, sizeof(dstPath)) != EOK) {
+        LOGE("CopyConfigFile 2 memset_s dstPath failed.");
+        return -1;
+    }
+    return (CopyFileToWpaDir(srcPath, configName) == HAL_SUCCESS) ? 1 : -1;
+}
+
 int CopyConfigFile(const char* configName)
 {
     char buf[BUFF_SIZE] = {0};
@@ -206,32 +232,15 @@ int CopyConfigFile(const char* configName)
             LOGE("strcat_s failed.");
             return HAL_FAILURE;
         }
-        if (access(path[i], F_OK) != -1) {
-            char cmd[BUFF_SIZE] = {0};
-            char dstPath[BUFF_SIZE] = P2P_CONFIG_DIR;
-            if (strcat_s(dstPath, sizeof(dstPath), configName) != EOK) {
-                LOGE("%{public}s: failed to strcat_s %{public}s", __func__, configName);
-                return HAL_FAILURE;
-            }
-            LOGD("%{public}s: destination is %{public}s", __func__, dstPath);
-            if ((strcmp(dstPath, P2P_WPA_CONFIG_FILE) == 0) && (FileIsExisted(dstPath) == HAL_SUCCESS)) {
-                LOGW("%{public}s: dstPath is existed", __func__);
-                if (memset_s(dstPath, sizeof(dstPath), 0x0, sizeof(dstPath)) != EOK) {
-                    LOGE("CopyConfigFile 1 memset_s dstPath failed.");
-                    return HAL_FAILURE;
-                }
-                continue;
-            }
-            if (memset_s(dstPath, sizeof(dstPath), 0x0, sizeof(dstPath)) != EOK) {
-                LOGE("CopyConfigFile 2 memset_s dstPath failed.");
-                return HAL_FAILURE;
-            }
-            if (snprintf_s(cmd, sizeof(cmd), sizeof(cmd) - 1,
-                "cp %s %s/wpa_supplicant/", path[i], CONFIG_ROOR_DIR) < 0) {
-                LOGE("snprintf_s cp cmd failed.");
-                return HAL_FAILURE;
-            }
-            return ExcuteCmd(cmd);
+        if (access(path[i], F_OK) == -1) {
+            continue;
+        }
+        int ret = HandleExistingConfig(path[i], configName);
+        if (ret < 0) {
+            return HAL_FAILURE;
+        }
+        if (ret > 0) {
+            return HAL_SUCCESS;
         }
     }
     LOGD("success to copy file %{public}s", configName);

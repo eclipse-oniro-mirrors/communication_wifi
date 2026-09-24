@@ -201,7 +201,7 @@ static int InitRpcFuncMapCommon(void)
     return ret;
 }
 
-static int InitRpcFuncMapP2p(void)
+static int InitRpcFuncMapP2pPart1(void)
 {
     int ret = 0;
     ret += PushRpcFunc("P2pStart", RpcP2pStart);
@@ -228,6 +228,12 @@ static int InitRpcFuncMapP2p(void)
     ret += PushRpcFunc("P2pStopFind", RpcP2pStopFind);
     ret += PushRpcFunc("P2pSetExtListen", RpcP2pSetExtListen);
     ret += PushRpcFunc("P2pSetListenChannel", RpcP2pSetListenChannel);
+    return ret;
+}
+
+static int InitRpcFuncMapP2pPart2(void)
+{
+    int ret = 0;
     ret += PushRpcFunc("P2pConnect", RpcP2pConnect);
     ret += PushRpcFunc("P2pCancelConnect", RpcP2pCancelConnect);
     ret += PushRpcFunc("P2pProvisionDiscovery", RpcP2pProvisionDiscovery);
@@ -251,6 +257,13 @@ static int InitRpcFuncMapP2p(void)
     ret += PushRpcFunc("P2pGetGroupConfig", RpcP2pGetGroupConfig);
     ret += PushRpcFunc("P2pAddNetwork", RpcP2pAddNetwork);
     ret += PushRpcFunc("P2pHid2dConnect", RpcP2pHid2dConnect);
+    return ret;
+}
+
+static int InitRpcFuncMapP2p(void)
+{
+    int ret = InitRpcFuncMapP2pPart1();
+    ret += InitRpcFuncMapP2pPart2();
     return ret;
 }
 

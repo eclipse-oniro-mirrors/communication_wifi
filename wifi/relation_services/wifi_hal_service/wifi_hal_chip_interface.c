@@ -54,16 +54,7 @@ WifiErrorNo CreateIface(int32_t type, WifiIface *iface)
     if (iface == NULL) {
         return WIFI_HAL_FAILED;
     }
-    const int bufferSize = 8;
-    char name[bufferSize];
-    if (memset_s(name, bufferSize, 0, bufferSize) != EOK) {
-        LOGE("CreateIface memset_s is failed");
-        return WIFI_HAL_FAILED;
-    }
-    if (strcpy_s(iface->name, WIFI_IFACE_NAME_MAXLEN, name) != EOK) {
-        return WIFI_HAL_FAILED;
-    }
-
+    iface->name[0] = '\0';
     iface->type = type;
     return WIFI_HAL_SUCCESS;
 }

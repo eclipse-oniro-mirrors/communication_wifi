@@ -101,6 +101,37 @@ int RpcStartScan(RpcServer *server, Context *context)
     return ret;
 }
 
+static void WriteScanInfo(Context *context, ScanInfo *result, int64_t currTime)
+{
+    WriteStr(context, result->bssid);
+    WriteInt(context, result->freq);
+    WriteInt(context, result->siglv);
+    WriteStr(context, result->flags);
+    WriteStr(context, result->ssid);
+    WriteInt64(context, currTime);
+    WriteInt(context, result->channelWidth);
+    WriteInt(context, result->centerFrequency0);
+    WriteInt(context, result->centerFrequency1);
+    WriteInt(context, result->isVhtInfoExist);
+    WriteInt(context, result->isHtInfoExist);
+    WriteInt(context, result->isHeInfoExist);
+    WriteInt(context, result->isErpExist);
+    WriteInt(context, result->maxRates);
+    WriteInt(context, result->extMaxRates);
+    WriteInt(context, result->ieSize);
+    for (int j = 0; j < result->ieSize; ++j) {
+        WriteInt(context, result->infoElems[j].id);
+        WriteInt(context, result->infoElems[j].size);
+        WriteUStr(context, (unsigned char *)result->infoElems[j].content, result->infoElems[j].size);
+        free(result->infoElems[j].content);
+        result->infoElems[j].content = NULL;
+    }
+    if (result->infoElems != NULL) {
+        free(result->infoElems);
+        result->infoElems = NULL;
+    }
+}
+
 int RpcGetScanInfos(RpcServer *server, Context *context)
 {
     if (server == NULL || context == NULL) {
@@ -125,35 +156,9 @@ int RpcGetScanInfos(RpcServer *server, Context *context)
     clock_gettime(CLOCK_MONOTONIC, &clockTime);
     if (err == WIFI_HAL_SUCCESS) {
         WriteInt(context, maxSize);
+        int64_t currTime = (int64_t)clockTime.tv_sec * secComplex * secComplex + clockTime.tv_nsec / secComplex;
         for (int i = 0; i < maxSize; ++i) {
-            WriteStr(context, results[i].bssid);
-            WriteInt(context, results[i].freq);
-            WriteInt(context, results[i].siglv);
-            WriteStr(context, results[i].flags);
-            WriteStr(context, results[i].ssid);
-            int64_t currTime = (int64_t)clockTime.tv_sec * secComplex * secComplex + clockTime.tv_nsec / secComplex;
-            WriteInt64(context, currTime);
-            WriteInt(context, results[i].channelWidth);
-            WriteInt(context, results[i].centerFrequency0);
-            WriteInt(context, results[i].centerFrequency1);
-            WriteInt(context, results[i].isVhtInfoExist);
-            WriteInt(context, results[i].isHtInfoExist);
-            WriteInt(context, results[i].isHeInfoExist);
-            WriteInt(context, results[i].isErpExist);
-            WriteInt(context, results[i].maxRates);
-            WriteInt(context, results[i].extMaxRates);
-            WriteInt(context, results[i].ieSize);
-            for (int j = 0; j < results[i].ieSize; ++j) {
-                WriteInt(context, results[i].infoElems[j].id);
-                WriteInt(context, results[i].infoElems[j].size);
-                WriteUStr(context, (unsigned char *)results[i].infoElems[j].content, results[i].infoElems[j].size);
-                free(results[i].infoElems[j].content);
-                results[i].infoElems[j].content = NULL;
-            }
-            if (results[i].infoElems != NULL) {
-                free(results[i].infoElems);
-                results[i].infoElems = NULL;
-            }
+            WriteScanInfo(context, &results[i], currTime);
         }
     }
     WriteEnd(context);
@@ -477,6 +482,26 @@ int RpcGetSupportFeature(RpcServer *server, Context *context)
     return HAL_SUCCESS;
 }
 
+static int ReadIfName(Context *context, char *ifname, char **pIfName)
+{
+    int ret = ReadStr(context, ifname, WIFI_IFACE_NAME_MAXLEN);
+    if (ret < 0) {
+        return -1;
+    } else if (ret > 0) {
+        int len = ret + 1;
+        *pIfName = (char *)calloc(len, sizeof(char));
+        if (*pIfName == NULL) {
+            return -1;
+        }
+        if (ReadStr(context, *pIfName, len) != 0) {
+            free(*pIfName);
+            *pIfName = NULL;
+            return -1;
+        }
+    }
+    return 0;
+}
+
 int RpcRunCmd(RpcServer *server, Context *context)
 {
     if (server == NULL || context == NULL) {
@@ -484,20 +509,8 @@ int RpcRunCmd(RpcServer *server, Context *context)
     }
     char ifname[WIFI_IFACE_NAME_MAXLEN] = {0};
     char *pIfName = NULL;
-    int ret = ReadStr(context, ifname, WIFI_IFACE_NAME_MAXLEN);
-    if (ret < 0) {
+    if (ReadIfName(context, ifname, &pIfName) < 0) {
         return HAL_FAILURE;
-    } else if (ret > 0) {
-        int len = ret + 1;
-        pIfName = (char *)calloc(len, sizeof(char));
-        if (pIfName == NULL) {
-            return HAL_FAILURE;
-        }
-        if (ReadStr(context, pIfName, len) != 0) {
-            free(pIfName);
-            pIfName = NULL;
-            return HAL_FAILURE;
-        }
     }
     int cmdid = 0;
     int bufsize = 0;
@@ -782,6 +795,18 @@ static char **ReadRoamBlockList(Context *context, int size)
     }
 }
 
+static void FreeRoamList(char **list, int size)
+{
+    if (list == NULL) {
+        return;
+    }
+    for (int i = 0; i < size; ++i) {
+        free(list[i]);
+        list[i] = NULL;
+    }
+    free(list);
+}
+
 int RpcSetRoamConfig(RpcServer *server, Context *context)
 {
     if (server == NULL || context == NULL) {
@@ -819,22 +844,8 @@ int RpcSetRoamConfig(RpcServer *server, Context *context)
         WriteInt(context, err);
         WriteEnd(context);
     } while (0);
-    if (blocklist != NULL) {
-        for (int i = 0; i < blocksize; ++i) {
-            free(blocklist[i]);
-            blocklist[i] = NULL;
-        }
-        free(blocklist);
-        blocklist = NULL;
-    }
-    if (trustlist != NULL) {
-        for (int i = 0; i < size; ++i) {
-            free(trustlist[i]);
-            trustlist[i] = NULL;
-        }
-        free(trustlist);
-        trustlist = NULL;
-    }
+    FreeRoamList(blocklist, blocksize);
+    FreeRoamList(trustlist, size);
     return ret;
 }
 

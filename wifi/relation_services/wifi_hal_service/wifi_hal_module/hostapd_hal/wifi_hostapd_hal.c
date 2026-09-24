@@ -585,41 +585,49 @@ static int FindSubCmdIndex(struct iw_priv_args *privPtr, int i)
     return -1;
 }
 
-static int SendPrivateCmd(struct iwreq *wrq, struct iw_priv_args *privPtr, const char *fName,
-    int bufLen, int sock, char dataBuf[])
+struct PrivCmdContext {
+    struct iwreq *wrq;
+    struct iw_priv_args *privPtr;
+    const char *fName;
+    int bufLen;
+    int sock;
+    char *dataBuf;
+};
+
+static int SendPrivateCmd(const struct PrivCmdContext *ctx)
 {
     int cmd = 0;
     int subCmd = 0;
     int ret = 0;
 
-    if (wrq == NULL || privPtr == NULL || fName == NULL) {
+    if (ctx == NULL || ctx->wrq == NULL || ctx->privPtr == NULL || ctx->fName == NULL) {
         return -1;
     }
-    int i = FindPrivCmdIndex(wrq, privPtr, fName);
+    int i = FindPrivCmdIndex(ctx->wrq, ctx->privPtr, ctx->fName);
     if (i < 0) {
-        LOGE("fName: %{public}s - function not supported", fName);
+        LOGE("fName: %{public}s - function not supported", ctx->fName);
         return -1;
     }
-    cmd = (int)privPtr[i].cmd;
+    cmd = (int)ctx->privPtr[i].cmd;
     if (cmd < SIOCDEVPRIVATE) {
-        int j = FindSubCmdIndex(privPtr, i);
+        int j = FindSubCmdIndex(ctx->privPtr, i);
         if (j < 0) {
-            LOGE("fName: %{public}s - invalid private ioctl", fName);
+            LOGE("fName: %{public}s - invalid private ioctl", ctx->fName);
             return -1;
         }
         subCmd = cmd;
-        cmd = (int)privPtr[j].cmd;
+        cmd = (int)ctx->privPtr[j].cmd;
     }
-    wrq->ifr_name[IFNAMSIZ - 1] = '\0';
-    if ((bufLen == 0) && (*dataBuf != 0)) {
-        wrq->u.data.length = strlen(dataBuf) + 1;
+    ctx->wrq->ifr_name[IFNAMSIZ - 1] = '\0';
+    if ((ctx->bufLen == 0) && (*ctx->dataBuf != 0)) {
+        ctx->wrq->u.data.length = strlen(ctx->dataBuf) + 1;
     } else {
-        wrq->u.data.length = (uint16_t)bufLen;
+        ctx->wrq->u.data.length = (uint16_t)ctx->bufLen;
     }
-    wrq->u.data.pointer = dataBuf;
-    wrq->u.data.flags = (uint16_t)subCmd;
-    ret = ioctl(sock, cmd, wrq);
-    LOGD("the data length is:%d, ret is %d", wrq->u.data.length, ret);
+    ctx->wrq->u.data.pointer = ctx->dataBuf;
+    ctx->wrq->u.data.flags = (uint16_t)subCmd;
+    ret = ioctl(ctx->sock, cmd, ctx->wrq);
+    LOGD("the data length is:%d, ret is %d", ctx->wrq->u.data.length, ret);
     return ret;
 }
 
@@ -663,7 +671,8 @@ static int SetCommandHwHisi(const char *iface, const char *fName, unsigned int b
         close(sock);
         return -1;
     }
-    ret = SendPrivateCmd(&wrq, privPtr, fName, bufLen, sock, dataBuf);
+    struct PrivCmdContext ctx = {&wrq, privPtr, fName, bufLen, sock, dataBuf};
+    ret = SendPrivateCmd(&ctx);
     close(sock);
     return ret;
 }

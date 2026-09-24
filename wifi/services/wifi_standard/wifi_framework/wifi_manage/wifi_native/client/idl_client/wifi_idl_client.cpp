@@ -514,19 +514,8 @@ WifiErrorNo WifiIdlClient::CheckValidDeviceConfig(const WifiHalDeviceConfig &con
     return WIFI_HAL_OPT_OK;
 }
 
-WifiErrorNo WifiIdlClient::SetDeviceConfig(int networkId, const WifiHalDeviceConfig &config)
+void WifiIdlClient::AppendKeyMgmtConfig(SetNetworkConfig *conf, int &num, const WifiHalDeviceConfig &config) const
 {
-    CHECK_CLIENT_NOT_NULL;
-    if (CheckValidDeviceConfig(config) != WIFI_HAL_OPT_OK) {
-        LOGE("SetDeviceConfig, CheckValidDeviceConfig return error!");
-        return WIFI_HAL_OPT_FAILED;
-    }
-    SetNetworkConfig conf[DEVICE_CONFIG_END_POS];
-    if (memset_s(conf, sizeof(conf), 0, sizeof(conf)) != EOK) {
-        LOGE("SetDeviceConfig, memset_s return error!");
-        return WIFI_HAL_OPT_FAILED;
-    }
-    int num = 0;
     num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_SSID, config.ssid);
     if (config.keyMgmt.find(KEY_MGMT_WPA_PSK) != std::string::npos) {
         num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_PSK, config.psk);
@@ -539,6 +528,19 @@ WifiErrorNo WifiIdlClient::SetDeviceConfig(int networkId, const WifiHalDeviceCon
     } else {
         num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_KEYMGMT, config.keyMgmt);
     }
+}
+
+void WifiIdlClient::AppendPhase2Method(SetNetworkConfig *conf, int &num, const WifiHalDeviceConfig &config) const
+{
+    if (config.eapConfig.phase2Method != static_cast<int>(Phase2Method::NONE)) {
+        std::string strPhase2Method = WifiEapConfig::Phase2MethodToStr(config.eapConfig.eap,
+            config.eapConfig.phase2Method);
+        num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_EAP_PHASE2METHOD, strPhase2Method);
+    }
+}
+
+void WifiIdlClient::AppendEapConfig(SetNetworkConfig *conf, int &num, const WifiHalDeviceConfig &config) const
+{
     EapMethod eapMethod = WifiEapConfig::Str2EapMethod(config.eapConfig.eap);
     LOGI("%{public}s, eap:%{public}s, eapMethod:%{public}d, num:%{public}d",
         __func__, config.eapConfig.eap.c_str(), eapMethod, num);
@@ -548,11 +550,7 @@ WifiErrorNo WifiIdlClient::SetDeviceConfig(int networkId, const WifiHalDeviceCon
             num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_IDENTITY, config.eapConfig.identity);
             num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_PASSWORD, config.eapConfig.password);
             num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_EAP_CA_CERT, config.eapConfig.caCertPath);
-            if (config.eapConfig.phase2Method != static_cast<int>(Phase2Method::NONE)) {
-                std::string strPhase2Method = WifiEapConfig::Phase2MethodToStr(config.eapConfig.eap,
-                    config.eapConfig.phase2Method);
-                num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_EAP_PHASE2METHOD, strPhase2Method);
-            }
+            AppendPhase2Method(conf, num, config);
             break;
         case EapMethod::EAP_TLS:
             num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_EAP, config.eapConfig.eap);
@@ -567,11 +565,7 @@ WifiErrorNo WifiIdlClient::SetDeviceConfig(int networkId, const WifiHalDeviceCon
             num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_IDENTITY, config.eapConfig.identity);
             num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_EAP_CA_CERT, config.eapConfig.caCertPath);
             num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_PASSWORD, config.eapConfig.password);
-            if (config.eapConfig.phase2Method != static_cast<int>(Phase2Method::NONE)) {
-                std::string strPhase2Method = WifiEapConfig::Phase2MethodToStr(config.eapConfig.eap,
-                    config.eapConfig.phase2Method);
-                num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_EAP_PHASE2METHOD, strPhase2Method);
-            }
+            AppendPhase2Method(conf, num, config);
             break;
         case EapMethod::EAP_PWD:
             num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_EAP, config.eapConfig.eap);
@@ -588,7 +582,10 @@ WifiErrorNo WifiIdlClient::SetDeviceConfig(int networkId, const WifiHalDeviceCon
             LOGE("%{public}s, invalid eapMethod:%{public}d", __func__, eapMethod);
             break;
     }
+}
 
+void WifiIdlClient::AppendWepConfig(SetNetworkConfig *conf, int &num, const WifiHalDeviceConfig &config) const
+{
     num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_BSSID, config.bssid);
     int i = 0;
     num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_WEP_KEY_0, config.wepKeys[i++]);
@@ -612,6 +609,10 @@ WifiErrorNo WifiIdlClient::SetDeviceConfig(int networkId, const WifiHalDeviceCon
     } else {
         num += PushDeviceConfigInt(conf + num, DEVICE_CONFIG_IEEE80211W, PMF_OPTIONAL);
     }
+}
+
+void WifiIdlClient::AppendCipherConfig(SetNetworkConfig *conf, int &num, const WifiHalDeviceConfig &config) const
+{
     if (config.allowedProtocols > 0) {
         std::string protocolsStr[] = {"WPA ", "RSN ", "WPA2 ", "OSEN "};
         num += PushDeviceConfigParseMask(conf + num, DEVICE_CONFIG_ALLOW_PROTOCOLS, config.allowedProtocols,
@@ -632,6 +633,25 @@ WifiErrorNo WifiIdlClient::SetDeviceConfig(int networkId, const WifiHalDeviceCon
         num += PushDeviceConfigParseMask(conf + num, DEVICE_CONFIG_GROUP_MGMT_CIPHERS, config.allowedGroupMgmtCiphers,
                                          groupMgmtCipherStr, sizeof(groupMgmtCipherStr)/sizeof(groupMgmtCipherStr[0]));
     }
+}
+
+WifiErrorNo WifiIdlClient::SetDeviceConfig(int networkId, const WifiHalDeviceConfig &config)
+{
+    CHECK_CLIENT_NOT_NULL;
+    if (CheckValidDeviceConfig(config) != WIFI_HAL_OPT_OK) {
+        LOGE("SetDeviceConfig, CheckValidDeviceConfig return error!");
+        return WIFI_HAL_OPT_FAILED;
+    }
+    SetNetworkConfig conf[DEVICE_CONFIG_END_POS];
+    if (memset_s(conf, sizeof(conf), 0, sizeof(conf)) != EOK) {
+        LOGE("SetDeviceConfig, memset_s return error!");
+        return WIFI_HAL_OPT_FAILED;
+    }
+    int num = 0;
+    AppendKeyMgmtConfig(conf, num, config);
+    AppendEapConfig(conf, num, config);
+    AppendWepConfig(conf, num, config);
+    AppendCipherConfig(conf, num, config);
     if (num == 0) {
         return WIFI_HAL_OPT_OK;
     }

@@ -870,6 +870,41 @@ static void GetHalNetworkInfos(char *buf, P2pNetworkInfo *info)
     return;
 }
 
+static int CountP2pNetworks(const char *buf)
+{
+    char *token = strstr(buf, "\n"); /* skip first line */
+    if (token == NULL) {
+        return -1;
+    }
+    int count = 0;
+    char *tmpPos = token + 1;
+    while ((tmpPos = strstr(tmpPos, "\n")) != NULL) {
+        count += 1;
+        ++tmpPos;
+    }
+    return count;
+}
+
+static void FillP2pNetworkInfos(char *buf, P2pNetworkList *infoList)
+{
+    char *token = strstr(buf, "\n");
+    if (token == NULL) {
+        return;
+    }
+    char *tmpBuf = token + 1;
+    char *savedPtr = NULL;
+    token = strtok_r(tmpBuf, "\n", &savedPtr);
+    int index = 0;
+    while (token != NULL) {
+        if (index >= infoList->infoNum) {
+            break;
+        }
+        GetHalNetworkInfos(token, &infoList->infos[index]);
+        index++;
+        token = strtok_r(NULL, "\n", &savedPtr);
+    }
+}
+
 static P2pSupplicantErrCode WpaP2pCliCmdNetworkList(WifiWpaP2pInterface *this, P2pNetworkList *infoList)
 {
     if (this == NULL || infoList == NULL) {
@@ -890,17 +925,13 @@ static P2pSupplicantErrCode WpaP2pCliCmdNetworkList(WifiWpaP2pInterface *this, P
         buf = NULL;
         return P2P_SUP_ERRCODE_FAILED;
     }
-    char *token = strstr(buf, "\n"); /* skip first line */
-    if (token == NULL) {
+    int count = CountP2pNetworks(buf);
+    if (count < 0) {
         free(buf);
         buf = NULL;
         return P2P_SUP_ERRCODE_FAILED;
     }
-    char *tmpPos = token + 1;
-    while ((tmpPos = strstr(tmpPos, "\n")) != NULL) {
-        infoList->infoNum += 1;
-        ++tmpPos;
-    }
+    infoList->infoNum += count;
     if (infoList->infoNum <= 0) {
         free(buf);
         buf = NULL;
@@ -912,18 +943,7 @@ static P2pSupplicantErrCode WpaP2pCliCmdNetworkList(WifiWpaP2pInterface *this, P
         buf = NULL;
         return P2P_SUP_ERRCODE_FAILED;
     }
-    char *tmpBuf = token + 1;
-    char *savedPtr = NULL;
-    token = strtok_r(tmpBuf, "\n", &savedPtr);
-    int index = 0;
-    while (token != NULL) {
-        if (index >= infoList->infoNum) {
-            break;
-        }
-        GetHalNetworkInfos(token, &infoList->infos[index]);
-        index++;
-        token = strtok_r(NULL, "\n", &savedPtr);
-    }
+    FillP2pNetworkInfos(buf, infoList);
     free(buf);
     buf = NULL;
     return P2P_SUP_ERRCODE_SUCCESS;

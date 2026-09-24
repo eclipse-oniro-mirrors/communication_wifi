@@ -497,6 +497,26 @@ static void GetScanInfoElems(Context *context, ScanInfo* scanInfo)
     }
 }
 
+static void ReadScanInfo(Context *context, ScanInfo *info)
+{
+    ReadStr(context, info->bssid, WIFI_BSSID_LENGTH);
+    ReadInt(context, &info->freq);
+    ReadInt(context, &info->siglv);
+    ReadStr(context, info->flags, WIFI_SCAN_INFO_CAPABILITY_LENGTH);
+    ReadStr(context, info->ssid, WIFI_SSID_LENGTH);
+    ReadInt64(context, &info->timestamp);
+    ReadInt(context, &info->channelWidth);
+    ReadInt(context, &info->centerFrequency0);
+    ReadInt(context, &info->centerFrequency1);
+    ReadInt(context, &info->isVhtInfoExist);
+    ReadInt(context, &info->isHtInfoExist);
+    ReadInt(context, &info->isHeInfoExist);
+    ReadInt(context, &info->isErpExist);
+    ReadInt(context, &info->maxRates);
+    ReadInt(context, &info->extMaxRates);
+    GetScanInfoElems(context, info);
+}
+
 ScanInfo* GetScanInfos(int *size)
 {
     RpcClient *client = GetStaRpcClient();
@@ -514,32 +534,19 @@ ScanInfo* GetScanInfos(int *size)
     ReadInt(context, &result);
     if (result != WIFI_HAL_OPT_OK) {
         LOGE("server GetScanInfos deal failed!");
-    } else {
-        ReadInt(context, size);
-        LOGI("GetScanInfos size: %{public}d", *size);
-        if (*size > 0) {
-            scanInfos = (ScanInfo *)calloc(*size, sizeof(ScanInfo));
-            if (scanInfos != NULL) {
-                for (int i = 0; i < *size; ++i) {
-                    ReadStr(context, scanInfos[i].bssid, WIFI_BSSID_LENGTH);
-                    ReadInt(context, &scanInfos[i].freq);
-                    ReadInt(context, &scanInfos[i].siglv);
-                    ReadStr(context, scanInfos[i].flags, WIFI_SCAN_INFO_CAPABILITY_LENGTH);
-                    ReadStr(context, scanInfos[i].ssid, WIFI_SSID_LENGTH);
-                    ReadInt64(context, &scanInfos[i].timestamp);
-                    ReadInt(context, &scanInfos[i].channelWidth);
-                    ReadInt(context, &scanInfos[i].centerFrequency0);
-                    ReadInt(context, &scanInfos[i].centerFrequency1);
-                    ReadInt(context, &scanInfos[i].isVhtInfoExist);
-                    ReadInt(context, &scanInfos[i].isHtInfoExist);
-                    ReadInt(context, &scanInfos[i].isHeInfoExist);
-                    ReadInt(context, &scanInfos[i].isErpExist);
-                    ReadInt(context, &scanInfos[i].maxRates);
-                    ReadInt(context, &scanInfos[i].extMaxRates);
-                    GetScanInfoElems(context, &scanInfos[i]);
-                }
-            } else {
-                LOGE("GetScanInfos alloc mem failed!");
+        ReadClientEnd(client);
+        UnlockRpcClient(client);
+        return NULL;
+    }
+    ReadInt(context, size);
+    LOGI("GetScanInfos size: %{public}d", *size);
+    if (*size > 0) {
+        scanInfos = (ScanInfo *)calloc(*size, sizeof(ScanInfo));
+        if (scanInfos == NULL) {
+            LOGE("GetScanInfos alloc mem failed!");
+        } else {
+            for (int i = 0; i < *size; ++i) {
+                ReadScanInfo(context, &scanInfos[i]);
             }
         }
     }

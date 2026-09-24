@@ -1115,6 +1115,11 @@ private:
     int PushDeviceConfigParseMask(SetNetworkConfig *pConfig, DeviceConfigType type, unsigned int mask,
         const std::string parseStr[], int size) const;
     WifiErrorNo CheckValidDeviceConfig(const WifiHalDeviceConfig &config) const;
+    void AppendKeyMgmtConfig(SetNetworkConfig *conf, int &num, const WifiHalDeviceConfig &config) const;
+    void AppendEapConfig(SetNetworkConfig *conf, int &num, const WifiHalDeviceConfig &config) const;
+    void AppendPhase2Method(SetNetworkConfig *conf, int &num, const WifiHalDeviceConfig &config) const;
+    void AppendWepConfig(SetNetworkConfig *conf, int &num, const WifiHalDeviceConfig &config) const;
+    void AppendCipherConfig(SetNetworkConfig *conf, int &num, const WifiHalDeviceConfig &config) const;
     int PushP2pGroupConfigString(P2pGroupConfig *pConfig, P2pGroupConfigType type, const std::string &str) const;
     int PushP2pGroupConfigInt(P2pGroupConfig *pConfig, P2pGroupConfigType type, int i) const;
 };

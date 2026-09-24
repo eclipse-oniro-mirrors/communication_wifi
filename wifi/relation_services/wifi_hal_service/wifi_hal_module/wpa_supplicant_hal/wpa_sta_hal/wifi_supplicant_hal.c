@@ -750,6 +750,29 @@ static int WpaCliCmdBssFlush(WifiWpaStaInterface *this)
     return WpaCliCmd(cmd, buf, sizeof(buf));
 }
 
+static int BuildScanCmd(WifiWpaStaInterface *this, const ScanSettings *settings, char *pcmd, unsigned len)
+{
+    int res = 0;
+    if (settings != NULL) {
+        if (settings->scanStyle == SCAN_TYPE_PNO && settings->isStartPnoScan) {
+            res = snprintf_s(pcmd, len, len - 1, "IFNAME=%s SET PNO 1", this->ifname);
+        } else if (settings->scanStyle == SCAN_TYPE_PNO && !settings->isStartPnoScan) {
+            res = snprintf_s(pcmd, len, len - 1, "IFNAME=%s SET PNO 0", this->ifname);
+        } else {
+            res = snprintf_s(pcmd, len, len - 1, "IFNAME=%s SCAN", this->ifname);
+        }
+    }
+    if (res < 0) {
+        LOGE("snprintf error");
+        return -1;
+    }
+    if (settings != NULL && ConcatScanSetting(settings, pcmd + res, len - res) < 0) {
+        LOGE("ConcatScanSetting return failed!");
+        return -1;
+    }
+    return 0;
+}
+
 static int WpaCliCmdScan(WifiWpaStaInterface *this, const ScanSettings *settings)
 {
     if (this == NULL) {
@@ -770,26 +793,7 @@ static int WpaCliCmdScan(WifiWpaStaInterface *this, const ScanSettings *settings
     if (pcmd == NULL) {
         return -1;
     }
-    int pos = 0;
-    int res = 0;
-    if (settings != NULL) {
-        if (settings->scanStyle == SCAN_TYPE_PNO && settings->isStartPnoScan) {
-            res = snprintf_s(pcmd, len, len - 1, "IFNAME=%s SET PNO 1", this->ifname);
-        } else if (settings->scanStyle == SCAN_TYPE_PNO && !settings->isStartPnoScan) {
-            res = snprintf_s(pcmd, len, len - 1, "IFNAME=%s SET PNO 0", this->ifname);
-        } else {
-            res = snprintf_s(pcmd, len, len - 1, "IFNAME=%s SCAN", this->ifname);
-        }
-    }
-    if (res < 0) {
-        LOGE("snprintf error");
-        free(pcmd);
-        pcmd = NULL;
-        return -1;
-    }
-    pos += res;
-    if (settings != NULL && ConcatScanSetting(settings, pcmd + pos, len - pos) < 0) {
-        LOGE("ConcatScanSetting return failed!");
+    if (BuildScanCmd(this, settings, pcmd, len) < 0) {
         free(pcmd);
         pcmd = NULL;
         return -1;
@@ -952,7 +956,8 @@ static int HexStringToString(const char *str, char *out)
         return -1;
     }
     const int hexShiftNum = 4;
-    for (unsigned i = 0, j = 0; i + 1 < len; i += 2) {
+    const unsigned hexPairLen = 2;
+    for (unsigned i = 0, j = 0; i + 1 < len; i += hexPairLen) {
         int8_t high = IsValidHexCharAndConvert(str[i]);
         int8_t low = IsValidHexCharAndConvert(str[i + 1]);
         if (high < 0 || low < 0) {
@@ -1139,20 +1144,15 @@ static void RecordIeNeedParse(unsigned int id, ScanInfoElem* ie, struct NeedPars
     }
 }
 
-static void GetInfoElems(int length, int end, char *srcBuf, ScanInfo *pcmd)
+static int ParseIeElems(int length, int end, char *srcBuf, ScanInfoElem *infoElemsTemp,
+    struct NeedParseIe *iesNeedParse)
 {
-    int len;
     int start = end + 1;
     int last = end + 1;
-    int lenValue = 2;
-    int lastLength = 3;
+    const int lenValue = 2;
+    const int lastLength = 3;
     int remainingLength = length - start;
     int infoElemsSize = 0;
-    struct NeedParseIe iesNeedParse = {NULL};
-    ScanInfoElem* infoElemsTemp = (ScanInfoElem *)calloc(MAX_INFO_ELEMS_SIZE, sizeof(ScanInfoElem));
-    if (infoElemsTemp == NULL) {
-        return;
-    }
     while (remainingLength > 1 && start < length) {
         if (srcBuf[start] == '[') {
             ++start;
@@ -1165,9 +1165,9 @@ static void GetInfoElems(int length, int end, char *srcBuf, ScanInfo *pcmd)
             ++last;
             continue;
         }
-        len = last - start - 1;
-        infoElemsTemp[infoElemsSize].size = len/lenValue;
-        infoElemsTemp[infoElemsSize].content = (char *)calloc(len/lenValue+1, sizeof(char));
+        int len = last - start - 1;
+        infoElemsTemp[infoElemsSize].size = len / lenValue;
+        infoElemsTemp[infoElemsSize].content = (char *)calloc(len / lenValue + 1, sizeof(char));
         if (infoElemsTemp[infoElemsSize].content == NULL) {
             break;
         }
@@ -1179,11 +1179,14 @@ static void GetInfoElems(int length, int end, char *srcBuf, ScanInfo *pcmd)
         }
         start = last;
         remainingLength = length - last;
-        RecordIeNeedParse(infoElemsTemp[infoElemsSize].id, &infoElemsTemp[infoElemsSize], &iesNeedParse);
+        RecordIeNeedParse(infoElemsTemp[infoElemsSize].id, &infoElemsTemp[infoElemsSize], iesNeedParse);
         ++infoElemsSize;
     }
-    GetChanWidthCenterFreq(pcmd, &iesNeedParse);
+    return infoElemsSize;
+}
 
+static void ClearInfoElems(ScanInfo *pcmd)
+{
     // clear old infoElems first
     if (pcmd->infoElems != NULL) {
         for (int i = 0; i < pcmd->ieSize; i++) {
@@ -1195,11 +1198,57 @@ static void GetInfoElems(int length, int end, char *srcBuf, ScanInfo *pcmd)
         free(pcmd->infoElems);
         pcmd->infoElems = NULL;
     }
+}
+
+static void GetInfoElems(int length, int end, char *srcBuf, ScanInfo *pcmd)
+{
+    struct NeedParseIe iesNeedParse = {NULL};
+    ScanInfoElem* infoElemsTemp = (ScanInfoElem *)calloc(MAX_INFO_ELEMS_SIZE, sizeof(ScanInfoElem));
+    if (infoElemsTemp == NULL) {
+        return;
+    }
+    int infoElemsSize = ParseIeElems(length, end, srcBuf, infoElemsTemp, &iesNeedParse);
+    GetChanWidthCenterFreq(pcmd, &iesNeedParse);
+    ClearInfoElems(pcmd);
     pcmd->infoElems = infoElemsTemp;
     pcmd->ieSize = infoElemsSize;
     return;
 }
 #endif
+
+static int HandleScanColumn(ScanInfo *pcmd, char *srcBuf, int start, int end, int length, int columnIndex)
+{
+    if (columnIndex == COLUMN_INDEX_ZERO) {
+        if (strcpy_s(pcmd->bssid, sizeof(pcmd->bssid), srcBuf + start) != EOK) {
+            return 1;
+        }
+    } else if (columnIndex == COLUMN_INDEX_ONE) {
+        pcmd->freq = atoi(srcBuf + start);
+    } else if (columnIndex == COLUMN_INDEX_TWO) {
+        pcmd->siglv = atoi(srcBuf + start);
+    } else if (columnIndex == COLUMN_INDEX_THREE) {
+        if (strcpy_s(pcmd->flags, sizeof(pcmd->flags), srcBuf + start) != EOK) {
+            return 1;
+        }
+#ifdef OHOS_ARCH_LITE // The wpa of arch lite don't return "informationElements".
+        int ssidStart = end + 1;
+        if (strcpy_s(pcmd->ssid, sizeof(pcmd->ssid), srcBuf + ssidStart) != EOK) {
+            return 1;
+        }
+        PrintfDecode((u8 *)pcmd->ssid, sizeof(pcmd->ssid), pcmd->ssid);
+        return 2;
+#else
+    } else if (columnIndex == COLUMN_INDEX_FOUR) {
+        if (strcpy_s(pcmd->ssid, sizeof(pcmd->ssid), srcBuf + start) != EOK) {
+            return 1;
+        }
+        PrintfDecode((u8 *)pcmd->ssid, sizeof(pcmd->ssid), pcmd->ssid);
+        GetInfoElems(length, end, srcBuf, pcmd);
+        return 2;
+#endif
+    }
+    return 0;
+}
 
 int DelScanInfoLine(ScanInfo *pcmd, char *srcBuf, int length)
 {
@@ -1213,40 +1262,14 @@ int DelScanInfoLine(ScanInfo *pcmd, char *srcBuf, int length)
             continue;
         }
         srcBuf[end] = '\0';
-        if (columnIndex == COLUMN_INDEX_ZERO) {
-            if (strcpy_s(pcmd->bssid, sizeof(pcmd->bssid), srcBuf + start) != EOK) {
-                fail = 1;
-                break;
-            }
-        } else if (columnIndex == COLUMN_INDEX_ONE) {
-            pcmd->freq = atoi(srcBuf + start);
-        } else if (columnIndex == COLUMN_INDEX_TWO) {
-            pcmd->siglv = atoi(srcBuf + start);
-        } else if (columnIndex == COLUMN_INDEX_THREE) {
-            if (strcpy_s(pcmd->flags, sizeof(pcmd->flags), srcBuf + start) != EOK) {
-                fail = 1;
-                break;
-            }
-#ifdef OHOS_ARCH_LITE // The wpa of arch lite don't return "informationElements".
-            start = end + 1;
-            if (strcpy_s(pcmd->ssid, sizeof(pcmd->ssid), srcBuf + start) != EOK) {
-                fail = 1;
-                break;
-            }
-            PrintfDecode((u8 *)pcmd->ssid, sizeof(pcmd->ssid), pcmd->ssid);
+        int ret = HandleScanColumn(pcmd, srcBuf, start, end, length, columnIndex);
+        if (ret == 1) {
+            fail = 1;
+            break;
+        }
+        if (ret == 2) {
             start = length;
             break;
-#else
-        } else if (columnIndex == COLUMN_INDEX_FOUR) {
-            if (strcpy_s(pcmd->ssid, sizeof(pcmd->ssid), srcBuf + start) != EOK) {
-                fail = 1;
-                break;
-            }
-            PrintfDecode((u8 *)pcmd->ssid, sizeof(pcmd->ssid), pcmd->ssid);
-            GetInfoElems(length, end, srcBuf, pcmd);
-            start = length;
-            break;
-#endif
         }
         ++columnIndex;
         ++end;
@@ -1258,6 +1281,37 @@ int DelScanInfoLine(ScanInfo *pcmd, char *srcBuf, int length)
         }
     }
     return fail;
+}
+
+static void ParseScanResults(char *buf, ScanInfo *pcmd, int *size)
+{
+    char *savedPtr = NULL;
+    strtok_r(buf, "\n", &savedPtr); /* skip first line */
+    char *token = strtok_r(NULL, "\n", &savedPtr);
+    int j = 0;
+    while (token != NULL) {
+        if (j >= *size) {
+            LOGE("get scan info full!");
+            break;
+        }
+        int length = strlen(token);
+        if (length <= 0) {
+            break;
+        }
+        if (DelScanInfoLine(&pcmd[j], token, length)) {
+            LOGE("parse scan result line failed!");
+            break;
+        }
+        LOGD("-->>%{public}2d %{private}s %{private}s %{public}d %{public}d %{public}d %{public}d %{public}d "
+             "%{public}d %{public}d %{public}d %{public}d %{public}d %{public}d",
+             j, pcmd[j].ssid, pcmd[j].bssid, pcmd[j].freq, pcmd[j].siglv,
+             pcmd[j].centerFrequency0, pcmd[j].centerFrequency1, pcmd[j].channelWidth,
+             pcmd[j].isVhtInfoExist, pcmd[j].isHtInfoExist, pcmd[j].isHeInfoExist, pcmd[j].isErpExist,
+             pcmd[j].maxRates, pcmd[j].extMaxRates);
+        token = strtok_r(NULL, "\n", &savedPtr);
+        j++;
+    }
+    *size = j;
 }
 
 static int WpaCliCmdScanInfo(WifiWpaStaInterface *this, ScanInfo *pcmd, int *size)
@@ -1279,36 +1333,7 @@ static int WpaCliCmdScanInfo(WifiWpaStaInterface *this, ScanInfo *pcmd, int *siz
         buf = NULL;
         return -1;
     }
-    char *savedPtr = NULL;
-    strtok_r(buf, "\n", &savedPtr); /* skip first line */
-    char *token = strtok_r(NULL, "\n", &savedPtr);
-    int j = 0;
-    while (token != NULL) {
-        if (j >= *size) {
-            *size = j;
-            LOGE("get scan info full!");
-            free(buf);
-            buf = NULL;
-            return 0;
-        }
-        int length = strlen(token);
-        if (length <= 0) {
-            break;
-        }
-        if (DelScanInfoLine(&pcmd[j], token, length)) {
-            LOGE("parse scan result line failed!");
-            break;
-        }
-        LOGD("-->>%{public}2d %{private}s %{private}s %{public}d %{public}d %{public}d %{public}d %{public}d "
-             "%{public}d %{public}d %{public}d %{public}d %{public}d %{public}d",
-             j, pcmd[j].ssid, pcmd[j].bssid, pcmd[j].freq, pcmd[j].siglv,
-             pcmd[j].centerFrequency0, pcmd[j].centerFrequency1, pcmd[j].channelWidth,
-             pcmd[j].isVhtInfoExist, pcmd[j].isHtInfoExist, pcmd[j].isHeInfoExist, pcmd[j].isErpExist,
-             pcmd[j].maxRates, pcmd[j].extMaxRates);
-        token = strtok_r(NULL, "\n", &savedPtr);
-        j++;
-    }
-    *size = j;
+    ParseScanResults(buf, pcmd, size);
     free(buf);
     buf = NULL;
     return 0;
@@ -1393,27 +1418,8 @@ static int WpaCliCmdWpaSetSuspendMode(WifiWpaStaInterface *this, bool mode)
     return WpaCliCmd(cmd, buf, sizeof(buf));
 }
 
-WifiWpaStaInterface *GetWifiStaInterface(int staNo)
+static void InitStaInterfaceOps(WifiWpaStaInterface *p)
 {
-    char *name;
-    if (staNo == 0) {
-        name = "wlan0";
-    } else {
-        name = "wlan2";
-    }
-    WifiWpaStaInterface *p = g_wpaStaInterface;
-    while (p != NULL) {
-        if (strcmp(p->ifname, name) == 0) {
-            return p;
-        }
-        p = p->next;
-    }
-    p = (WifiWpaStaInterface *)calloc(1, sizeof(WifiWpaStaInterface));
-    if (p == NULL) {
-        return NULL;
-    }
-    StrSafeCopy(p->ifname, sizeof(p->ifname), name);
-    p->staNo = staNo;
     p->wpaCliCmdStatus = WpaCliCmdStatus;
     p->wpaCliCmdAddNetworks = WpaCliCmdAddNetworks;
     p->wpaCliCmdReconnect = WpaCliCmdReconnect;
@@ -1441,6 +1447,30 @@ WifiWpaStaInterface *GetWifiStaInterface(int staNo)
     p->wpaCliCmdGetSignalInfo = WpaCliCmdGetSignalInfo;
     p->wpaCliCmdWpaSetSuspendMode = WpaCliCmdWpaSetSuspendMode;
     p->wpaCliCmdWpaSetPowerMode = WpaCliCmdWpaSetPowerMode;
+}
+
+WifiWpaStaInterface *GetWifiStaInterface(int staNo)
+{
+    char *name;
+    if (staNo == 0) {
+        name = "wlan0";
+    } else {
+        name = "wlan2";
+    }
+    WifiWpaStaInterface *p = g_wpaStaInterface;
+    while (p != NULL) {
+        if (strcmp(p->ifname, name) == 0) {
+            return p;
+        }
+        p = p->next;
+    }
+    p = (WifiWpaStaInterface *)calloc(1, sizeof(WifiWpaStaInterface));
+    if (p == NULL) {
+        return NULL;
+    }
+    StrSafeCopy(p->ifname, sizeof(p->ifname), name);
+    p->staNo = staNo;
+    InitStaInterfaceOps(p);
     p->next = g_wpaStaInterface;
     g_wpaStaInterface = p;
 
