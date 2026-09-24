@@ -182,7 +182,9 @@ static WifiErrorNo AddP2pRandomMacFlag()
             LOGD("%{public}s: success to update the file, ret:%{public}d", __func__, ret);
         }
     }
-    fclose(fp);
+    if (fclose(fp) != 0) {
+        return WIFI_HAL_FAILED;
+    }
     return WIFI_HAL_SUCCESS;
 }
 

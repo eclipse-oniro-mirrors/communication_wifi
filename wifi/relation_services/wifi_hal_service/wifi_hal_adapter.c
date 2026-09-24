@@ -63,7 +63,9 @@ static int ReadConfigModuleName(char *name, int size)
         }
         flag += 1;
     } while (0);
-    fclose(fp);
+    if (fclose(fp) != 0) {
+        LOGE("fclose failed!");
+    }
     return (flag == 0) ? -1 : 0;
 }
 
@@ -145,8 +147,26 @@ void ReleaseWifiHalVendorInterface(void)
     return;
 }
 
+static int IsSafeCmd(const char *szCmd)
+{
+    if (szCmd == NULL) {
+        return 0;
+    }
+    const char *dangerousChar = ";|&$`<>\\\"'\n";
+    for (const char *p = szCmd; *p != '\0'; ++p) {
+        if (strchr(dangerousChar, *p) != NULL) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 int ExcuteCmd(const char *szCmd)
 {
+    if (!IsSafeCmd(szCmd)) {
+        LOGE("Execute cmd contains illegal character, reject!");
+        return HAL_FAILURE;
+    }
     LOGI("Execute cmd: %{private}s", szCmd);
     int ret = system(szCmd);
     if (ret == -1) {

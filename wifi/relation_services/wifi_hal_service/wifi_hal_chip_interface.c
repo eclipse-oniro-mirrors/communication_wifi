@@ -60,7 +60,7 @@ WifiErrorNo CreateIface(int32_t type, WifiIface *iface)
         LOGE("CreateIface memset_s is failed");
         return WIFI_HAL_FAILED;
     }
-    if (strcpy_s(iface->name, sizeof(iface->name), name) != EOK) {
+    if (strcpy_s(iface->name, WIFI_IFACE_NAME_MAXLEN, name) != EOK) {
         return WIFI_HAL_FAILED;
     }
 

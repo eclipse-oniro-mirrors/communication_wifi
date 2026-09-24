@@ -74,7 +74,8 @@ pid_t GetPID(const char *pidFile)
 void StopProcess(void)
 {
     char pidFile[DIR_MAX_LENGTH] = {0, };
-    int n = snprintf_s(pidFile, DIR_MAX_LENGTH, DIR_MAX_LENGTH - 1, "%s/%s.pid", CONFIG_ROOR_DIR, WIFI_MANAGGER_PID_NAME);
+    int n = snprintf_s(pidFile, DIR_MAX_LENGTH, DIR_MAX_LENGTH - 1, "%s/%s.pid", CONFIG_ROOR_DIR,
+        WIFI_MANAGGER_PID_NAME);
     if (n < 0) {
         LOGE("InitPidfile: construct pidFile name failed.");
         return;
@@ -129,10 +130,18 @@ int main(void)
         return -1;
     }
     SetRpcServerInited(server);
-    setvbuf(stdout, NULL, _IOLBF, 0);
-    signal(SIGINT, SignalExit);
-    signal(SIGTERM, SignalExit);
-    signal(SIGPIPE, SIG_IGN);
+    if (setvbuf(stdout, NULL, _IOLBF, 0) != 0) {
+        LOGE("setvbuf failed!");
+    }
+    if (signal(SIGINT, SignalExit) == SIG_ERR) {
+        LOGE("signal SIGINT failed!");
+    }
+    if (signal(SIGTERM, SignalExit) == SIG_ERR) {
+        LOGE("signal SIGTERM failed!");
+    }
+    if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
+        LOGE("signal SIGPIPE failed!");
+    }
 
     StopProcess();
     RunRpcLoop(server);

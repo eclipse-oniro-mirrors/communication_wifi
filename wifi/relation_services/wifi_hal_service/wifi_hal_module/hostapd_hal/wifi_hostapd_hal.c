@@ -178,6 +178,30 @@ static void DelCallbackMessage(const char *msg, int id)
     }
 }
 
+static int HostapdRecvOneMsg(struct wpa_ctrl *ctrl, char *buf, int id)
+{
+    if (memset_s(buf, BUFSIZE_RECV, 0, BUFSIZE_RECV) != EOK) {
+        LOGE("thread clear buffer cache failed!");
+        return -1;
+    }
+    size_t len = BUFSIZE_RECV - 1;
+    int ret = wpa_ctrl_recv(ctrl, buf, &len);
+    if (ret < 0) {
+        LOGE("hostapd thread read event message failed!");
+        return -1;
+    }
+    if (len <= 0) {
+        return 0;
+    }
+    char *p = buf;
+    if (*p == '<') {
+        p = strchr(p, '>');
+        (p == NULL) ? (p = buf) : (p++);
+    }
+    DelCallbackMessage(p, id);
+    return 0;
+}
+
 static void *HostapdReceiveCallback(void *arg)
 {
     if (arg == NULL) {
@@ -205,25 +229,9 @@ static void *HostapdReceiveCallback(void *arg)
         } else if (ret == 0) {
             continue;
         }
-        if (memset_s(buf, BUFSIZE_RECV, 0, BUFSIZE_RECV) != EOK) {
-            LOGE("thread clear buffer cache failed!");
+        if (HostapdRecvOneMsg(ctrl, buf, id) < 0) {
             break;
         }
-        size_t len = BUFSIZE_RECV - 1;
-        ret = wpa_ctrl_recv(ctrl, buf, &len);
-        if (ret < 0) {
-            LOGE("hostapd thread read event message failed!");
-            break;
-        }
-        if (len <= 0) {
-            continue;
-        }
-        char *p = buf;
-        if (*p == '<') {
-            p = strchr(p, '>');
-            (p == NULL) ? (p = buf) : (p++);
-        }
-        DelCallbackMessage(p, id);
     }
     free(buf);
     buf = NULL;
@@ -555,35 +563,47 @@ static int SetApBand(int band, int id)
 }
 
 #ifndef OHOS_ARCH_LITE
+static int FindPrivCmdIndex(struct iwreq *wrq, struct iw_priv_args *privPtr, const char *fName)
+{
+    for (int i = 0; i < wrq->u.data.length; i++) {
+        if (strncmp(privPtr[i].name, fName, strlen(fName)) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static int FindSubCmdIndex(struct iw_priv_args *privPtr, int i)
+{
+    for (int j = 0; j < i; j++) {
+        if ((privPtr[j].set_args == privPtr[i].set_args) &&
+            (privPtr[j].get_args == privPtr[i].get_args) &&
+            (privPtr[j].name[0] == '\0')) {
+            return j;
+        }
+    }
+    return -1;
+}
+
 static int SendPrivateCmd(struct iwreq *wrq, struct iw_priv_args *privPtr, const char *fName,
     int bufLen, int sock, char dataBuf[])
 {
-    int i, j, ret;
     int cmd = 0;
     int subCmd = 0;
+    int ret = 0;
 
     if (wrq == NULL || privPtr == NULL || fName == NULL) {
         return -1;
     }
-    for (i = 0; i < wrq->u.data.length; i++) {
-        if (strncmp(privPtr[i].name, fName, strlen(fName)) == 0) {
-            cmd = (int)privPtr[i].cmd;
-            break;
-        }
-    }
-    if (i == wrq->u.data.length) {
+    int i = FindPrivCmdIndex(wrq, privPtr, fName);
+    if (i < 0) {
         LOGE("fName: %{public}s - function not supported", fName);
         return -1;
     }
+    cmd = (int)privPtr[i].cmd;
     if (cmd < SIOCDEVPRIVATE) {
-        for (j = 0; j < i; j++) {
-            if ((privPtr[j].set_args == privPtr[i].set_args) &&
-                (privPtr[j].get_args == privPtr[i].get_args) &&
-                (privPtr[j].name[0] == '\0')) {
-                break;
-            }
-        }
-        if (j == i) {
+        int j = FindSubCmdIndex(privPtr, i);
+        if (j < 0) {
             LOGE("fName: %{public}s - invalid private ioctl", fName);
             return -1;
         }
@@ -809,10 +829,12 @@ static int ModBlockList(const char *mac, int id)
         return -1;
     }
     if (fprintf(fp, "%s\n", mac) < 0) {
-        fclose(fp);
+        (void)fclose(fp);
         return -1;
     }
-    fclose(fp);
+    if (fclose(fp) != 0) {
+        return -1;
+    }
     if (sprintf_s(cmd, sizeof(cmd), "SET deny_mac_file %s/%s", CONFIG_PATH_DIR, CONFIG_DENY_MAC_FILE_NAME) < 0) {
         return -1;
     }

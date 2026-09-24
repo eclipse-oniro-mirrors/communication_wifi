@@ -30,16 +30,7 @@
 #include "wifi_hal_module_manage.h"
 #include "wifi_common_hal.h"
 
-#ifndef __UT__
 #include "wifi_log.h"
-#endif
-
-#ifdef __UT__
-#define static
-#define LOGI(...) ;
-#define LOGD(...) ;
-#define LOGE(...) ;
-#endif
 
 #undef LOG_TAG
 #define LOG_TAG "WifiWpaHal"
@@ -722,6 +713,61 @@ static void WpaCallBackFuncTwo(const char *p)
     return;
 }
 
+static void HandleWpaConnected(const char *p)
+{
+    char *pid = strstr(p, "id=");
+    char *pMacPos = strstr(p, "Connection to ");
+    if (pid == NULL || pMacPos == NULL) {
+        return;
+    }
+    pid += strlen("id=");
+    pMacPos += strlen("Connection to ");
+    int id = atoi(pid);
+    if (id < 0) {
+        id = -1;
+    }
+    WifiHalCbNotifyConnectChanged(WPA_CB_CONNECTED, id, pMacPos);
+}
+
+static void HandleWpaDisconnected(const char *p)
+{
+    char *pBssid = strstr(p, "bssid=");
+    if (pBssid == NULL) {
+        return;
+    }
+    pBssid += strlen("bssid=");
+    char *reasonPos = strstr(p, "reason=");
+    int reasonCode = -1;
+    if (reasonPos != NULL) {
+        reasonPos += strlen("reason=");
+        int ret = sscanf_s(reasonPos, "%d", &reasonCode);
+        if (ret < 0) {
+            LOGE("reasonCode failed!");
+            return;
+        }
+    }
+    WifiHalCbNotifyDisConnectReason(reasonCode, pBssid);
+    WifiHalCbNotifyConnectChanged(WPA_CB_DISCONNECTED, reasonCode, pBssid);
+}
+
+static void HandleWpaBssidChanged(const char *p)
+{
+    LOGI("Reveive WPA_EVENT_BSSID_CHANGED notify event");
+    char *pBssid = strstr(p, "BSSID=");
+    if (pBssid == NULL) {
+        LOGE("NO bssid find!");
+        return;
+    }
+    pBssid += strlen("BSSID=");
+    char *pReason = strstr(p, "REASON=");
+    if (pReason == NULL) {
+        LOGE("NO reason find!");
+        return;
+    }
+    pReason += strlen("REASON=");
+    WifiHalCbNotifyBssidChanged(pReason, pBssid);
+}
+
 static void WpaCallBackFunc(const char *p)
 {
     if (p == NULL) {
@@ -733,52 +779,12 @@ static void WpaCallBackFunc(const char *p)
     } else if (strncmp(p, WPA_EVENT_SCAN_FAILED, strlen(WPA_EVENT_SCAN_FAILED)) == 0) {
         WifiHalCbNotifyScanEnd(STA_CB_SCAN_FAILED);
     } else if (strncmp(p, WPA_EVENT_CONNECTED, strlen(WPA_EVENT_CONNECTED)) == 0) { /* Connection notification */
-        char *pid = strstr(p, "id=");
-        char *pMacPos = strstr(p, "Connection to ");
-        if (pid == NULL || pMacPos == NULL) {
-            return;
-        }
-        pid += strlen("id=");
-        pMacPos += strlen("Connection to ");
-        int id = atoi(pid);
-        if (id < 0) {
-            id = -1;
-        }
-        WifiHalCbNotifyConnectChanged(WPA_CB_CONNECTED, id, pMacPos);
+        HandleWpaConnected(p);
     } else if (strncmp(p, WPA_EVENT_DISCONNECTED, strlen(WPA_EVENT_DISCONNECTED)) == 0) { /* Disconnection */
-        char *pBssid = strstr(p, "bssid=");
-        if (pBssid == NULL) {
-            return;
-        }
-        pBssid += strlen("bssid=");
-        char *reasonPos = strstr(p, "reason=");
-        int reasonCode = -1;
-        if (reasonPos != NULL) {
-            reasonPos += strlen("reason=");
-            int ret = sscanf_s(reasonPos, "%d", &reasonCode);
-            if (ret < 0) {
-                LOGE("reasonCode failed!");
-                return;
-            }
-        }
-        WifiHalCbNotifyDisConnectReason(reasonCode, pBssid);
-        WifiHalCbNotifyConnectChanged(WPA_CB_DISCONNECTED, reasonCode, pBssid);
+        HandleWpaDisconnected(p);
     /* bssid changed event */
     } else if (strncmp(p, WPA_EVENT_BSSID_CHANGED, strlen(WPA_EVENT_BSSID_CHANGED)) == 0) {
-        LOGI("Reveive WPA_EVENT_BSSID_CHANGED notify event");
-        char *pBssid = strstr(p, "BSSID=");
-        if (pBssid == NULL) {
-            LOGE("NO bssid find!");
-            return;
-        }
-        pBssid += strlen("BSSID=");
-        char *pReason = strstr(p, "REASON=");
-        if (pReason == NULL) {
-            LOGE("NO reason find!");
-            return;
-        }
-        pReason += strlen("REASON=");
-        WifiHalCbNotifyBssidChanged(pReason, pBssid);
+        HandleWpaBssidChanged(p);
     } else {
         WpaCallBackFuncTwo(p);
     }
@@ -874,6 +880,41 @@ static void RecoverWifiThread(void)
     pthread_detach(tid);
 }
 
+static int HandleWpaRecvMsg(const char *buf, char *p, const char *staIface,
+    const char *p2pIface, const char *chbaIface)
+{
+    if (strncmp(p, WPA_EVENT_TERMINATING, strlen(WPA_EVENT_TERMINATING)) == 0) {
+        LOGI("=====================WPA_EVENT_TERMINATING=======================");
+        RecoverWifiThread();
+        return 1;
+    }
+    char *iface = strstr(buf, "IFNAME=");
+    if (iface == NULL) {
+        /* if 'IFNAME=' is not reported */
+        if (strstr(p, "chba0") != NULL) {
+            HalCallbackNotify(p);
+            return 0;
+        }
+        if (WpaP2pCallBackFunc(p) == 0) {
+            return 0;
+        }
+        WpaCallBackFunc(p);
+        return 0;
+    }
+    if (strncmp(iface, p2pIface, strlen(p2pIface)) == 0) {
+        if (WpaP2pCallBackFunc(p) == 0) {
+            return 0;
+        }
+    }
+    if (strncmp(iface, staIface, strlen(staIface)) == 0) {
+        WpaCallBackFunc(p);
+    }
+    if (strncmp(iface, chbaIface, strlen(chbaIface)) == 0) {
+        HalCallbackNotify(p);
+    }
+    return 0;
+}
+
 static void *WpaReceiveCallback(void *arg)
 {
     if (arg == NULL) {
@@ -917,34 +958,8 @@ static void *WpaReceiveCallback(void *arg)
         } else {
             p++;
         }
-        if (strncmp(p, WPA_EVENT_TERMINATING, strlen(WPA_EVENT_TERMINATING)) == 0) {
-            LOGI("=====================WPA_EVENT_TERMINATING=======================");
-            RecoverWifiThread();
+        if (HandleWpaRecvMsg(buf, p, staIface, p2pIface, chbaIface) != 0) {
             break;
-        }
-        char *iface = strstr(buf, "IFNAME=");
-        if (iface == NULL) {
-            /* if 'IFNAME=' is not reported */
-            if (strstr(p, "chba0") != NULL) {
-                HalCallbackNotify(p);
-                continue;
-            }
-            if (WpaP2pCallBackFunc(p) == 0) {
-                continue;
-            }
-            WpaCallBackFunc(p);
-            continue;
-        }
-        if (strncmp(iface, p2pIface, strlen(p2pIface)) == 0) {
-            if (WpaP2pCallBackFunc(p) == 0) {
-                continue;
-            }
-        }
-        if (strncmp(iface, staIface, strlen(staIface)) == 0) {
-            WpaCallBackFunc(p);
-        }
-        if (strncmp(iface, chbaIface, strlen(chbaIface)) == 0) {
-            HalCallbackNotify(p);
         }
     }
     free(buf);

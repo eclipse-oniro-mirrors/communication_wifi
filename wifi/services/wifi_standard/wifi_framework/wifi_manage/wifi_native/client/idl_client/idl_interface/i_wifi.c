@@ -34,7 +34,6 @@
 #ifndef __UT__
 #include "wifi_log.h"
 #else
-#define static
 #define LOGI(...)
 #define LOGE(...)
 #endif

@@ -661,7 +661,6 @@ public:
      */
     WifiErrorNo ReqWpaAutoConnect(int enable);
 
-
     /**
      * @Description Clearing the wpa Blocklist.
      *
