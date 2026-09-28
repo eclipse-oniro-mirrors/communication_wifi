@@ -23,6 +23,9 @@ namespace OHOS {
 namespace Wifi {
 static const std::string EAP_METHOD[] = { "NONE", "PEAP", "TLS", "TTLS", "PWD", "SIM", "AKA", "AKA'" };
 std::map<SecTypeTaihe, KeyMgmt> g_mapSecTypeToKeyMgmt = {
+#ifdef FEATURE_CARPLAY_SUPPORTED
+    {SecTypeTaihe::SEC_TYPE_SAE, KeyMgmt::WPA2_PSK_SAE},
+#endif
     {SecTypeTaihe::SEC_TYPE_OPEN, KeyMgmt::NONE},
     {SecTypeTaihe::SEC_TYPE_PSK, KeyMgmt::WPA2_PSK},
 };

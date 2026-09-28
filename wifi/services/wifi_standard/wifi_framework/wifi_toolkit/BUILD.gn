@@ -166,6 +166,10 @@ if (defined(ohos_lite)) {
       defines += [ "FEATURE_WITH_GO_SIMULATION_AP" ]
     }
 
+    if (wifi_feature_carplay_supported) {
+      defines += [ "FEATURE_CARPLAY_SUPPORTED" ]
+    }
+
     external_deps = [
       "ability_base:want",
       "c_utils:utils",

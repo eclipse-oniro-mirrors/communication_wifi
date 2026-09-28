@@ -91,6 +91,7 @@ declare_args() {
   wifi_feature_secure_schedule_supported = false
   wifi_feature_with_go_simulation_ap = false
   wifi_feature_exception_record = false
+  wifi_feature_carplay_supported = false
 }
 
 memory_optimization_cflags = [

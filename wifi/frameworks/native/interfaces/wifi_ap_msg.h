@@ -58,7 +58,10 @@ enum class KeyMgmt {
     WPA2_PSK = 4,
     OSEN = 5,
     FT_PSK = 6,
-    FT_EAP = 7
+    FT_EAP = 7,
+#ifdef FEATURE_CARPLAY_SUPPORTED
+    WPA2_PSK_SAE = 8 /* WPA2-PSK + SAE transition */
+#endif
 };
 
 enum class BandType {
@@ -79,7 +82,11 @@ enum class PowerModel {
 struct HotspotConfig {
     HotspotConfig()
     {
+#ifdef FEATURE_CARPLAY_SUPPORTED
+        securityType = KeyMgmt::WPA2_PSK_SAE;
+#else
         securityType = KeyMgmt::WPA2_PSK;
+#endif
         band = BandType::BAND_2GHZ;
         channel = AP_CHANNEL_DEFAULT;
         maxConn = AP_MAX_CONN_DEFAULT;

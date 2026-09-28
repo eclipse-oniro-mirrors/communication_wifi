@@ -1214,7 +1214,11 @@ void WifiHotspotServiceImpl::ConfigInfoDump(std::string& result)
     std::map<KeyMgmt, std::string> mapKeyMgmtToStr = {
         {KeyMgmt::NONE, "Open"}, {KeyMgmt::WPA_PSK, "WPA_PSK"}, {KeyMgmt::WPA_EAP, "WPA_EAP"},
         {KeyMgmt::IEEE8021X, "IEEE8021X"}, {KeyMgmt::WPA2_PSK, "WPA2_PSK"}, {KeyMgmt::OSEN, "OSEN"},
+#ifdef FEATURE_CARPLAY_SUPPORTED
+        {KeyMgmt::FT_PSK, "FT_PSK"}, {KeyMgmt::FT_EAP, "FT_EAP"}, {KeyMgmt::WPA2_PSK_SAE, "WPA2_PSK_SAE"}
+#else
         {KeyMgmt::FT_PSK, "FT_PSK"}, {KeyMgmt::FT_EAP, "FT_EAP"}
+#endif
     };
 
     auto funcStrKeyMgmt = [&mapKeyMgmtToStr](KeyMgmt secType) {
@@ -1389,6 +1393,12 @@ ErrCode WifiHotspotServiceImpl::IsValidHotspotConfig(const HotspotConfig &cfg, c
         return ErrCode::WIFI_OPT_INVALID_PARAM;
     }
 
+#ifdef FEATURE_CARPLAY_SUPPORTED
+    if (cfg.GetSecurityType() == KeyMgmt::WPA2_PSK_SAE) {
+        if (CfgCheckPsk(cfg) == ErrCode::WIFI_OPT_INVALID_PARAM) {
+            return ErrCode::WIFI_OPT_INVALID_PARAM;
+        }
+#else
     if (cfg.GetSecurityType() == KeyMgmt::NONE) {
         if (cfg.GetPreSharedKey().length() > 0) {
             WIFI_LOGE("Open hotspot PreSharedKey length is non-zero error!");
@@ -1398,6 +1408,7 @@ ErrCode WifiHotspotServiceImpl::IsValidHotspotConfig(const HotspotConfig &cfg, c
         if (CfgCheckPsk(cfg) == ErrCode::WIFI_OPT_INVALID_PARAM) {
             return ErrCode::WIFI_OPT_INVALID_PARAM;
         }
+#endif
     } else {
         WIFI_LOGE("Hotspot securityType is not supported!");
         return ErrCode::WIFI_OPT_INVALID_PARAM;

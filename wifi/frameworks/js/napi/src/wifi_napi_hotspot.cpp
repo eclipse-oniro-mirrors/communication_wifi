@@ -30,6 +30,9 @@ DEFINE_WIFILOG_LABEL("WifiNAPIHotspot");
 std::shared_ptr<WifiHotspot> wifiHotspotPtr = WifiHotspot::GetInstance(WIFI_HOTSPOT_ABILITY_ID);
 
 std::map<SecTypeJs, KeyMgmt> g_mapSecTypeToKeyMgmt = {
+#ifdef FEATURE_CARPLAY_SUPPORTED
+    {SecTypeJs::SEC_TYPE_SAE, KeyMgmt::WPA2_PSK_SAE},
+#endif
     {SecTypeJs::SEC_TYPE_OPEN, KeyMgmt::NONE},
     {SecTypeJs::SEC_TYPE_PSK, KeyMgmt::WPA2_PSK},
 };

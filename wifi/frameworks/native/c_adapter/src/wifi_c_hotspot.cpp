@@ -65,6 +65,9 @@ NO_SANITIZE("cfi") WifiErrorCode IsOpenSoftApAllowed(bool &isSupported)
 
 /* Others type is not support for AP */
 static std::map<WifiSecurityType, OHOS::Wifi::KeyMgmt> g_mapSecTypeToKeyMgmt = {
+#ifdef FEATURE_CARPLAY_SUPPORTED
+    {WifiSecurityType::WIFI_SEC_TYPE_SAE, OHOS::Wifi::KeyMgmt::WPA2_PSK_SAE},
+#endif
     {WifiSecurityType::WIFI_SEC_TYPE_OPEN, OHOS::Wifi::KeyMgmt::NONE},
     {WifiSecurityType::WIFI_SEC_TYPE_PSK, OHOS::Wifi::KeyMgmt::WPA2_PSK},
 };
