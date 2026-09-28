@@ -651,18 +651,6 @@ int GetSecurityTypeFromKeyMgmt(KeyMgmt keyMgmt)
     };
 }
 
-WifiP2pDevice ConvertWifiP2pDeviceFromTaihe(const ::ohos::wifiManager::WifiP2pDevice& device)
-{
-    WifiP2pDevice dev;
-    dev.SetDeviceName(static_cast<std::string>(device.deviceName));
-    dev.SetDeviceAddress(static_cast<std::string>(device.deviceAddress));
-    dev.SetDeviceAddressType(static_cast<int>(device.deviceAddressType));
-    dev.SetPrimaryDeviceType(static_cast<std::string>(device.primaryDeviceType));
-    dev.SetP2pDeviceStatus(static_cast<P2pDeviceStatus>(static_cast<int>(device.deviceStatus)));
-    dev.SetGroupCapabilitys(device.groupCapabilities);
-    return dev;
-}
-
 ::ohos::wifiManager::WifiP2pServiceRequest MakeWifiP2pServiceRequest(const WifiP2pServiceRequest& request)
 {
     const std::vector<unsigned char>& query = request.GetQuery();
