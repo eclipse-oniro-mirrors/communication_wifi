@@ -1216,38 +1216,53 @@ static void GetInfoElems(int length, int end, char *srcBuf, ScanInfo *pcmd)
 }
 #endif
 
-static int HandleScanColumn(ScanInfo *pcmd, char *srcBuf, int start, int end, int length, int columnIndex)
+enum ScanColumnResult {
+    SCAN_COLUMN_CONTINUE = 0,
+    SCAN_COLUMN_FAIL = 1,
+    SCAN_COLUMN_DONE = 2,
+};
+
+struct ScanColumnContext {
+    ScanInfo *pcmd;
+    char *srcBuf;
+    int start;
+    int end;
+    int length;
+    int columnIndex;
+};
+
+static int HandleScanColumn(const struct ScanColumnContext *ctx)
 {
-    if (columnIndex == COLUMN_INDEX_ZERO) {
-        if (strcpy_s(pcmd->bssid, sizeof(pcmd->bssid), srcBuf + start) != EOK) {
-            return 1;
+    if (ctx->columnIndex == COLUMN_INDEX_ZERO) {
+        if (strcpy_s(ctx->pcmd->bssid, sizeof(ctx->pcmd->bssid), ctx->srcBuf + ctx->start) != EOK) {
+            return SCAN_COLUMN_FAIL;
         }
-    } else if (columnIndex == COLUMN_INDEX_ONE) {
-        pcmd->freq = atoi(srcBuf + start);
-    } else if (columnIndex == COLUMN_INDEX_TWO) {
-        pcmd->siglv = atoi(srcBuf + start);
-    } else if (columnIndex == COLUMN_INDEX_THREE) {
-        if (strcpy_s(pcmd->flags, sizeof(pcmd->flags), srcBuf + start) != EOK) {
-            return 1;
+    } else if (ctx->columnIndex == COLUMN_INDEX_ONE) {
+        ctx->pcmd->freq = atoi(ctx->srcBuf + ctx->start);
+    } else if (ctx->columnIndex == COLUMN_INDEX_TWO) {
+        ctx->pcmd->siglv = atoi(ctx->srcBuf + ctx->start);
+    } else if (ctx->columnIndex == COLUMN_INDEX_THREE) {
+        if (strcpy_s(ctx->pcmd->flags, sizeof(ctx->pcmd->flags), ctx->srcBuf + ctx->start) != EOK) {
+            return SCAN_COLUMN_FAIL;
         }
 #ifdef OHOS_ARCH_LITE // The wpa of arch lite don't return "informationElements".
-        int ssidStart = end + 1;
-        if (strcpy_s(pcmd->ssid, sizeof(pcmd->ssid), srcBuf + ssidStart) != EOK) {
-            return 1;
+        int ssidStart = ctx->end + 1;
+        if (strcpy_s(ctx->pcmd->ssid, sizeof(ctx->pcmd->ssid), ctx->srcBuf + ssidStart) != EOK) {
+            return SCAN_COLUMN_FAIL;
         }
-        PrintfDecode((u8 *)pcmd->ssid, sizeof(pcmd->ssid), pcmd->ssid);
-        return 2;
+        PrintfDecode((u8 *)ctx->pcmd->ssid, sizeof(ctx->pcmd->ssid), ctx->pcmd->ssid);
+        return SCAN_COLUMN_DONE;
 #else
-    } else if (columnIndex == COLUMN_INDEX_FOUR) {
-        if (strcpy_s(pcmd->ssid, sizeof(pcmd->ssid), srcBuf + start) != EOK) {
-            return 1;
+    } else if (ctx->columnIndex == COLUMN_INDEX_FOUR) {
+        if (strcpy_s(ctx->pcmd->ssid, sizeof(ctx->pcmd->ssid), ctx->srcBuf + ctx->start) != EOK) {
+            return SCAN_COLUMN_FAIL;
         }
-        PrintfDecode((u8 *)pcmd->ssid, sizeof(pcmd->ssid), pcmd->ssid);
-        GetInfoElems(length, end, srcBuf, pcmd);
-        return 2;
+        PrintfDecode((u8 *)ctx->pcmd->ssid, sizeof(ctx->pcmd->ssid), ctx->pcmd->ssid);
+        GetInfoElems(ctx->length, ctx->end, ctx->srcBuf, ctx->pcmd);
+        return SCAN_COLUMN_DONE;
 #endif
     }
-    return 0;
+    return SCAN_COLUMN_CONTINUE;
 }
 
 int DelScanInfoLine(ScanInfo *pcmd, char *srcBuf, int length)
@@ -1262,12 +1277,13 @@ int DelScanInfoLine(ScanInfo *pcmd, char *srcBuf, int length)
             continue;
         }
         srcBuf[end] = '\0';
-        int ret = HandleScanColumn(pcmd, srcBuf, start, end, length, columnIndex);
-        if (ret == 1) {
+        struct ScanColumnContext ctx = {pcmd, srcBuf, start, end, length, columnIndex};
+        int ret = HandleScanColumn(&ctx);
+        if (ret == SCAN_COLUMN_FAIL) {
             fail = 1;
             break;
         }
-        if (ret == 2) {
+        if (ret == SCAN_COLUMN_DONE) {
             start = length;
             break;
         }

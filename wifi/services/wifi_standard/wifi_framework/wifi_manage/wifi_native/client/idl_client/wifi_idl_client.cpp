@@ -37,13 +37,6 @@ const int BUFFER_SIZE = 4096;
 const int PMF_OPTIONAL = 1;
 const int PMF_REQUIRED = 2;
 
-#define CHECK_CLIENT_NOT_NULL           \
-    do {                                \
-        if (pRpcClient == nullptr) {    \
-            return WIFI_HAL_OPT_FAILED; \
-        }                               \
-    } while (0)
-
 WifiIdlClient::WifiIdlClient()
 {
     pRpcClient = nullptr;
@@ -80,49 +73,65 @@ void WifiIdlClient::ExitAllClient(void)
 
 WifiErrorNo WifiIdlClient::StartWifi(void)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return Start();
 }
 
 WifiErrorNo WifiIdlClient::StopWifi(void)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return Stop();
 }
 
 WifiErrorNo WifiIdlClient::ReqConnect(int networkId)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return Connect(networkId);
 }
 
 WifiErrorNo WifiIdlClient::ReqReconnect(void)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return Reconnect();
 }
 
 WifiErrorNo WifiIdlClient::ReqReassociate(void)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return Reassociate();
 }
 
 WifiErrorNo WifiIdlClient::ReqDisconnect(void)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return Disconnect();
 }
 
 WifiErrorNo WifiIdlClient::GetStaCapabilities(unsigned int &capabilities)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return GetCapabilities(reinterpret_cast<uint32_t *>(&capabilities));
 }
 
 WifiErrorNo WifiIdlClient::GetStaDeviceMacAddress(std::string &mac)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     char szMac[HAL_BSSID_LENGTH + 1] = {0};
     int len = HAL_BSSID_LENGTH + 1;
     WifiErrorNo err = GetDeviceMacAddress((unsigned char *)szMac, &len);
@@ -134,7 +143,9 @@ WifiErrorNo WifiIdlClient::GetStaDeviceMacAddress(std::string &mac)
 
 WifiErrorNo WifiIdlClient::GetSupportFrequencies(int band, std::vector<int> &frequencies)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
 
     int values[HAL_GET_MAX_BANDS] = {0};
     int size = HAL_GET_MAX_BANDS;
@@ -152,7 +163,9 @@ WifiErrorNo WifiIdlClient::GetSupportFrequencies(int band, std::vector<int> &fre
 
 WifiErrorNo WifiIdlClient::SetConnectMacAddr(const std::string &mac, const int portType)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     if (CheckMacIsValid(mac) != 0) {
         return WIFI_HAL_OPT_INPUT_MAC_INVALID;
     }
@@ -168,7 +181,9 @@ WifiErrorNo WifiIdlClient::SetConnectMacAddr(const std::string &mac, const int p
 
 WifiErrorNo WifiIdlClient::SetScanMacAddress(const std::string &mac)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     if (CheckMacIsValid(mac) != 0) {
         return WIFI_HAL_OPT_INPUT_MAC_INVALID;
     }
@@ -178,7 +193,9 @@ WifiErrorNo WifiIdlClient::SetScanMacAddress(const std::string &mac)
 
 WifiErrorNo WifiIdlClient::DisconnectLastRoamingBssid(const std::string &mac)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     if (CheckMacIsValid(mac) != 0) {
         return WIFI_HAL_OPT_INPUT_MAC_INVALID;
     }
@@ -188,19 +205,25 @@ WifiErrorNo WifiIdlClient::DisconnectLastRoamingBssid(const std::string &mac)
 
 WifiErrorNo WifiIdlClient::ReqGetSupportFeature(long &feature)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return GetSupportFeature(&feature);
 }
 
 WifiErrorNo WifiIdlClient::SetTxPower(int power)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return SetWifiTxPower(static_cast<int32_t>(power));
 }
 
 WifiErrorNo WifiIdlClient::Scan(const WifiHalScanParam &scanParam)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     ScanSettings settings;
     if (memset_s(&settings, sizeof(settings), 0, sizeof(settings)) != EOK) {
         return WIFI_HAL_OPT_FAILED;
@@ -251,7 +274,9 @@ WifiErrorNo WifiIdlClient::Scan(const WifiHalScanParam &scanParam)
 
 WifiErrorNo WifiIdlClient::ReqGetNetworkList(std::vector<WifiHalWpaNetworkInfo> &networkList)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     WifiNetworkInfo infos[HAL_GET_MAX_NETWORK_LIST];
     if (memset_s(infos, sizeof(infos), 0, sizeof(infos)) != EOK) {
         return WIFI_HAL_OPT_FAILED;
@@ -274,7 +299,9 @@ WifiErrorNo WifiIdlClient::ReqGetNetworkList(std::vector<WifiHalWpaNetworkInfo> 
 
 WifiErrorNo WifiIdlClient::QueryScanInfos(std::vector<InterScanInfo> &scanInfos)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     int size = HAL_GET_MAX_SCAN_INFO;
     ScanInfo* results = GetScanInfos(&size);
     if (results == NULL) {
@@ -356,7 +383,9 @@ WifiErrorNo WifiIdlClient::ConvertPnoScanParam(const WifiHalPnoScanParam &param,
 
 WifiErrorNo WifiIdlClient::ReqStartPnoScan(const WifiHalPnoScanParam &scanParam)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     PnoScanSettings settings;
     if (memset_s(&settings, sizeof(settings), 0, sizeof(settings)) != EOK) {
         return WIFI_HAL_OPT_FAILED;
@@ -390,13 +419,17 @@ WifiErrorNo WifiIdlClient::ReqStartPnoScan(const WifiHalPnoScanParam &scanParam)
 
 WifiErrorNo WifiIdlClient::ReqStopPnoScan(void)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return StopPnoScan();
 }
 
 WifiErrorNo WifiIdlClient::RemoveDevice(int networkId)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     if (networkId < 0) {
         return WIFI_HAL_OPT_INVALID_PARAM;
     }
@@ -405,31 +438,41 @@ WifiErrorNo WifiIdlClient::RemoveDevice(int networkId)
 
 WifiErrorNo WifiIdlClient::ClearDeviceConfig(void) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return RemoveNetwork(-1);
 }
 
 WifiErrorNo WifiIdlClient::GetNextNetworkId(int &networkId)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return AddNetwork(&networkId);
 }
 
 WifiErrorNo WifiIdlClient::ReqEnableNetwork(int networkId)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return EnableNetwork(networkId);
 }
 
 WifiErrorNo WifiIdlClient::ReqDisableNetwork(int networkId)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return DisableNetwork(networkId);
 }
 
 WifiErrorNo WifiIdlClient::GetDeviceConfig(WifiHalGetDeviceConfig &config)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     GetNetworkConfig conf;
     if (memset_s(&conf, sizeof(conf), 0, sizeof(conf)) != EOK) {
         return WIFI_HAL_OPT_FAILED;
@@ -637,7 +680,9 @@ void WifiIdlClient::AppendCipherConfig(SetNetworkConfig *conf, int &num, const W
 
 WifiErrorNo WifiIdlClient::SetDeviceConfig(int networkId, const WifiHalDeviceConfig &config)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     if (CheckValidDeviceConfig(config) != WIFI_HAL_OPT_OK) {
         LOGE("SetDeviceConfig, CheckValidDeviceConfig return error!");
         return WIFI_HAL_OPT_FAILED;
@@ -660,7 +705,9 @@ WifiErrorNo WifiIdlClient::SetDeviceConfig(int networkId, const WifiHalDeviceCon
 
 WifiErrorNo WifiIdlClient::SetBssid(int networkId, const std::string &bssid)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     SetNetworkConfig conf;
     int num = PushDeviceConfigString(&conf, DEVICE_CONFIG_BSSID, bssid, false);
     if (num == 0) {
@@ -673,13 +720,17 @@ WifiErrorNo WifiIdlClient::SetBssid(int networkId, const std::string &bssid)
 
 WifiErrorNo WifiIdlClient::SaveDeviceConfig(void)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return SaveNetworkConfig();
 }
 
 WifiErrorNo WifiIdlClient::ReqRegisterStaEventCallback(const WifiEventCallback &callback)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     IWifiEventCallback cEventCallback;
     if (memset_s(&cEventCallback, sizeof(cEventCallback), 0, sizeof(cEventCallback)) != EOK) {
         return WIFI_HAL_OPT_FAILED;
@@ -701,7 +752,9 @@ WifiErrorNo WifiIdlClient::ReqRegisterStaEventCallback(const WifiEventCallback &
 
 WifiErrorNo WifiIdlClient::ReqStartWpsPbcMode(const WifiHalWpsConfig &config)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     WifiWpsParam param;
     if (memset_s(&param, sizeof(param), 0, sizeof(param)) != EOK) {
         return WIFI_HAL_OPT_FAILED;
@@ -716,7 +769,9 @@ WifiErrorNo WifiIdlClient::ReqStartWpsPbcMode(const WifiHalWpsConfig &config)
 
 WifiErrorNo WifiIdlClient::ReqStartWpsPinMode(const WifiHalWpsConfig &config, int &pinCode)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     WifiWpsParam param;
     if (memset_s(&param, sizeof(param), 0, sizeof(param)) != EOK) {
         return WIFI_HAL_OPT_FAILED;
@@ -736,13 +791,17 @@ WifiErrorNo WifiIdlClient::ReqStartWpsPinMode(const WifiHalWpsConfig &config, in
 
 WifiErrorNo WifiIdlClient::ReqStopWps()
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return StopWps();
 }
 
 WifiErrorNo WifiIdlClient::ReqGetRoamingCapabilities(WifiHalRoamCapability &capability)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     WifiRoamCapability tmp;
     if (memset_s(&tmp, sizeof(tmp), 0, sizeof(tmp)) != EOK) {
         return WIFI_HAL_OPT_FAILED;
@@ -794,7 +853,9 @@ char **WifiIdlClient::ConVectorToCArrayString(const std::vector<std::string> &ve
 
 WifiErrorNo WifiIdlClient::ReqSetRoamConfig(const WifiHalRoamConfig &config)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     char **blocklist = nullptr;
     int blocksize = config.blocklistBssids.size();
     char **trustlist = nullptr;
@@ -839,7 +900,9 @@ WifiErrorNo WifiIdlClient::ReqSetRoamConfig(const WifiHalRoamConfig &config)
 
 WifiErrorNo WifiIdlClient::ReqGetConnectSignalInfo(const std::string &endBssid, WifiSignalPollInfo &info) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     WpaSignalInfo req = {0};
     WifiErrorNo err = GetConnectSignalInfo(endBssid.c_str(), &req);
     if (err == WIFI_HAL_OPT_OK) {
@@ -862,33 +925,43 @@ WifiErrorNo WifiIdlClient::ReqGetConnectSignalInfo(const std::string &endBssid, 
 
 WifiErrorNo WifiIdlClient::ReqSetPmMode(int frequency, int mode) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     LOGE("not support set pm mode.");
     return WIFI_HAL_OPT_NOT_SUPPORT;
 }
 
 WifiErrorNo WifiIdlClient::ReqSetDpiMarkRule(int uid, int protocol, int enable) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     LOGE("not support set dpi mark rule.");
     return WIFI_HAL_OPT_NOT_SUPPORT;
 }
 
 WifiErrorNo WifiIdlClient::StartAp(int id, const std::string &ifaceName)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return StartSoftAp(id, ifaceName.c_str());
 }
 
 WifiErrorNo WifiIdlClient::StopAp(int id)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return StopSoftAp(id);
 }
 
 WifiErrorNo WifiIdlClient::SetSoftApConfig(const HotspotConfig &config, int id)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     HostapdConfig tmp;
     if (memset_s(&tmp, sizeof(tmp), 0, sizeof(tmp)) != EOK) {
         return WIFI_HAL_OPT_FAILED;
@@ -913,7 +986,9 @@ WifiErrorNo WifiIdlClient::SetSoftApConfig(const HotspotConfig &config, int id)
 
 WifiErrorNo WifiIdlClient::GetStationList(std::vector<std::string> &result, int id)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
 
     char *staInfos = new (std::nothrow) char[BUFFER_SIZE]();
     if (staInfos == nullptr) {
@@ -935,7 +1010,9 @@ WifiErrorNo WifiIdlClient::GetStationList(std::vector<std::string> &result, int 
 
 WifiErrorNo WifiIdlClient::AddBlockByMac(const std::string &mac, int id)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     if (CheckMacIsValid(mac) != 0) {
         return WIFI_HAL_OPT_INPUT_MAC_INVALID;
     }
@@ -945,7 +1022,9 @@ WifiErrorNo WifiIdlClient::AddBlockByMac(const std::string &mac, int id)
 
 WifiErrorNo WifiIdlClient::DelBlockByMac(const std::string &mac, int id)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     if (CheckMacIsValid(mac) != 0) {
         return WIFI_HAL_OPT_INPUT_MAC_INVALID;
     }
@@ -955,7 +1034,9 @@ WifiErrorNo WifiIdlClient::DelBlockByMac(const std::string &mac, int id)
 
 WifiErrorNo WifiIdlClient::RemoveStation(const std::string &mac, int id)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     if (CheckMacIsValid(mac) != 0) {
         return WIFI_HAL_OPT_INPUT_MAC_INVALID;
     }
@@ -965,7 +1046,9 @@ WifiErrorNo WifiIdlClient::RemoveStation(const std::string &mac, int id)
 
 WifiErrorNo WifiIdlClient::GetFrequenciesByBand(int32_t band, std::vector<int> &frequencies, int id)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
 
     int values[HAL_GET_MAX_BANDS] = {0};
     int size = HAL_GET_MAX_BANDS;
@@ -982,7 +1065,9 @@ WifiErrorNo WifiIdlClient::GetFrequenciesByBand(int32_t band, std::vector<int> &
 
 WifiErrorNo WifiIdlClient::RegisterApEvent(IWifiApMonitorEventCallback callback, int id) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     IWifiApEventCallback cEventCallback;
     if (memset_s(&cEventCallback, sizeof(cEventCallback), 0, sizeof(cEventCallback)) != EOK) {
         return WIFI_HAL_OPT_FAILED;
@@ -997,7 +1082,9 @@ WifiErrorNo WifiIdlClient::RegisterApEvent(IWifiApMonitorEventCallback callback,
 
 WifiErrorNo WifiIdlClient::SetWifiCountryCode(const std::string &code, int id)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     if (code.length() != HAL_COUNTRY_CODE_LENGTH) {
         return WIFI_HAL_OPT_INVALID_PARAM;
     }
@@ -1006,7 +1093,9 @@ WifiErrorNo WifiIdlClient::SetWifiCountryCode(const std::string &code, int id)
 
 WifiErrorNo WifiIdlClient::ReqDisconnectStaByMac(const std::string &mac, int id)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     if (CheckMacIsValid(mac) != 0) {
         return WIFI_HAL_OPT_INPUT_MAC_INVALID;
     }
@@ -1015,47 +1104,61 @@ WifiErrorNo WifiIdlClient::ReqDisconnectStaByMac(const std::string &mac, int id)
 
 WifiErrorNo WifiIdlClient::ReqGetPowerModel(int& model, int id)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return WpaGetPowerModel(&model, id);
 }
 
 WifiErrorNo WifiIdlClient::ReqSetPowerModel(const int& model, int id)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return WpaSetPowerModel(model, id);
 }
 
 WifiErrorNo WifiIdlClient::GetWifiChipObject(int id, IWifiChip &chip)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     LOGD("Get wifi chip object accord %{public}d, %{public}d", id, chip.i);
     return WIFI_HAL_OPT_OK;
 }
 
 WifiErrorNo WifiIdlClient::GetChipIds(std::vector<int> &ids)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     LOGD("start GetChipIds %{public}zu", ids.size()); /* fixed compile error, -Werror,-Wunused-parameter */
     return WIFI_HAL_OPT_OK;
 }
 
 WifiErrorNo WifiIdlClient::GetUsedChipId(int &id)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     id = 0; /* fixed compile error, -Werror,-Wunused-parameter */
     return WIFI_HAL_OPT_OK;
 }
 
 WifiErrorNo WifiIdlClient::GetChipCapabilities(int &capabilities)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     capabilities = 0; /* fixed compile error, -Werror,-Wunused-parameter */
     return WIFI_HAL_OPT_OK;
 }
 
 WifiErrorNo WifiIdlClient::GetSupportedModes(std::vector<int> &modes)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     int size = HAL_INTERFACE_SUPPORT_COMBINATIONS;
     int supportModes[HAL_INTERFACE_SUPPORT_COMBINATIONS] = {0};
     WifiErrorNo err = GetSupportedComboModes(supportModes, &size);
@@ -1069,21 +1172,27 @@ WifiErrorNo WifiIdlClient::GetSupportedModes(std::vector<int> &modes)
 
 WifiErrorNo WifiIdlClient::ConfigRunModes(int mode)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     LOGD("start ConfigRunModes mode %{public}d", mode);
     return WIFI_HAL_OPT_OK;
 }
 
 WifiErrorNo WifiIdlClient::GetCurrentMode(int &mode)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     mode = 0; /* fixed compile error, -Werror,-Wunused-parameter */
     return WIFI_HAL_OPT_OK;
 }
 
 WifiErrorNo WifiIdlClient::RegisterChipEventCallback(WifiChipEventCallback &callback)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     IWifiChipEventCallback cEventCallback;
     if (memset_s(&cEventCallback, sizeof(cEventCallback), 0, sizeof(cEventCallback)) != EOK) {
         return WIFI_HAL_OPT_FAILED;
@@ -1095,75 +1204,99 @@ WifiErrorNo WifiIdlClient::RegisterChipEventCallback(WifiChipEventCallback &call
 
 WifiErrorNo WifiIdlClient::RequestFirmwareDebugInfo(std::string &debugInfo)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     debugInfo.clear(); /* fixed compile error, -Werror,-Wunused-parameter */
     return WIFI_HAL_OPT_OK;
 }
 
 WifiErrorNo WifiIdlClient::ReqIsSupportDbdc(bool &isSupport) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return IsChipSupportDbdc(&isSupport);
 }
 
 WifiErrorNo WifiIdlClient::ReqIsSupportCsa(bool &isSupport) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return IsChipSupportCsa(&isSupport);
 }
 
 WifiErrorNo WifiIdlClient::ReqIsSupportRadarDetect(bool &isSupport) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return IsChipSupportRadarDetect(&isSupport);
 }
 
 WifiErrorNo WifiIdlClient::ReqIsSupportDfsChannel(bool &isSupport) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return IsChipSupportDfsChannel(&isSupport);
 }
 
 WifiErrorNo WifiIdlClient::ReqIsSupportIndoorChannel(bool &isSupport) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return IsChipSupportIndoorChannel(&isSupport);
 }
 
 WifiErrorNo WifiIdlClient::ReqStartSupplicant(void)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return StartSupplicant();
 }
 
 WifiErrorNo WifiIdlClient::ReqStopSupplicant(void)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return StopSupplicant();
 }
 
 WifiErrorNo WifiIdlClient::ReqConnectSupplicant(void)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return ConnectSupplicant();
 }
 
 WifiErrorNo WifiIdlClient::ReqDisconnectSupplicant(void)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return DisconnectSupplicant();
 }
 
 WifiErrorNo WifiIdlClient::ReqRequestToSupplicant(const std::string &request)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return RequestToSupplicant(
         reinterpret_cast<unsigned char *>(const_cast<char *>(request.c_str())), request.length());
 }
 
 WifiErrorNo WifiIdlClient::ReqRegisterSupplicantEventCallback(SupplicantEventCallback &callback)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     ISupplicantEventCallback cEventCallback;
     if (memset_s(&cEventCallback, sizeof(cEventCallback), 0, sizeof(cEventCallback)) != EOK) {
         return WIFI_HAL_OPT_FAILED;
@@ -1176,7 +1309,9 @@ WifiErrorNo WifiIdlClient::ReqRegisterSupplicantEventCallback(SupplicantEventCal
 
 WifiErrorNo WifiIdlClient::ReqUnRegisterSupplicantEventCallback(void)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     ISupplicantEventCallback cEventCallback;
     if (memset_s(&cEventCallback, sizeof(cEventCallback), 0, sizeof(cEventCallback)) != EOK) {
         return WIFI_HAL_OPT_FAILED;
@@ -1186,7 +1321,9 @@ WifiErrorNo WifiIdlClient::ReqUnRegisterSupplicantEventCallback(void)
 
 WifiErrorNo WifiIdlClient::ReqSetPowerSave(bool enable)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     int mode = 0;
     if (enable) {
         mode = 1;
@@ -1197,7 +1334,9 @@ WifiErrorNo WifiIdlClient::ReqSetPowerSave(bool enable)
 
 WifiErrorNo WifiIdlClient::ReqWpaSetCountryCode(const std::string &countryCode)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     if (countryCode.length() != HAL_COUNTRY_CODE_LENGTH) {
         return WIFI_HAL_OPT_INVALID_PARAM;
     }
@@ -1206,7 +1345,9 @@ WifiErrorNo WifiIdlClient::ReqWpaSetCountryCode(const std::string &countryCode)
 
 WifiErrorNo WifiIdlClient::ReqWpaGetCountryCode(std::string &countryCode)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     const int idlCountryCodeLen = 32;
     char code[idlCountryCodeLen] = {0};
     WifiErrorNo ret = WpaGetCountryCode(code, idlCountryCodeLen);
@@ -1218,61 +1359,81 @@ WifiErrorNo WifiIdlClient::ReqWpaGetCountryCode(std::string &countryCode)
 
 WifiErrorNo WifiIdlClient::ReqWpaAutoConnect(int enable)
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return WpaAutoConnect(enable);
 }
 
 WifiErrorNo WifiIdlClient::ReqWpaBlocklistClear()
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return WpaBlocklistClear();
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pStart(void) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pStart();
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pStop(void) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pStop();
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pSetDeviceName(const std::string &name) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pSetDeviceName(name.c_str());
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pSetSsidPostfixName(const std::string &postfixName) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pSetSsidPostfixName(postfixName.c_str());
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pSetWpsDeviceType(const std::string &type) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pSetWpsDeviceType(type.c_str());
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pSetWpsSecondaryDeviceType(const std::string &type) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pSetWpsSecondaryDeviceType(type.c_str());
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pSetWpsConfigMethods(const std::string &config) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pSetWpsConfigMethods(config.c_str());
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pGetDeviceAddress(std::string &deviceAddress) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     char address[HAL_P2P_DEV_ADDRESS_LEN] = {0};
     WifiErrorNo ret = P2pGetDeviceAddress(address, HAL_P2P_DEV_ADDRESS_LEN);
     if (ret == WIFI_HAL_OPT_OK) {
@@ -1283,25 +1444,33 @@ WifiErrorNo WifiIdlClient::ReqP2pGetDeviceAddress(std::string &deviceAddress) co
 
 WifiErrorNo WifiIdlClient::ReqP2pFlush() const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pFlush();
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pFlushService() const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pFlushService();
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pSaveConfig() const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pSaveConfig();
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pRegisterCallback(const P2pHalCallback &callbacks) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
 
     IWifiEventP2pCallback cEventCallback;
     if (memset_s(&cEventCallback, sizeof(cEventCallback), 0, sizeof(cEventCallback)) != EOK) {
@@ -1341,14 +1510,18 @@ WifiErrorNo WifiIdlClient::ReqP2pRegisterCallback(const P2pHalCallback &callback
 
 WifiErrorNo WifiIdlClient::ReqP2pSetupWpsPbc(const std::string &groupInterface, const std::string &bssid) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pSetupWpsPbc(groupInterface.c_str(), bssid.c_str());
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pSetupWpsPin(
     const std::string &groupInterface, const std::string &address, const std::string &pin, std::string &result) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     if (!pin.empty() && pin.size() != HAL_PIN_CODE_LENGTH) {
         return WIFI_HAL_OPT_INVALID_PARAM;
     }
@@ -1363,13 +1536,17 @@ WifiErrorNo WifiIdlClient::ReqP2pSetupWpsPin(
 
 WifiErrorNo WifiIdlClient::ReqP2pRemoveNetwork(int networkId) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pRemoveNetwork(networkId);
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pListNetworks(std::map<int, WifiP2pGroupInfo> &mapGroups) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     P2pNetworkList infoList = {0};
     WifiErrorNo ret = P2pListNetworks(&infoList);
     if (ret != WIFI_HAL_OPT_OK) {
@@ -1397,45 +1574,59 @@ WifiErrorNo WifiIdlClient::ReqP2pListNetworks(std::map<int, WifiP2pGroupInfo> &m
 
 WifiErrorNo WifiIdlClient::ReqP2pSetGroupMaxIdle(const std::string &groupInterface, size_t time) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pSetGroupMaxIdle(groupInterface.c_str(), time);
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pSetPowerSave(const std::string &groupInterface, bool enable) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     int flag = enable;
     return P2pSetPowerSave(groupInterface.c_str(), flag);
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pSetWfdEnable(bool enable) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     int flag = enable;
     return P2pSetWfdEnable(flag);
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pSetWfdDeviceConfig(const std::string &config) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pSetWfdDeviceConfig(config.c_str());
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pStartFind(size_t timeout) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pStartFind(timeout);
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pStopFind() const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pStopFind();
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pSetExtListen(bool enable, size_t period, size_t interval) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     if (enable) {
         if (period < HAL_P2P_LISTEN_MIN_TIME || period > HAL_P2P_LISTEN_MAX_TIME ||
             interval < HAL_P2P_LISTEN_MIN_TIME || interval > HAL_P2P_LISTEN_MAX_TIME || period > interval) {
@@ -1448,14 +1639,18 @@ WifiErrorNo WifiIdlClient::ReqP2pSetExtListen(bool enable, size_t period, size_t
 
 WifiErrorNo WifiIdlClient::ReqP2pSetListenChannel(size_t channel, unsigned char regClass) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pSetListenChannel(channel, regClass);
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pConnect(const WifiP2pConfigInternal &config, bool isJoinExistingGroup,
     std::string &pin) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     P2pConnectInfo info = {0};
     info.mode = isJoinExistingGroup;
     info.persistent = config.GetNetId();
@@ -1495,13 +1690,17 @@ WifiErrorNo WifiIdlClient::ReqP2pConnect(const WifiP2pConfigInternal &config, bo
 
 WifiErrorNo WifiIdlClient::ReqP2pCancelConnect() const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pCancelConnect();
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pProvisionDiscovery(const WifiP2pConfigInternal &config) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     WpsMethod mode = config.GetWpsInfo().GetWpsMethod();
     if (mode == WpsMethod::WPS_METHOD_LABEL) {
         mode = WpsMethod::WPS_METHOD_DISPLAY;
@@ -1517,26 +1716,34 @@ WifiErrorNo WifiIdlClient::ReqP2pProvisionDiscovery(const WifiP2pConfigInternal 
 
 WifiErrorNo WifiIdlClient::ReqP2pAddGroup(bool isPersistent, int networkId, int freq) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     int flag = isPersistent;
     return P2pAddGroup(flag, networkId, freq);
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pRemoveGroup(const std::string &groupInterface) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pRemoveGroup(groupInterface.c_str());
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pRemoveGroupClient(const std::string &deviceMac) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pRemoveGroupClient(deviceMac.c_str());
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pInvite(const WifiP2pGroupInfo &group, const std::string &deviceAddr) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pInvite(group.IsPersistent(),
         deviceAddr.c_str(),
         group.GetOwner().GetDeviceAddress().c_str(),
@@ -1545,13 +1752,17 @@ WifiErrorNo WifiIdlClient::ReqP2pInvite(const WifiP2pGroupInfo &group, const std
 
 WifiErrorNo WifiIdlClient::ReqP2pReinvoke(int networkId, const std::string &deviceAddr) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pReinvoke(networkId, deviceAddr.c_str());
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pGetGroupCapability(const std::string &deviceAddress, uint32_t &cap) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     int capacity = 0;
     WifiErrorNo ret = P2pGetGroupCapability(deviceAddress.c_str(), &capacity);
     if (ret == WIFI_HAL_OPT_OK) {
@@ -1562,7 +1773,9 @@ WifiErrorNo WifiIdlClient::ReqP2pGetGroupCapability(const std::string &deviceAdd
 
 WifiErrorNo WifiIdlClient::ReqP2pAddService(const WifiP2pServiceInfo &info) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     WifiErrorNo ret = WIFI_HAL_OPT_OK;
     P2pServiceInfo servInfo = {0};
     std::vector<std::string> queryList = info.GetQueryList();
@@ -1602,7 +1815,9 @@ WifiErrorNo WifiIdlClient::ReqP2pAddService(const WifiP2pServiceInfo &info) cons
 
 WifiErrorNo WifiIdlClient::ReqP2pRemoveService(const WifiP2pServiceInfo &info) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     WifiErrorNo ret = WIFI_HAL_OPT_OK;
     P2pServiceInfo servInfo = {0};
     std::vector<std::string> queryList = info.GetQueryList();
@@ -1642,7 +1857,9 @@ WifiErrorNo WifiIdlClient::ReqP2pRemoveService(const WifiP2pServiceInfo &info) c
 WifiErrorNo WifiIdlClient::ReqP2pReqServiceDiscovery(
     const std::string &deviceAddress, const std::vector<unsigned char> &tlvs, std::string &reqID) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     if (deviceAddress.size() != HAL_BSSID_LENGTH || tlvs.empty()) {
         return WIFI_HAL_OPT_INVALID_PARAM;
     }
@@ -1665,33 +1882,43 @@ WifiErrorNo WifiIdlClient::ReqP2pReqServiceDiscovery(
 
 WifiErrorNo WifiIdlClient::ReqP2pCancelServiceDiscovery(const std::string &id) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pCancelServiceDiscovery(id.c_str());
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pSetRandomMac(bool enable) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     int flag = enable;
     return P2pSetRandomMac(flag);
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pSetMiracastType(int type) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pSetMiracastType(type);
 }
 
 WifiErrorNo WifiIdlClient::ReqSetPersistentReconnect(int mode) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pSetPersistentReconnect(mode);
 }
 
 WifiErrorNo WifiIdlClient::ReqRespServiceDiscovery(
     const WifiP2pDevice &device, int frequency, int dialogToken, const std::vector<unsigned char> &tlvs) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     if (tlvs.empty()) {
         return WIFI_HAL_OPT_INVALID_PARAM;
     }
@@ -1712,13 +1939,17 @@ WifiErrorNo WifiIdlClient::ReqRespServiceDiscovery(
 
 WifiErrorNo WifiIdlClient::ReqSetServiceDiscoveryExternal(bool isExternalProcess) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pSetServDiscExternal(isExternalProcess);
 }
 
 WifiErrorNo WifiIdlClient::ReqGetP2pPeer(const std::string &deviceAddress, WifiP2pDevice &device) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     P2pDeviceInfo peerInfo;
     if (memset_s(&peerInfo, sizeof(peerInfo), 0, sizeof(peerInfo)) != EOK) {
         return WIFI_HAL_OPT_FAILED;
@@ -1738,13 +1969,17 @@ WifiErrorNo WifiIdlClient::ReqGetP2pPeer(const std::string &deviceAddress, WifiP
 
 WifiErrorNo WifiIdlClient::ReqP2pGetChba0Freq(int &chba0Freq) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pGetChba0Freq(&chba0Freq);
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pGetSupportFrequencies(int band, std::vector<int> &frequencies) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     int values[HAL_GET_MAX_BANDS] = {0};
     int size = HAL_GET_MAX_BANDS;
 
@@ -1784,7 +2019,9 @@ int WifiIdlClient::PushP2pGroupConfigInt(P2pGroupConfig *pConfig, P2pGroupConfig
 
 WifiErrorNo WifiIdlClient::ReqP2pSetGroupConfig(int networkId, const HalP2pGroupConfig &config) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     P2pGroupConfig conf[GROUP_CONFIG_END_POS];
     if (memset_s(conf, sizeof(conf), 0, sizeof(conf)) != EOK) {
         return WIFI_HAL_OPT_FAILED;
@@ -1814,7 +2051,9 @@ WifiErrorNo WifiIdlClient::ReqP2pSetGroupConfig(int networkId, const HalP2pGroup
 
 WifiErrorNo WifiIdlClient::ReqP2pGetGroupConfig(int networkId, HalP2pGroupConfig &config) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     P2pGroupConfig confs[GROUP_CONFIG_END_POS];
     if (memset_s(confs, sizeof(confs), 0, sizeof(confs)) != EOK) {
         return WIFI_HAL_OPT_FAILED;
@@ -1840,13 +2079,17 @@ WifiErrorNo WifiIdlClient::ReqP2pGetGroupConfig(int networkId, HalP2pGroupConfig
 
 WifiErrorNo WifiIdlClient::ReqP2pAddNetwork(int &networkId) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return P2pAddNetwork(&networkId);
 }
 
 WifiErrorNo WifiIdlClient::ReqP2pHid2dConnect(const Hid2dConnectConfig &config) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     Hid2dConnectInfo info;
     if (memset_s(&info, sizeof(info), 0, sizeof(info)) != EOK) {
         return WIFI_HAL_OPT_FAILED;
@@ -1874,13 +2117,17 @@ WifiErrorNo WifiIdlClient::ReqP2pHid2dConnect(const Hid2dConnectConfig &config) 
 
 WifiErrorNo WifiIdlClient::ReqWpaSetSuspendMode(bool mode) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return SetSuspendMode(mode);
 }
 
 WifiErrorNo WifiIdlClient::ReqWpaSetPowerMode(bool mode) const
 {
-    CHECK_CLIENT_NOT_NULL;
+    if (pRpcClient == nullptr) {
+        return WIFI_HAL_OPT_FAILED;
+    }
     return SetPowerMode(mode);
 }
 }  // namespace Wifi
