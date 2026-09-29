@@ -513,6 +513,9 @@ private:
     void StopP2pDhcpClient();
     void DoP2pArp(std::string serverIp, std::string clientIp);
     bool ReinvokeGroup(WifiP2pConfigInternal &config, int networkId, const WifiP2pDevice &device) const;
+#ifdef FEATURE_WITH_GO_SIMULATION_AP
+    bool ReuseRptPersistentGroup(const WifiP2pConfigInternal &config, int freq, int &netId) const;
+#endif
     void SetClientInfo(HalP2pGroupConfig &wpaConfig, WifiP2pGroupInfo &grpBuf) const;
     void FilterInvalidGroup() const;
     void InitChipSupportSignalAcquisitionFlag();

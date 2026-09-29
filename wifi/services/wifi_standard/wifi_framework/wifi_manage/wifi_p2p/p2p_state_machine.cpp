@@ -1272,9 +1272,58 @@ bool P2pStateMachine::CreateTempGroupWithConfig(const WifiP2pConfigInternal &con
     return ret != WIFI_HAL_OPT_FAILED;
 }
 
+#ifdef FEATURE_WITH_GO_SIMULATION_AP
+bool P2pStateMachine::ReuseRptPersistentGroup(const WifiP2pConfigInternal &config, int freq, int &netId) const
+{
+    UpdateGroupManager();
+    int existNetId = -1;
+    std::string oldPsk;
+    const std::string targetGroupName = config.GetGroupName();
+    if (targetGroupName.empty()) {
+        WIFI_LOGE("ReuseRptPersistentGroup: empty group name, skip reuse");
+        return false;
+    }
+    for (const auto &group : groupManager.GetGroups()) {
+        if (group.IsPersistent() && group.GetGroupName() == targetGroupName) {
+            existNetId = group.GetNetworkId();
+            oldPsk = group.GetPassphrase();
+            break;
+        }
+    }
+    if (existNetId < 0) {
+        return false;
+    }
+    WIFI_LOGI("ReuseRptPersistentGroup: reuse persistent networkId %{public}d", existNetId);
+    if (!config.GetPassphrase().empty() && config.GetPassphrase() != oldPsk) {
+        WifiErrorNo setRet = WifiP2PHalInterface::GetInstance().P2pSetSingleConfig(
+            existNetId, "psk", "\"" + config.GetPassphrase() + "\"");
+        if (setRet != WIFI_HAL_OPT_OK) {
+            WIFI_LOGE("ReuseRptPersistentGroup: update psk failed, fallback to create, ret=%{public}d",
+                static_cast<int>(setRet));
+            return false;
+        }
+    }
+    netId = existNetId;
+    WifiErrorNo reuseRet = WifiP2PHalInterface::GetInstance().GroupAdd(true, existNetId, freq);
+    if (reuseRet == WIFI_HAL_OPT_FAILED) {
+        WIFI_LOGE("ReuseRptPersistentGroup: GroupAdd failed, netId=%{public}d, ret=%{public}d",
+            existNetId, static_cast<int>(reuseRet));
+    }
+    UpdateGroupManager();
+    UpdatePersistentGroups();
+    return reuseRet != WIFI_HAL_OPT_FAILED;
+}
+#endif
+
 bool P2pStateMachine::DealCreateRptGroupWithConfig(const WifiP2pConfigInternal &config, int freq) const
 {
     int createdNetId = -1;
+#ifdef FEATURE_WITH_GO_SIMULATION_AP
+    bool reuseOk = ReuseRptPersistentGroup(config, freq, createdNetId);
+    if (createdNetId >= 0) {
+        return reuseOk;
+    }
+#endif
     WifiErrorNo ret = WifiP2PHalInterface::GetInstance().P2pAddNetwork(createdNetId);
     if (ret == WIFI_HAL_OPT_OK) {
         WifiP2PHalInterface::GetInstance().P2pSetSingleConfig(createdNetId, "rptid", std::to_string(createdNetId));
