@@ -30,6 +30,9 @@ let sslErrorCode_ = -1;
 let isUpload_ = false;
 let isPortalSuccess_ = 0;
 
+export function updatePortalSuccess(succeeded: number) {
+  isPortalSuccess_ = succeeded;
+}
 
 export function updateOnNewWant() {
   isOnNewWant_ = 1;
@@ -39,7 +42,7 @@ export function updateOnNewWant() {
   finalUrl_ = '';
   httpErrorCode_ = 0;
   errorCode_ = 0;
-  sslErrorCode_ = 0;
+  sslErrorCode_ = -1;
   isUpload_ = false;
 }
  
@@ -86,9 +89,6 @@ export function updateOnSslErrorEvent(code: number) {
 
 function portalHiSysEvent() {
   hilog.info(DOMAIN, TAG, '%{public}s', 'Enter portalHiSysEvent');
-  if (httpErrorCode_ == 0 && errorCode_ == 0 &&  sslErrorCode_ == 0) {
-    isPortalSuccess_ = 1;
-  }
   const eventValue: string = JSON.stringify({
     IS_ON_NEW_WANT: isOnNewWant_,
     BIND_NET_DURATION: bindNetDuration_,
@@ -118,14 +118,8 @@ function portalHiSysEvent() {
 }
 
 export function updateOnBackground() {
-  if ((httpErrorCode_ != 0 || errorCode_ != 0 || sslErrorCode_ != 0) && !isUpload_) {
+  if (!isUpload_) {
     portalHiSysEvent();
     isUpload_ = true;
-  }
-}
- 
-export function updateAboutToDisappear() {
-  if (!isUpload_){
-    portalHiSysEvent();
   }
 }
