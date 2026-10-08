@@ -30,8 +30,8 @@ import {
   modifyInputTypeCode
 } from '../common/utils';
 import {
-  updateFinalUrl, updateOnHttpErrorReceive, updateOnErrorReceive, updateOnSslErrorEvent, updateAboutToDisappear,
-  safeAnonymize
+  updateFinalUrl, updateOnHttpErrorReceive, updateOnErrorReceive, updateOnSslErrorEvent, safeAnonymize,
+  updatePortalSuccess
 } from '../common/chr';
 
 const DOMAIN = 0x01560;
@@ -1066,6 +1066,8 @@ struct Index {
     });
     this.netConnect.on('netAvailable', (data: connection.NetHandle) => {
       const ERR_NETWORK_CHANGED:number = -21;
+      const SUCCEEDED:number = 1;
+      updatePortalSuccess(SUCCEEDED);
       setTimeout(() => {
         if (this.webviewError === ERR_NETWORK_CHANGED) {
           hilog.info(DOMAIN, TAG, '%{public}s', 'web err refresh');
@@ -1083,7 +1085,10 @@ struct Index {
   }
 
   aboutToDisappear(): void {
-    updateAboutToDisappear();
+    this.netConnect.unregister((err: BusinessError) => {
+      hilog.error(
+        DOMAIN, TAG, '%{public}s', 'Failed to unregister netconnect.' + JSON.stringify(err));
+    });
     emitter.off('WANT_UPDATE');
   }
 }
