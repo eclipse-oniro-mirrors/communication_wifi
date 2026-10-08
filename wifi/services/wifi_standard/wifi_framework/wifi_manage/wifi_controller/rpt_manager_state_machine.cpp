@@ -500,7 +500,11 @@ void RptManagerMachine::StoppingState::StopRpt()
         pRptManagerMachine->SwitchState(pRptManagerMachine->pStoppedState);
         return;
     }
+#ifdef FEATURE_WITH_GO_SIMULATION_AP
+    pService->RemoveGroup();
+#else
     pService->DeleteGroup(group);
+#endif
 #endif
 }
 
