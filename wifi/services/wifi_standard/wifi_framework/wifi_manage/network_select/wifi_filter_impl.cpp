@@ -690,10 +690,16 @@ bool ValidConfigNetworkFilter::Filter(NetworkCandidate &networkCandidate)
 
     // portal network filtering
     if (networkCandidate.wifiDeviceConfig.isPortal) {
-        WIFI_LOGI("ValidConfigNetworkFilter, portal network, skip candidate:%{public}s",
-            networkCandidate.ToString().c_str());
-        networkCandidate.filtedReason[filterName].insert(FiltedReason::PORTAL_NETWORK);
-        return false;
+        if (IsCurrentPortalWeakAndSameSsid(networkCandidate)) {
+            WIFI_LOGI("ValidConfigNetworkFilter, current network is portal with weak signal,"
+                " relax protal filtering for same-ssid candidate:%{public}s",
+                networkCandidate.ToString().c_str());
+        } else {
+            WIFI_LOGI("ValidConfigNetworkFilter, portal network, skip candidate:%{public}s",
+                networkCandidate.ToString().c_str());
+            networkCandidate.filtedReason[filterName].insert(FiltedReason::PORTAL_NETWORK);
+            return false;
+        }
     }
 
     // disable network filtering
@@ -723,6 +729,34 @@ bool ValidConfigNetworkFilter::Filter(NetworkCandidate &networkCandidate)
         return false;
     }
 
+    return true;
+}
+
+bool ValidConfigNetworkFilter::IsCurrentPortalWeakAndSameSsid(const NetworkCandidate &networkCandidate) const
+{
+    WifiLinkedInfo linkedInfo;
+    if (WifiConfigCenter::GetInstance().GetLinkedInfo(linkedInfo) != WIFI_OPT_SUCCESS) {
+        return false;
+    }
+    WifiDeviceConfig currentConfig;
+    if (WifiSettings::GetInstance().GetDeviceConfig(linkedInfo.networkId, currentConfig) != 0) {
+        return false;
+    }
+    if (!currentConfig.isPortal) {
+        return false;
+    }
+    int32_t currentSignalLevel = WifiSettings::GetInstance().GetSignalLevel(linkedInfo.rssi, linkedInfo.band);
+    if (currentSignalLevel > SIGNAL_LEVEL_TWO) {
+        return false;
+    }
+    // Only relax for the same portal SSID (roaming to a different BSSID under
+    // the same network). Different SSID or same BSSID keeps original filtering.
+    if (networkCandidate.wifiDeviceConfig.ssid != currentConfig.ssid) {
+        return false;
+    }
+    if (networkCandidate.interScanInfo.bssid == linkedInfo.bssid) {
+        return false;
+    }
     return true;
 }
 

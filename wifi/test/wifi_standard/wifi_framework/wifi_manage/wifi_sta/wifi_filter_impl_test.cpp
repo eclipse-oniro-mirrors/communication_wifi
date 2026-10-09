@@ -14,12 +14,15 @@
  */
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <cstdint>
+#include <string>
 #include "wifi_filter_impl.h"
 #include "mock_wifi_settings.h"
 #include "network_selection_utils.h"
 #include "mock_wifi_config_center.h"
 #include "wifi_sensor_scene.h"
 #include "network_black_list_manager.h"
+#include "wifi_errcode.h"
 
 using ::testing::_;
 using ::testing::Return;
@@ -27,6 +30,9 @@ using ::testing::An;
 using ::testing::ext::TestSize;
 using ::testing::ReturnRoundRobin;
 using ::testing::Invoke;
+using ::testing::DoAll;
+using ::testing::SetArgReferee;
+using ::testing::TypedEq;
 
 namespace OHOS {
 namespace Wifi {
@@ -881,6 +887,571 @@ HWTEST_F(WifiFilterImplTest, Perf5gBlackListFilterTest_BssidNotInList_ShouldPass
 
     // Act & Assert: The filter should pass the candidate.
     EXPECT_TRUE(filter->DoFilter(candidate));
+}
+
+constexpr int SIGNAL_LEVEL_TWO = 2;
+
+/*
+ * Scenario: GetLinkedInfo fails (return non-WIFI_OPT_SUCCESS)
+ * Expected: IsCurrentPortalWeakAndSameSsid returns false
+ */
+HWTEST_F(WifiFilterImplTest, ValidConfigNetworkFilter_IsCurrentPortalWeakAndSameSsid_GetLinkedInfoFail, TestSize.Level1)
+{
+    InterScanInfo scanInfo;
+    scanInfo.bssid = "aa:bb:cc:dd:ee:01";
+    scanInfo.ssid = "TestSSID";
+    scanInfo.frequency = 2412;
+    scanInfo.band = static_cast<int>(BandType::BAND_2GHZ);
+    scanInfo.rssi = -60;
+    scanInfo.securityType = WifiSecurity::PSK;
+    scanInfo.channelWidth = WifiChannelWidth::WIDTH_20MHZ;
+    NetworkSelection::NetworkCandidate candidate(scanInfo);
+    candidate.wifiDeviceConfig.ssid = "TestSSID";
+    candidate.wifiDeviceConfig.bssid = "aa:bb:cc:dd:ee:01";
+    candidate.wifiDeviceConfig.networkId = 1;
+    candidate.wifiDeviceConfig.noInternetAccess = false;
+    candidate.wifiDeviceConfig.isPortal = false;
+    candidate.wifiDeviceConfig.isSecureWifi = true;
+    candidate.wifiDeviceConfig.isAllowAutoConnect = true;
+    candidate.wifiDeviceConfig.networkSelectionStatus.status = WifiDeviceConfigStatus::ENABLED;
+
+    NetworkSelection::ValidConfigNetworkFilter filter;
+
+    EXPECT_CALL(WifiConfigCenter::GetInstance(), GetLinkedInfo(_, _))
+        .WillOnce(Return(-1));
+    
+    bool result = filter.IsCurrentPortalWeakAndSameSsid(candidate);
+    EXPECT_FALSE(result);
+}
+
+/*
+ * Scenario: GetLinkedInfo succeeds but GetDeviceConfig fails (return non-zero)
+ * Expected: IsCurrentPortalWeakAndSameSsid returns false
+ */
+HWTEST_F(WifiFilterImplTest, ValidConfigNetworkFilter_IsCurrentPortalWeakAndSameSsid_GetDeviceConfigFail,
+    TestSize.Level1)
+{
+    InterScanInfo scanInfo;
+    scanInfo.bssid = "aa:bb:cc:dd:ee:01";
+    scanInfo.ssid = "TestSSID";
+    scanInfo.frequency = 2412;
+    scanInfo.band = static_cast<int>(BandType::BAND_2GHZ);
+    scanInfo.rssi = -60;
+    scanInfo.securityType = WifiSecurity::PSK;
+    scanInfo.channelWidth = WifiChannelWidth::WIDTH_20MHZ;
+    NetworkSelection::NetworkCandidate candidate(scanInfo);
+    candidate.wifiDeviceConfig.ssid = "TestSSID";
+    candidate.wifiDeviceConfig.bssid = "aa:bb:cc:dd:ee:01";
+    candidate.wifiDeviceConfig.networkId = 1;
+    candidate.wifiDeviceConfig.noInternetAccess = false;
+    candidate.wifiDeviceConfig.isPortal = false;
+    candidate.wifiDeviceConfig.isSecureWifi = true;
+    candidate.wifiDeviceConfig.isAllowAutoConnect = true;
+    candidate.wifiDeviceConfig.networkSelectionStatus.status = WifiDeviceConfigStatus::ENABLED;
+
+    NetworkSelection::ValidConfigNetworkFilter filter;
+    WifiLinkedInfo linkedInfo;
+    linkedInfo.networkId = 1;
+    linkedInfo.bssid = "aa:bb:cc:dd:ee:02";
+    linkedInfo.rssi = -70;
+    linkedInfo.band = static_cast<int>(BandType::BAND_2GHZ);
+
+    EXPECT_CALL(WifiConfigCenter::GetInstance(), GetLinkedInfo(_, _))
+        .WillOnce(DoAll(SetArgReferee<0>(linkedInfo), Return(WIFI_OPT_SUCCESS)));
+    EXPECT_CALL(WifiSettings::GetInstance(), GetDeviceConfig(TypedEq<const int&>(1), _, _))
+        .WillOnce(Return(-1));
+    
+    bool result = filter.IsCurrentPortalWeakAndSameSsid(candidate);
+    EXPECT_FALSE(result);
+}
+
+/*
+ * Scenario: Current network is NOT a portal (currentConfig.isPortal == false)
+ * Expected: IsCurrentPortalWeakAndSameSsid returns false
+ */
+HWTEST_F(WifiFilterImplTest, ValidConfigNetworkFilter_IsCurrentPortalWeakAndSameSsid_CurrentNotPortal, TestSize.Level1)
+{
+    InterScanInfo scanInfo;
+    scanInfo.bssid = "aa:bb:cc:dd:ee:01";
+    scanInfo.ssid = "TestSSID";
+    scanInfo.frequency = 2412;
+    scanInfo.band = static_cast<int>(BandType::BAND_2GHZ);
+    scanInfo.rssi = -60;
+    scanInfo.securityType = WifiSecurity::PSK;
+    scanInfo.channelWidth = WifiChannelWidth::WIDTH_20MHZ;
+    NetworkSelection::NetworkCandidate candidate(scanInfo);
+    candidate.wifiDeviceConfig.ssid = "TestSSID";
+    candidate.wifiDeviceConfig.bssid = "aa:bb:cc:dd:ee:01";
+    candidate.wifiDeviceConfig.networkId = 1;
+    candidate.wifiDeviceConfig.noInternetAccess = false;
+    candidate.wifiDeviceConfig.isPortal = false;
+    candidate.wifiDeviceConfig.isSecureWifi = true;
+    candidate.wifiDeviceConfig.isAllowAutoConnect = true;
+    candidate.wifiDeviceConfig.networkSelectionStatus.status = WifiDeviceConfigStatus::ENABLED;
+
+    NetworkSelection::ValidConfigNetworkFilter filter;
+    WifiLinkedInfo linkedInfo;
+    linkedInfo.networkId = 1;
+    linkedInfo.bssid = "aa:bb:cc:dd:ee:02";
+    linkedInfo.rssi = -70;
+    linkedInfo.band = static_cast<int>(BandType::BAND_2GHZ);
+
+    WifiDeviceConfig currentConfig;
+    currentConfig.ssid = "TestSSID";
+    currentConfig.isPortal = false;
+
+    EXPECT_CALL(WifiConfigCenter::GetInstance(), GetLinkedInfo(_, _))
+        .WillOnce(DoAll(SetArgReferee<0>(linkedInfo), Return(WIFI_OPT_SUCCESS)));
+    EXPECT_CALL(WifiSettings::GetInstance(), GetDeviceConfig(TypedEq<const int&>(1), _, _))
+        .WillOnce(DoAll(SetArgReferee<1>(currentConfig), Return(0)));
+    
+    bool result = filter.IsCurrentPortalWeakAndSameSsid(candidate);
+    EXPECT_FALSE(result);
+}
+
+/*
+ * Scenario: Current signal level is strong (> SIGNAL_LEVEL_TWO, i.e., > 2)
+ * Expected: IsCurrentPortalWeakAndSameSsid returns false
+ */
+HWTEST_F(WifiFilterImplTest, ValidConfigNetworkFilter_IsCurrentPortalWeakAndSameSsid_SignalStrong, TestSize.Level1)
+{
+    InterScanInfo scanInfo;
+    scanInfo.bssid = "aa:bb:cc:dd:ee:01";
+    scanInfo.ssid = "TestSSID";
+    scanInfo.frequency = 2412;
+    scanInfo.band = static_cast<int>(BandType::BAND_2GHZ);
+    scanInfo.rssi = -60;
+    scanInfo.securityType = WifiSecurity::PSK;
+    scanInfo.channelWidth = WifiChannelWidth::WIDTH_20MHZ;
+    NetworkSelection::NetworkCandidate candidate(scanInfo);
+    candidate.wifiDeviceConfig.ssid = "TestSSID";
+    candidate.wifiDeviceConfig.bssid = "aa:bb:cc:dd:ee:01";
+    candidate.wifiDeviceConfig.networkId = 1;
+    candidate.wifiDeviceConfig.noInternetAccess = false;
+    candidate.wifiDeviceConfig.isPortal = false;
+    candidate.wifiDeviceConfig.isSecureWifi = true;
+    candidate.wifiDeviceConfig.isAllowAutoConnect = true;
+    candidate.wifiDeviceConfig.networkSelectionStatus.status = WifiDeviceConfigStatus::ENABLED;
+
+    NetworkSelection::ValidConfigNetworkFilter filter;
+    WifiLinkedInfo linkedInfo;
+    linkedInfo.networkId = 1;
+    linkedInfo.bssid = "aa:bb:cc:dd:ee:02";
+    linkedInfo.rssi = -40;
+    linkedInfo.band = static_cast<int>(BandType::BAND_2GHZ);
+
+    WifiDeviceConfig currentConfig;
+    currentConfig.ssid = "TestSSID";
+    currentConfig.isPortal = true;
+
+    EXPECT_CALL(WifiConfigCenter::GetInstance(), GetLinkedInfo(_, _))
+        .WillOnce(DoAll(SetArgReferee<0>(linkedInfo), Return(WIFI_OPT_SUCCESS)));
+    EXPECT_CALL(WifiSettings::GetInstance(), GetDeviceConfig(TypedEq<const int&>(1), _, _))
+        .WillOnce(DoAll(SetArgReferee<1>(currentConfig), Return(0)));
+    EXPECT_CALL(WifiSettings::GetInstance(), GetSignalLevel(_, _, _))
+        .WillOnce(Return(4));
+    
+    bool result = filter.IsCurrentPortalWeakAndSameSsid(candidate);
+    EXPECT_FALSE(result);
+}
+
+/*
+ * Scenario: Different SSID between candidate and current
+ * Expected: IsCurrentPortalWeakAndSameSsid returns false
+ */
+HWTEST_F(WifiFilterImplTest, ValidConfigNetworkFilter_IsCurrentPortalWeakAndSameSsid_DifferentSsid, TestSize.Level1)
+{
+    InterScanInfo scanInfo;
+    scanInfo.bssid = "aa:bb:cc:dd:ee:03";
+    scanInfo.ssid = "TestSSID";
+    scanInfo.frequency = 2412;
+    scanInfo.band = static_cast<int>(BandType::BAND_2GHZ);
+    scanInfo.rssi = -60;
+    scanInfo.securityType = WifiSecurity::PSK;
+    scanInfo.channelWidth = WifiChannelWidth::WIDTH_20MHZ;
+    NetworkSelection::NetworkCandidate candidate(scanInfo);
+    candidate.wifiDeviceConfig.ssid = "DifferentSSID";
+
+    NetworkSelection::ValidConfigNetworkFilter filter;
+    WifiLinkedInfo linkedInfo;
+    linkedInfo.networkId = 1;
+    linkedInfo.bssid = "aa:bb:cc:dd:ee:02";
+    linkedInfo.rssi = -80;
+    linkedInfo.band = static_cast<int>(BandType::BAND_2GHZ);
+
+    WifiDeviceConfig currentConfig;
+    currentConfig.ssid = "TestSSID";
+    currentConfig.isPortal = true;
+
+    EXPECT_CALL(WifiConfigCenter::GetInstance(), GetLinkedInfo(_, _))
+        .WillOnce(DoAll(SetArgReferee<0>(linkedInfo), Return(WIFI_OPT_SUCCESS)));
+    EXPECT_CALL(WifiSettings::GetInstance(), GetDeviceConfig(TypedEq<const int&>(1), _, _))
+        .WillOnce(DoAll(SetArgReferee<1>(currentConfig), Return(0)));
+    EXPECT_CALL(WifiSettings::GetInstance(), GetSignalLevel(_, _, _))
+        .WillOnce(Return(SIGNAL_LEVEL_TWO));
+    
+    bool result = filter.IsCurrentPortalWeakAndSameSsid(candidate);
+    EXPECT_FALSE(result);
+}
+
+/*
+ * Scenario: Same BSSID between candidate and current (not a different AP)
+ * Expected: IsCurrentPortalWeakAndSameSsid returns false
+ */
+HWTEST_F(WifiFilterImplTest, ValidConfigNetworkFilter_IsCurrentPortalWeakAndSameSsid_SameBssid, TestSize.Level1)
+{
+    std::string sameBssid = "aa:bb:cc:dd:ee:99";
+    InterScanInfo scanInfo;
+    scanInfo.bssid = sameBssid;
+    scanInfo.ssid = "TestSSID";
+    scanInfo.frequency = 2412;
+    scanInfo.band = static_cast<int>(BandType::BAND_2GHZ);
+    scanInfo.rssi = -60;
+    scanInfo.securityType = WifiSecurity::PSK;
+    scanInfo.channelWidth = WifiChannelWidth::WIDTH_20MHZ;
+    NetworkSelection::NetworkCandidate candidate(scanInfo);
+    candidate.wifiDeviceConfig.ssid = "TestSSID";
+
+    NetworkSelection::ValidConfigNetworkFilter filter;
+    WifiLinkedInfo linkedInfo;
+    linkedInfo.networkId = 1;
+    linkedInfo.bssid = sameBssid;
+    linkedInfo.rssi = -80;
+    linkedInfo.band = static_cast<int>(BandType::BAND_2GHZ);
+
+    WifiDeviceConfig currentConfig;
+    currentConfig.ssid = "TestSSID";
+    currentConfig.isPortal = true;
+
+    EXPECT_CALL(WifiConfigCenter::GetInstance(), GetLinkedInfo(_, _))
+        .WillOnce(DoAll(SetArgReferee<0>(linkedInfo), Return(WIFI_OPT_SUCCESS)));
+    EXPECT_CALL(WifiSettings::GetInstance(), GetDeviceConfig(TypedEq<const int&>(1), _, _))
+        .WillOnce(DoAll(SetArgReferee<1>(currentConfig), Return(0)));
+    EXPECT_CALL(WifiSettings::GetInstance(), GetSignalLevel(_, _, _))
+        .WillOnce(Return(SIGNAL_LEVEL_TWO));
+    
+    bool result = filter.IsCurrentPortalWeakAndSameSsid(candidate);
+    EXPECT_FALSE(result);
+}
+
+/*
+ * Scenario: All conditions met -- portal, weak signal, same SSID, different BSSID
+ * Expected: IsCurrentPortalWeakAndSameSsid returns true
+ */
+HWTEST_F(WifiFilterImplTest, ValidConfigNetworkFilter_IsCurrentPortalWeakAndSameSsid_AllConditionsMet, TestSize.Level1)
+{
+    InterScanInfo scanInfo;
+    scanInfo.bssid = "aa:bb:cc:dd:ee:03";
+    scanInfo.ssid = "TestSSID";
+    scanInfo.frequency = 2412;
+    scanInfo.band = static_cast<int>(BandType::BAND_2GHZ);
+    scanInfo.rssi = -60;
+    scanInfo.securityType = WifiSecurity::PSK;
+    scanInfo.channelWidth = WifiChannelWidth::WIDTH_20MHZ;
+    NetworkSelection::NetworkCandidate candidate(scanInfo);
+    candidate.wifiDeviceConfig.ssid = "TestSSID";
+
+    NetworkSelection::ValidConfigNetworkFilter filter;
+    WifiLinkedInfo linkedInfo;
+    linkedInfo.networkId = 1;
+    linkedInfo.bssid = "aa:bb:cc:dd:ee:02";
+    linkedInfo.rssi = -80;
+    linkedInfo.band = static_cast<int>(BandType::BAND_2GHZ);
+
+    WifiDeviceConfig currentConfig;
+    currentConfig.ssid = "TestSSID";
+    currentConfig.isPortal = true;
+
+    EXPECT_CALL(WifiConfigCenter::GetInstance(), GetLinkedInfo(_, _))
+        .WillOnce(DoAll(SetArgReferee<0>(linkedInfo), Return(WIFI_OPT_SUCCESS)));
+    EXPECT_CALL(WifiSettings::GetInstance(), GetDeviceConfig(TypedEq<const int&>(1), _, _))
+        .WillOnce(DoAll(SetArgReferee<1>(currentConfig), Return(0)));
+    EXPECT_CALL(WifiSettings::GetInstance(), GetSignalLevel(_, _, _))
+        .WillOnce(Return(SIGNAL_LEVEL_TWO));
+    
+    bool result = filter.IsCurrentPortalWeakAndSameSsid(candidate);
+    EXPECT_TRUE(result);
+}
+
+/*
+ * Scenario: Signal level exactly equals boundary value 2 (SIGNAL_LEVEL_TWO)
+ * Expected: IsCurrentPortalWeakAndSameSsid returns true (boundary <= 2)
+ */
+HWTEST_F(WifiFilterImplTest, ValidConfigNetworkFilter_IsCurrentPortalWeakAndSameSsid_SignalLevelBoundaryEq2,
+    TestSize.Level1)
+{
+    InterScanInfo scanInfo;
+    scanInfo.bssid = "aa:bb:cc:dd:ee:04";
+    scanInfo.ssid = "PortalSSID";
+    scanInfo.frequency = 2412;
+    scanInfo.band = static_cast<int>(BandType::BAND_2GHZ);
+    scanInfo.rssi = -60;
+    scanInfo.securityType = WifiSecurity::PSK;
+    scanInfo.channelWidth = WifiChannelWidth::WIDTH_20MHZ;
+    NetworkSelection::NetworkCandidate candidate(scanInfo);
+    candidate.wifiDeviceConfig.ssid = "PortalSSID";
+
+    NetworkSelection::ValidConfigNetworkFilter filter;
+    WifiLinkedInfo linkedInfo;
+    linkedInfo.networkId = 2;
+    linkedInfo.bssid = "aa:bb:cc:dd:ee:05";
+    linkedInfo.rssi = -78;
+    linkedInfo.band = static_cast<int>(BandType::BAND_2GHZ);
+
+    WifiDeviceConfig currentConfig;
+    currentConfig.ssid = "PortalSSID";
+    currentConfig.isPortal = true;
+
+    EXPECT_CALL(WifiConfigCenter::GetInstance(), GetLinkedInfo(_, _))
+        .WillOnce(DoAll(SetArgReferee<0>(linkedInfo), Return(WIFI_OPT_SUCCESS)));
+    EXPECT_CALL(WifiSettings::GetInstance(), GetDeviceConfig(TypedEq<const int&>(2), _, _))
+        .WillOnce(DoAll(SetArgReferee<1>(currentConfig), Return(0)));
+    EXPECT_CALL(WifiSettings::GetInstance(), GetSignalLevel(_, _, _))
+        .WillOnce(Return(2));
+    
+    bool result = filter.IsCurrentPortalWeakAndSameSsid(candidate);
+    EXPECT_TRUE(result);
+}
+
+/*
+ * Scenario: Signal level == 1 (below boundary, still weak)
+ * Expected: IsCurrentPortalWeakAndSameSsid returns true
+ */
+HWTEST_F(WifiFilterImplTest, ValidConfigNetworkFilter_IsCurrentPortalWeakAndSameSsid_SignalLevel1, TestSize.Level1)
+{
+    InterScanInfo scanInfo;
+    scanInfo.bssid = "aa:bb:cc:dd:ee:06";
+    scanInfo.ssid = "WeakPortal";
+    scanInfo.frequency = 5180;
+    scanInfo.band = static_cast<int>(BandType::BAND_5GHZ);
+    scanInfo.rssi = -90;
+    scanInfo.securityType = WifiSecurity::PSK;
+    scanInfo.channelWidth = WifiChannelWidth::WIDTH_20MHZ;
+    NetworkSelection::NetworkCandidate candidate(scanInfo);
+    candidate.wifiDeviceConfig.ssid = "WeakPortal";
+
+    NetworkSelection::ValidConfigNetworkFilter filter;
+    WifiLinkedInfo linkedInfo;
+    linkedInfo.networkId = 3;
+    linkedInfo.bssid = "aa:bb:cc:dd:ee:07";
+    linkedInfo.rssi = -90;
+    linkedInfo.band = static_cast<int>(BandType::BAND_5GHZ);
+
+    WifiDeviceConfig currentConfig;
+    currentConfig.ssid = "WeakPortal";
+    currentConfig.isPortal = true;
+
+    EXPECT_CALL(WifiConfigCenter::GetInstance(), GetLinkedInfo(_, _))
+        .WillOnce(DoAll(SetArgReferee<0>(linkedInfo), Return(WIFI_OPT_SUCCESS)));
+    EXPECT_CALL(WifiSettings::GetInstance(), GetDeviceConfig(TypedEq<const int&>(3), _, _))
+        .WillOnce(DoAll(SetArgReferee<1>(currentConfig), Return(0)));
+    EXPECT_CALL(WifiSettings::GetInstance(), GetSignalLevel(_, _, _))
+        .WillOnce(Return(1));
+    
+    bool result = filter.IsCurrentPortalWeakAndSameSsid(candidate);
+    EXPECT_TRUE(result);
+}
+
+/*
+ * Scenario: Portal network + IsCurrentPortalWeakAndSameSsid returns true (relaxed)
+ * Expected: Filter returns true (portal filtering relaxed for roaming)
+ * Note: This tests the portal branch in Filter where the relaxation condition holds.
+ */
+HWTEST_F(WifiFilterImplTest, ValidConfigNetworkFilter_Filter_PortalRelaxedReturnsTrue, TestSize.Level1)
+{
+    InterScanInfo scanInfo;
+    scanInfo.bssid = "aa:bb:cc:dd:ee:10";
+    scanInfo.ssid = "PortalNet";
+    scanInfo.frequency = 2412;
+    scanInfo.band = static_cast<int>(BandType::BAND_2GHZ);
+    scanInfo.rssi = -60;
+    scanInfo.securityType = WifiSecurity::PSK;
+    scanInfo.channelWidth = WifiChannelWidth::WIDTH_20MHZ;
+    NetworkSelection::NetworkCandidate candidate(scanInfo);
+    candidate.wifiDeviceConfig.ssid = "PortalNet";
+    candidate.wifiDeviceConfig.noInternetAccess = false;
+    candidate.wifiDeviceConfig.isPortal = true;
+    candidate.wifiDeviceConfig.isSecureWifi = true;
+    candidate.wifiDeviceConfig.isAllowAutoConnect = true;
+    candidate.wifiDeviceConfig.networkSelectionStatus.status = WifiDeviceConfigStatus::ENABLED;
+
+    NetworkSelection::ValidConfigNetworkFilter filter;
+
+    WifiLinkedInfo linkedInfo;
+    linkedInfo.networkId = 5;
+    linkedInfo.bssid = "aa:bb:cc:dd:ee:11";
+    linkedInfo.rssi = -80;
+    linkedInfo.band = static_cast<int>(BandType::BAND_2GHZ);
+
+    WifiDeviceConfig currentConfig;
+    currentConfig.ssid = "PortalNet";
+    currentConfig.isPortal = true;
+
+    EXPECT_CALL(WifiConfigCenter::GetInstance(), GetLinkedInfo(_, _))
+        .WillOnce(DoAll(SetArgReferee<0>(linkedInfo), Return(WIFI_OPT_SUCCESS)));
+    EXPECT_CALL(WifiSettings::GetInstance(), GetDeviceConfig(TypedEq<const int&>(5), _, _))
+        .WillOnce(DoAll(SetArgReferee<1>(currentConfig), Return(0)));
+    EXPECT_CALL(WifiSettings::GetInstance(), GetSignalLevel(_, _, _))
+        .WillOnce(Return(SIGNAL_LEVEL_TWO));
+    
+    bool result = filter.Filter(candidate);
+    bool hasPortalReason = candidate.filtedReason["ValidConfigNetwork"].count(
+        NetworkSelection::FiltedReason::PORTAL_NETWORK) > 0;
+    EXPECT_FALSE(hasPortalReason);
+}
+
+/*
+ * Scenario: Portal network + IsCurrentPortalWeakAndSameSsid returns false (strict filtering)
+ * Expected: Filter returns false and adds PORTAL_NETWORK to filtedReason
+ */
+HWTEST_F(WifiFilterImplTest, ValidConfigNetworkFilter_Filter_PortalStrictReturnsFalse, TestSize.Level1)
+{
+    InterScanInfo scanInfo;
+    scanInfo.bssid = "aa:bb:cc:dd:ee:01";
+    scanInfo.ssid = "TestSSID";
+    scanInfo.frequency = 2412;
+    scanInfo.band = static_cast<int>(BandType::BAND_2GHZ);
+    scanInfo.rssi = -60;
+    scanInfo.securityType = WifiSecurity::PSK;
+    scanInfo.channelWidth = WifiChannelWidth::WIDTH_20MHZ;
+    NetworkSelection::NetworkCandidate candidate(scanInfo);
+    candidate.wifiDeviceConfig.ssid = "PortalNet";
+    candidate.wifiDeviceConfig.noInternetAccess = false;
+    candidate.wifiDeviceConfig.isPortal = true;
+    candidate.wifiDeviceConfig.networkId = 10;
+    candidate.wifiDeviceConfig.isSecureWifi = true;
+    candidate.wifiDeviceConfig.isAllowAutoConnect = true;
+    candidate.wifiDeviceConfig.networkSelectionStatus.status = WifiDeviceConfigStatus::ENABLED;
+
+    NetworkSelection::ValidConfigNetworkFilter filter;
+
+    EXPECT_CALL(WifiConfigCenter::GetInstance(), GetLinkedInfo(_, _))
+        .WillOnce(Return(-1));
+    
+    bool result = filter.Filter(candidate);
+    bool hasPortalReason = candidate.filtedReason["ValidConfigNetwork"].count(
+        NetworkSelection::FiltedReason::PORTAL_NETWORK) > 0;
+    EXPECT_TRUE(hasPortalReason);
+}
+
+/*
+ * Scenario: Non-portal network passes the portal check (continues to next checks)
+ * Expected: Filter does NOT add PORTAL_NETWORK reason at the portal branch
+ */
+HWTEST_F(WifiFilterImplTest, ValidConfigNetworkFilter_Filter_NonPortalPassesPortalCheck, TestSize.Level1)
+{
+    InterScanInfo scanInfo;
+    scanInfo.bssid = "aa:bb:cc:dd:ee:01";
+    scanInfo.ssid = "TestSSID";
+    scanInfo.frequency = 2412;
+    scanInfo.band = static_cast<int>(BandType::BAND_2GHZ);
+    scanInfo.rssi = -60;
+    scanInfo.securityType = WifiSecurity::PSK;
+    scanInfo.channelWidth = WifiChannelWidth::WIDTH_20MHZ;
+    NetworkSelection::NetworkCandidate candidate(scanInfo);
+    candidate.wifiDeviceConfig.ssid = "NormalNet";
+    candidate.wifiDeviceConfig.noInternetAccess = false;
+    candidate.wifiDeviceConfig.isPortal = false;
+    candidate.wifiDeviceConfig.networkId = 20;
+    candidate.wifiDeviceConfig.isSecureWifi = true;
+    candidate.wifiDeviceConfig.isAllowAutoConnect = true;
+    candidate.wifiDeviceConfig.networkSelectionStatus.status = WifiDeviceConfigStatus::ENABLED;
+
+    NetworkSelection::ValidConfigNetworkFilter filter;
+    
+    bool result = filter.Filter(candidate);
+
+    bool hasPortalReason = candidate.filtedReason["ValidConfigNetwork"].count(
+        NetworkSelection::FiltedReason::PORTAL_NETWORK) > 0;
+    EXPECT_FALSE(hasPortalReason);
+}
+
+/*
+ * Scenario: Portal network, GetLinkedInfo succeeds, current is portal, but signal level == 3 (>2)
+ * Expected: IsCurrentPortalWeakAndSameSsid returns false (signal not weak enough)
+ */
+HWTEST_F(WifiFilterImplTest, ValidConfigNetworkFilter_IsCurrentPortalWeakAndSameSsid_SignalLevel3, TestSize.Level1)
+{
+    InterScanInfo scanInfo;
+    scanInfo.bssid = "aa:bb:cc:dd:ee:20";
+    scanInfo.ssid = "TestSSID";
+    scanInfo.frequency = 2412;
+    scanInfo.band = static_cast<int>(BandType::BAND_2GHZ);
+    scanInfo.rssi = -60;
+    scanInfo.securityType = WifiSecurity::PSK;
+    scanInfo.channelWidth = WifiChannelWidth::WIDTH_20MHZ;
+    NetworkSelection::NetworkCandidate candidate(scanInfo);
+    candidate.wifiDeviceConfig.ssid = "TestSSID";
+
+    NetworkSelection::ValidConfigNetworkFilter filter;
+    WifiLinkedInfo linkedInfo;
+    linkedInfo.networkId = 1;
+    linkedInfo.bssid = "aa:bb:cc:dd:ee:21";
+    linkedInfo.rssi = -50;
+    linkedInfo.band = static_cast<int>(BandType::BAND_2GHZ);
+
+    WifiDeviceConfig currentConfig;
+    currentConfig.ssid = "TestSSID";
+    currentConfig.isPortal = true;
+
+    EXPECT_CALL(WifiConfigCenter::GetInstance(), GetLinkedInfo(_, _))
+        .WillOnce(DoAll(SetArgReferee<0>(linkedInfo), Return(WIFI_OPT_SUCCESS)));
+    EXPECT_CALL(WifiSettings::GetInstance(), GetDeviceConfig(TypedEq<const int&>(1), _, _))
+        .WillOnce(DoAll(SetArgReferee<1>(currentConfig), Return(0)));
+    EXPECT_CALL(WifiSettings::GetInstance(), GetSignalLevel(_, _, _))
+        .WillOnce(Return(3));
+    
+    bool result = filter.IsCurrentPortalWeakAndSameSsid(candidate);
+    EXPECT_FALSE(result);
+}
+
+/*
+ * Scenario: Portal strict filtering -- candidate is portal, all pre-portal checks pass,
+ *  IsCurrentPortalWeakAndSameSsid returns false because current is NOT portal
+ * Expected: Filter returns false with PORTAL_NETWORK reason
+ */
+HWTEST_F(WifiFilterImplTest, ValidConfigNetworkFilter_Filter_PortalStrict_CurrentNotPortal, TestSize.Level1)
+{
+    InterScanInfo scanInfo;
+    scanInfo.bssid = "aa:bb:cc:dd:ee:01";
+    scanInfo.ssid = "TestSSID";
+    scanInfo.frequency = 2412;
+    scanInfo.band = static_cast<int>(BandType::BAND_2GHZ);
+    scanInfo.rssi = -60;
+    scanInfo.securityType = WifiSecurity::PSK;
+    scanInfo.channelWidth = WifiChannelWidth::WIDTH_20MHZ;
+    NetworkSelection::NetworkCandidate candidate(scanInfo);
+    candidate.wifiDeviceConfig.ssid = "PortalCandidate";
+    candidate.wifiDeviceConfig.noInternetAccess = false;
+    candidate.wifiDeviceConfig.isPortal = true;
+    candidate.wifiDeviceConfig.networkId = 30;
+    candidate.wifiDeviceConfig.isSecureWifi = true;
+    candidate.wifiDeviceConfig.isAllowAutoConnect = true;
+    candidate.wifiDeviceConfig.networkSelectionStatus.status = WifiDeviceConfigStatus::ENABLED;
+
+
+    NetworkSelection::ValidConfigNetworkFilter filter;
+
+    WifiLinkedInfo linkedInfo;
+    linkedInfo.networkId = 30;
+    linkedInfo.bssid = "aa:bb:cc:dd:ee:30";
+    linkedInfo.rssi = -80;
+    linkedInfo.band = static_cast<int>(BandType::BAND_2GHZ);
+
+    WifiDeviceConfig currentConfig;
+    currentConfig.ssid = "NormalNet";
+    currentConfig.isPortal = false;
+
+    EXPECT_CALL(WifiConfigCenter::GetInstance(), GetLinkedInfo(_, _))
+        .WillOnce(DoAll(SetArgReferee<0>(linkedInfo), Return(WIFI_OPT_SUCCESS)));
+    EXPECT_CALL(WifiSettings::GetInstance(), GetDeviceConfig(TypedEq<const int&>(30), _, _))
+        .WillOnce(DoAll(SetArgReferee<1>(currentConfig), Return(0)));
+    
+    bool result = filter.Filter(candidate);
+    EXPECT_FALSE(result);
+    bool hasPortalReason = candidate.filtedReason["ValidConfigNetwork"].count(
+        NetworkSelection::FiltedReason::PORTAL_NETWORK) > 0;
+    EXPECT_TRUE(hasPortalReason);
 }
 }
 }
