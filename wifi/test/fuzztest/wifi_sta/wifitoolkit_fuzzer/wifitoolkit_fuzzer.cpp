@@ -37,6 +37,10 @@
 #include "wifi_channel_helper.h"
 #include "network_selection.h"
 #include "network_selector_factory.h"
+#include "wifi_filter_impl.h"
+#include "wifi_scorer_impl.h"
+#include "wifi_comparator_impl.h"
+#include "network_selector_impl.h"
 #include "wifi_watchdog_utils.h"
 #include <mutex>
 #include <fuzzer/FuzzedDataProvider.h>
@@ -429,6 +433,430 @@ void WifiWatchDogUtilsTest()
     m_WifiWatchDogUtils->ReportResetEvent(threadName);
 }
 
+void BuildScanInfoFromFuzz(InterScanInfo &scanInfo)
+{
+    scanInfo.ssid = FDP->ConsumeBytesAsString(NUM_BYTES);
+    scanInfo.bssid = FDP->ConsumeBytesAsString(NUM_BYTES);
+    scanInfo.capabilities = FDP->ConsumeBytesAsString(NUM_BYTES);
+    scanInfo.frequency = FDP->ConsumeIntegral<int>();
+    scanInfo.band = FDP->ConsumeIntegral<int>();
+    scanInfo.rssi = FDP->ConsumeIntegral<int>();
+    scanInfo.securityType = static_cast<WifiSecurity>(FDP->ConsumeIntegral<int>());
+    scanInfo.riskType = static_cast<WifiRiskType>(FDP->ConsumeIntegral<int>());
+    scanInfo.supportedWifiCategory = static_cast<WifiCategory>(FDP->ConsumeIntegral<int>());
+}
+
+void BuildDeviceConfigFromFuzz(NetworkSelection::NetworkCandidate &candidate)
+{
+    candidate.wifiDeviceConfig.networkId = FDP->ConsumeIntegral<int>();
+    candidate.wifiDeviceConfig.uid = FDP->ConsumeIntegral<int>();
+    candidate.wifiDeviceConfig.isShared = FDP->ConsumeBool();
+    candidate.wifiDeviceConfig.isEphemeral = FDP->ConsumeBool();
+    candidate.wifiDeviceConfig.isPasspoint = FDP->ConsumeBool();
+    candidate.wifiDeviceConfig.isAllowAutoConnect = FDP->ConsumeBool();
+    candidate.wifiDeviceConfig.isSecureWifi = FDP->ConsumeBool();
+    candidate.wifiDeviceConfig.noInternetAccess = FDP->ConsumeBool();
+    candidate.wifiDeviceConfig.isPortal = FDP->ConsumeBool();
+    candidate.wifiDeviceConfig.userSelectBssid = FDP->ConsumeBytesAsString(NUM_BYTES);
+    candidate.wifiDeviceConfig.keyMgmt = FDP->ConsumeBytesAsString(NUM_BYTES);
+    candidate.wifiDeviceConfig.lastHasInternetTime = FDP->ConsumeIntegral<int64_t>();
+    candidate.wifiDeviceConfig.lastDisconnectTime = FDP->ConsumeIntegral<int64_t>();
+    candidate.wifiDeviceConfig.networkSelectionStatus.status =
+        static_cast<WifiDeviceConfigStatus>(FDP->ConsumeIntegral<int>());
+}
+
+void WifiFilterImplTest1(NetworkSelection::NetworkCandidate &candidate)
+{
+    {
+        NetworkSelection::HiddenWifiFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+    {
+        NetworkSelection::SignalStrengthWifiFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+    {
+        NetworkSelection::SavedWifiFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+    {
+        NetworkSelection::EphemeralWifiFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+    {
+        NetworkSelection::PassPointWifiFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+    {
+        NetworkSelection::DisableWifiFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+    {
+        NetworkSelection::MatchedUserSelectBssidWifiFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+    {
+        NetworkSelection::HasInternetWifiFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+    {
+        NetworkSelection::RecoveryWifiFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+    {
+        NetworkSelection::PoorPortalWifiFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+}
+
+void WifiFilterImplTest2(NetworkSelection::NetworkCandidate &candidate)
+{
+    {
+        NetworkSelection::PortalWifiFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+    {
+        NetworkSelection::MaybePortalWifiFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+    {
+        NetworkSelection::NoInternetWifiFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+    {
+        NetworkSelection::WeakAlgorithmWifiFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+    {
+        NetworkSelection::NotCurrentNetworkFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+    {
+        NetworkSelection::SameBssidNetworkFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+    {
+        NetworkSelection::SignalLevelFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+    {
+        NetworkSelection::ValidNetworkIdFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+    {
+        NetworkSelection::NotNetworkBlackListFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+    {
+        NetworkSelection::NotP2pFreqAt5gFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+}
+
+void WifiFilterImplTest3(NetworkSelection::NetworkCandidate &candidate)
+{
+    {
+        NetworkSelection::ValidConfigNetworkFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+    {
+        int32_t rssiInterval = FDP->ConsumeIntegral<int32_t>();
+        NetworkSelection::WifiSwitchThresholdFilter filter(rssiInterval);
+        (void)filter.DoFilter(candidate);
+    }
+    {
+        NetworkSelection::SuggestionNetworkWifiFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+    {
+        NetworkSelection::WifiSwitchThresholdQoeFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+    {
+        NetworkSelection::WifiSwitch5GNot2GFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+    {
+        NetworkSelection::SecureNetworkFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+    {
+        NetworkSelection::HigherCategoryFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+    {
+        NetworkSelection::Perf5gBlackListFilter filter;
+        (void)filter.DoFilter(candidate);
+    }
+}
+
+void WifiFilterImplTest()
+{
+    InterScanInfo scanInfo;
+    BuildScanInfoFromFuzz(scanInfo);
+    NetworkSelection::NetworkCandidate candidate(scanInfo);
+    BuildDeviceConfigFromFuzz(candidate);
+    WifiFilterImplTest1(candidate);
+    WifiFilterImplTest2(candidate);
+    WifiFilterImplTest3(candidate);
+}
+
+void WifiScorerImplTest1(NetworkSelection::NetworkCandidate &candidate)
+{
+    NetworkSelection::ScoreResult scoreResult;
+    {
+        NetworkSelection::RssiScorer scorer;
+        scorer.DoScore(candidate, scoreResult);
+    }
+    {
+        NetworkSelection::LastHaveInternetTimeScorer scorer;
+        scorer.DoScore(candidate, scoreResult);
+    }
+    {
+        NetworkSelection::NetworkStatusHistoryScorer scorer;
+        scorer.DoScore(candidate, scoreResult);
+    }
+    {
+        NetworkSelection::ThroughputScorer scorer;
+        scorer.DoScore(candidate, scoreResult);
+    }
+    {
+        NetworkSelection::SecurityBonusScorer scorer;
+        scorer.DoScore(candidate, scoreResult);
+    }
+    {
+        NetworkSelection::RssiLevelBonusScorer scorer;
+        scorer.DoScore(candidate, scoreResult);
+    }
+}
+
+void WifiScorerImplTest2(NetworkSelection::NetworkCandidate &candidate)
+{
+    NetworkSelection::ScoreResult scoreResult;
+    {
+        NetworkSelection::SignalLevelScorer scorer;
+        scorer.DoScore(candidate, scoreResult);
+    }
+    {
+        NetworkSelection::Network5gBonusScorer scorer;
+        scorer.DoScore(candidate, scoreResult);
+    }
+    {
+        std::string name = FDP->ConsumeBytesAsString(NUM_BYTES);
+        NetworkSelection::SavedNetworkScorer scorer(name);
+        scorer.DoScore(candidate, scoreResult);
+    }
+    {
+        NetworkSelection::NoInternetNetworkStatusHistoryScorer scorer;
+        scorer.DoScore(candidate, scoreResult);
+    }
+    {
+        std::string name = FDP->ConsumeBytesAsString(NUM_BYTES);
+        NetworkSelection::ApQualityScorer scorer(name);
+        scorer.DoScore(candidate, scoreResult);
+    }
+}
+
+void WifiScorerImplTest()
+{
+    InterScanInfo scanInfo;
+    BuildScanInfoFromFuzz(scanInfo);
+    NetworkSelection::NetworkCandidate candidate(scanInfo);
+    BuildDeviceConfigFromFuzz(candidate);
+    WifiScorerImplTest1(candidate);
+    WifiScorerImplTest2(candidate);
+}
+
+void BuildComparatorCandidates(std::vector<NetworkSelection::NetworkCandidate *> &ptrs)
+{
+    constexpr int NUM_CANDIDATES = 3;
+    static std::vector<InterScanInfo> scanInfos(NUM_CANDIDATES);
+    static std::vector<NetworkSelection::NetworkCandidate> candidates;
+    candidates.clear();
+    for (int i = 0; i < NUM_CANDIDATES; ++i) {
+        scanInfos[i].ssid = FDP->ConsumeBytesAsString(NUM_BYTES);
+        scanInfos[i].bssid = FDP->ConsumeBytesAsString(NUM_BYTES);
+        scanInfos[i].capabilities = FDP->ConsumeBytesAsString(NUM_BYTES);
+        scanInfos[i].frequency = FDP->ConsumeIntegral<int>();
+        scanInfos[i].band = FDP->ConsumeIntegral<int>();
+        scanInfos[i].rssi = FDP->ConsumeIntegral<int>();
+        scanInfos[i].securityType = static_cast<WifiSecurity>(FDP->ConsumeIntegral<int>());
+        candidates.emplace_back(scanInfos[i]);
+        candidates.back().wifiDeviceConfig.networkId = FDP->ConsumeIntegral<int>();
+        candidates.back().wifiDeviceConfig.uid = FDP->ConsumeIntegral<int>();
+        candidates.back().wifiDeviceConfig.isShared = FDP->ConsumeBool();
+        candidates.back().wifiDeviceConfig.isEphemeral = FDP->ConsumeBool();
+        candidates.back().wifiDeviceConfig.lastHasInternetTime = FDP->ConsumeIntegral<int64_t>();
+        candidates.back().wifiDeviceConfig.keyMgmt = FDP->ConsumeBytesAsString(NUM_BYTES);
+    }
+    for (auto &c : candidates) {
+        ptrs.push_back(&c);
+    }
+}
+
+void WifiComparatorImplTest1(std::vector<NetworkSelection::NetworkCandidate *> &ptrs)
+{
+    {
+        NetworkSelection::WifiScorerComparator comparator("fuzzComparator");
+        comparator.AddScorer(std::make_shared<NetworkSelection::RssiScorer>());
+        comparator.AddScorer(std::make_shared<NetworkSelection::SignalLevelScorer>());
+        comparator.AddScorer(std::make_shared<NetworkSelection::Network5gBonusScorer>());
+        std::vector<NetworkSelection::NetworkCandidate *> bestCandidates;
+        comparator.GetBestCandidates(ptrs, bestCandidates);
+        std::vector<NetworkSelection::NetworkCandidate *> sortedCandidates;
+        comparator.GetAllSortedCandidates(ptrs, sortedCandidates);
+    }
+    {
+        NetworkSelection::WifiScorerComparator comparator("fuzzComparator2");
+        comparator.AddScorer(std::make_shared<NetworkSelection::ThroughputScorer>());
+        comparator.AddScorer(std::make_shared<NetworkSelection::RssiScorer>());
+        std::vector<NetworkSelection::NetworkCandidate *> bestCandidates;
+        comparator.GetBestCandidates(ptrs, bestCandidates);
+        std::vector<NetworkSelection::NetworkCandidate *> sortedCandidates;
+        comparator.GetAllSortedCandidates(ptrs, sortedCandidates);
+    }
+}
+
+void WifiComparatorImplTest2(std::vector<NetworkSelection::NetworkCandidate *> &ptrs)
+{
+    {
+        NetworkSelection::WifiScorerComparator comparator("fuzzComparator3");
+        comparator.AddScorer(nullptr);
+        comparator.AddScorer(std::make_shared<NetworkSelection::RssiScorer>());
+        std::vector<NetworkSelection::NetworkCandidate *> bestCandidates;
+        comparator.GetBestCandidates(ptrs, bestCandidates);
+    }
+    {
+        NetworkSelection::WifiScorerComparator comparator("fuzzComparator4");
+        std::vector<NetworkSelection::NetworkCandidate *> emptyCandidates;
+        std::vector<NetworkSelection::NetworkCandidate *> bestCandidates;
+        comparator.GetBestCandidates(emptyCandidates, bestCandidates);
+        comparator.GetAllSortedCandidates(emptyCandidates, bestCandidates);
+    }
+}
+
+void WifiComparatorImplTest()
+{
+    std::vector<NetworkSelection::NetworkCandidate *> ptrs;
+    BuildComparatorCandidates(ptrs);
+    WifiComparatorImplTest1(ptrs);
+    WifiComparatorImplTest2(ptrs);
+}
+
+void NetworkSelectorImplTest1(NetworkSelection::NetworkCandidate &candidate)
+{
+    {
+        NetworkSelection::BlackListNetworkSelector selector;
+        (void)selector.TryNominate(candidate);
+        std::vector<NetworkSelection::NetworkCandidate *> result;
+        selector.GetBestCandidates(result);
+    }
+    {
+        NetworkSelection::AllNoInternetHistoryNetworkSelector selector;
+        (void)selector.TryNominate(candidate);
+        std::vector<NetworkSelection::NetworkCandidate *> result;
+        selector.GetBestCandidates(result);
+    }
+    {
+        NetworkSelection::HasInternetNetworkSelector selector;
+        (void)selector.TryNominate(candidate);
+        std::vector<NetworkSelection::NetworkCandidate *> result;
+        selector.GetBestCandidates(result);
+    }
+    {
+        NetworkSelection::RecoveryNetworkSelector selector;
+        (void)selector.TryNominate(candidate);
+        std::vector<NetworkSelection::NetworkCandidate *> result;
+        selector.GetBestCandidates(result);
+    }
+    {
+        NetworkSelection::PortalNetworkSelector selector;
+        selector.InitFilter();
+        (void)selector.TryNominate(candidate);
+        std::vector<NetworkSelection::NetworkCandidate *> result;
+        selector.GetBestCandidates(result);
+    }
+}
+
+void NetworkSelectorImplTest2(NetworkSelection::NetworkCandidate &candidate)
+{
+    {
+        NetworkSelection::NoInternetNetworkSelector selector;
+        (void)selector.TryNominate(candidate);
+        std::vector<NetworkSelection::NetworkCandidate *> result;
+        selector.GetBestCandidates(result);
+    }
+    {
+        NetworkSelection::PreferredApSelector selector;
+        (void)selector.TryNominate(candidate);
+        std::vector<NetworkSelection::NetworkCandidate *> result;
+        selector.GetBestCandidates(result);
+    }
+    {
+        NetworkSelection::SuggestionNetworkTracker selector;
+        (void)selector.TryNominate(candidate);
+        std::vector<NetworkSelection::NetworkCandidate *> result;
+        selector.GetBestCandidates(result);
+    }
+    {
+        NetworkSelection::HigherCategoryNetworkSelector selector;
+        (void)selector.TryNominate(candidate);
+        std::vector<NetworkSelection::NetworkCandidate *> result;
+        selector.GetBestCandidates(result);
+    }
+    {
+        NetworkSelection::SameSsidMultiBssidIntegrator selector;
+        (void)selector.TryNominate(candidate);
+        std::vector<NetworkSelection::NetworkCandidate *> result;
+        selector.GetBestCandidates(result);
+    }
+}
+
+void NetworkSelectorImplTest3(NetworkSelection::NetworkCandidate &candidate)
+{
+    {
+        NetworkSelection::AutoConnectIntegrator selector;
+        (void)selector.TryNominate(candidate);
+        std::vector<NetworkSelection::NetworkCandidate *> result;
+        selector.GetBestCandidates(result);
+    }
+    {
+        NetworkSelection::Wifi2WifiIntegrator selector;
+        (void)selector.TryNominate(candidate);
+        std::vector<NetworkSelection::NetworkCandidate *> result;
+        selector.GetBestCandidates(result);
+    }
+    {
+        NetworkSelection::Wifi2WifiNoNetIntegrator selector;
+        (void)selector.TryNominate(candidate);
+        std::vector<NetworkSelection::NetworkCandidate *> result;
+        selector.GetBestCandidates(result);
+    }
+    {
+        NetworkSelection::Wifi2WifiQoeSlowIntegrator selector;
+        (void)selector.TryNominate(candidate);
+        std::vector<NetworkSelection::NetworkCandidate *> result;
+        selector.GetBestCandidates(result);
+    }
+    {
+        NetworkSelection::SavedNetworkTracker selector;
+        (void)selector.TryNominate(candidate);
+        std::vector<NetworkSelection::NetworkCandidate *> result;
+        selector.GetBestCandidates(result);
+    }
+}
+
+void NetworkSelectorImplTest()
+{
+    InterScanInfo scanInfo;
+    BuildScanInfoFromFuzz(scanInfo);
+    NetworkSelection::NetworkCandidate candidate(scanInfo);
+    BuildDeviceConfigFromFuzz(candidate);
+    NetworkSelectorImplTest1(candidate);
+    NetworkSelectorImplTest2(candidate);
+    NetworkSelectorImplTest3(candidate);
+}
+
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
@@ -451,6 +879,10 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Wifi::AssetManagerTest();
     OHOS::Wifi::WifinotificationutilTest();
     OHOS::Wifi::WifiWatchDogUtilsTest();
+    OHOS::Wifi::WifiFilterImplTest();
+    OHOS::Wifi::WifiScorerImplTest();
+    OHOS::Wifi::WifiComparatorImplTest();
+    OHOS::Wifi::NetworkSelectorImplTest();
     return 0;
 }
 }
