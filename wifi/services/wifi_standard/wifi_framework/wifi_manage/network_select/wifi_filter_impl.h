@@ -82,6 +82,8 @@ public:
     ~ValidConfigNetworkFilter() override;
 protected:
     bool Filter(NetworkCandidate &networkCandidate) override;
+private:
+    bool IsCurrentPortalWeakAndSameSsid(const NetworkCandidate &networkCandidate) const;
 };
  
 class WifiSwitchThresholdFilter final : public SimpleWifiFilter {
