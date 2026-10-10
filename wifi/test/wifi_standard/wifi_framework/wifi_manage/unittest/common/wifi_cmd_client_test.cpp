@@ -236,10 +236,10 @@ HWTEST_F(WifiCmdClientTest, SetFoldStatusTest002, TestSize.Level1)
     EXPECT_EQ(result, 0);
 }
 
-HWTEST_F(WifiCmdClientTest, SetGameSceneOpt001, TestSize.Level1)
+HWTEST_F(WifiCmdClientTest, SetSceneOpt001, TestSize.Level1)
 {
     std::string ifName = "ifName";
     std::string param = "param";
-    int result = wifiCmdClient_->SetGameSceneOpt(ifName, param);
+    int result = wifiCmdClient_->SetSceneOpt(ifName, param);
     EXPECT_EQ(result, -1);
 }
