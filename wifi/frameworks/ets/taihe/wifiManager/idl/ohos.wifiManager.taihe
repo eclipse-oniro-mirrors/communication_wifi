@@ -343,7 +343,7 @@ struct StationInfo {
     macAddressType: Optional<DeviceAddressType>;
     ipAddress: String;
     reasonCode: Optional<i32>;
-    locallyGenerated: Optional<Boolean>;
+    locallyGenerated: Optional<bool>;
     rssi: Optional<i32>;
 }
 
