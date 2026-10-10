@@ -87,6 +87,11 @@ void WifiHotspotCallbackProxy::OnHotspotStaLeave(const StationInfo &info)
     data.WriteCString(info.bssid.c_str());
     data.WriteInt32(info.bssidType);
     data.WriteCString(info.ipAddr.c_str());
+#ifdef FEATURE_CARPLAY_SUPPORTED
+    data.WriteInt32(info.reasonCode);
+    data.WriteBool(info.locallyGenerated);
+    data.WriteInt32(info.rssi);
+#endif
     int error = Remote()->SendRequest(static_cast<uint32_t>(HotspotInterfaceCode::WIFI_CBK_CMD_HOTSPOT_STATE_LEAVE),
         data, reply, option);
     if (error != ERR_NONE) {

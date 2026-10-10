@@ -212,6 +212,11 @@ void WifiIdlHotspotEventCallback::OnHotspotStaLeave(const StationInfo &info)
     std::shared_lock<std::shared_mutex> guard(g_wifiHotspotStaLeaveLock);
     WIFI_LOGI("Hotspot received sta leave event");
     ::ohos::wifiManager::StationInfo result = {info.bssid};
+#ifdef FEATURE_CARPLAY_SUPPORTED
+    result.reasonCode = ::taihe::optional<int32_t>(std::in_place_t{}, info.reasonCode);
+    result.locallyGenerated = ::taihe::optional<bool>(std::in_place_t{}, info.locallyGenerated);
+    result.rssi = ::taihe::optional<int32_t>(std::in_place_t{}, info.rssi);
+#endif
     for (auto callback : g_wifiHotspotStaLeaveVec) {
         if (callback.has_value()) {
             (*callback)(result);

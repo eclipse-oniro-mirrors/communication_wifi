@@ -263,8 +263,11 @@ struct WifiHalPnoScanParam {
 struct WifiHalApConnectionNofify {
     int type;
     std::string mac;
-
-    WifiHalApConnectionNofify() : type(0)
+    int reasonCode;
+    bool locallyGenerated;
+    int rssi;
+    WifiHalApConnectionNofify() : type(0), reasonCode(1), locallyGenerated(false),
+                                  rssi(-127)
     {}
 
     ~WifiHalApConnectionNofify()

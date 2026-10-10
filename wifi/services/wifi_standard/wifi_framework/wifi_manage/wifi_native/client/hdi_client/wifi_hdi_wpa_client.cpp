@@ -34,7 +34,9 @@
 #include "hdi_struct_toolkit.h"
 #include "wifi_hdi_wpa_proxy.h"
 #include "define.h"
-
+#ifdef FEATURE_CARPLAY_SUPPORTED
+#include "parameter.h"
+#endif
 #ifndef UT_TEST
 #include "wifi_log.h"
 #else
@@ -801,6 +803,13 @@ WifiErrorNo WifiHdiWpaClient::SetSoftApConfig(const std::string &ifName, const H
     }
     GetChannelString(config, channelString);
     GetModeString(config, modeString);
+#ifdef FEATURE_CARPLAY_SUPPORTED
+    std::string supportType = OHOS::system::GetParameter("persist.poxiao.support_type", "");
+    std::string extraConfig;
+    if (supportType == "1" || supportType == "2") {
+        extraConfig = "dtim_period=1";
+    }
+#endif
     fileContext = StringCombination(
         "interface=%s\n"
         "driver=nl80211\n"
@@ -811,10 +820,16 @@ WifiErrorNo WifiHdiWpaClient::SetSoftApConfig(const std::string &ifName, const H
         "%s\n"
         "ignore_broadcast_ssid=0\n"
         "wowlan_triggers=any\n"
+#ifdef FEATURE_CARPLAY_SUPPORTED
+        "%s\n"
+#endif
         "%s\n",
         ifName.c_str(), ssid2String.c_str(),
         channelString.c_str(),
         modeString.c_str(),
+#ifdef FEATURE_CARPLAY_SUPPORTED
+        extraConfig.c_str(),
+#endif
         encryptionString.c_str());
     if (!WriteConfigToFile(fileContext)) {
         LOGE("write config failed");

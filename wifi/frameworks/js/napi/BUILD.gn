@@ -61,6 +61,9 @@ ohos_shared_library("wifi") {
   if (wifi_feature_with_local_security_detect) {
     defines += [ "WIFI_LOCAL_SECURITY_DETECT_ENABLE" ]
   }
+  if (wifi_feature_carplay_supported) {
+    defines += [ "FEATURE_CARPLAY_SUPPORTED" ]
+  }
 
   external_deps = [
     "ability_runtime:app_context",
@@ -205,6 +208,9 @@ ohos_shared_library("wifimanager") {
   }
   if (wifi_feature_with_local_security_detect) {
     defines += [ "WIFI_LOCAL_SECURITY_DETECT_ENABLE" ]
+  }
+  if (wifi_feature_carplay_supported) {
+    defines += [ "FEATURE_CARPLAY_SUPPORTED" ]
   }
 
   external_deps = [

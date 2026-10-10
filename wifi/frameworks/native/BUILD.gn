@@ -467,6 +467,9 @@ ohos_source_set("wifi_scan_stub") {
     if (wifi_feature_with_go_simulation_ap) {
       defines += [ "FEATURE_WITH_GO_SIMULATION_AP" ]
     }
+    if (wifi_feature_carplay_supported) {
+      defines += [ "FEATURE_CARPLAY_SUPPORTED" ]
+    }
     cflags = memory_optimization_cflags
     cflags_cc = memory_optimization_cflags_cc
     ldflags = memory_optimization_ldflags

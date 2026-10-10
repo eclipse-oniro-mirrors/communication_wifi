@@ -494,6 +494,10 @@ if (defined(ohos_lite)) {
       defines += [ "FEATURE_WITH_GO_SIMULATION_AP" ]
     }
 
+    if (wifi_feature_carplay_supported) {
+      defines += [ "FEATURE_CARPLAY_SUPPORTED" ]
+    }
+
     if (defined(global_parts_info) &&
       defined(global_parts_info.telephony_core_service) &&
       defined(global_parts_info.telephony_state_registry) &&

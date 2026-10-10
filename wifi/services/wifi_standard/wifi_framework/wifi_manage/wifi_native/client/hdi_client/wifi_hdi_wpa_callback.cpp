@@ -434,6 +434,11 @@ int32_t onEventStaJoin(struct IHostapdCallback *self, const struct HdiApCbParm *
         LOGE("onEvenStaJoin: tmpBuf len invalid!");
     }
 
+    if (strlen(apCbParm->content) < len + 1 + WIFI_HDI_STR_MAC_LENGTH) {
+        LOGE("onEvenStaJoin: content len invalid!");
+        return 1;
+    }
+
     if (memcpy_s(tmpBuf, sizeof(tmpBuf), apCbParm->content + len + 1, WIFI_HDI_STR_MAC_LENGTH) != 0) {
         LOGE("onEvenStaJoin: strcpy_s failed!");
     }
@@ -444,6 +449,23 @@ int32_t onEventStaJoin(struct IHostapdCallback *self, const struct HdiApCbParm *
         OHOS::Wifi::WifiHalApConnectionNofify cbInfo;
         cbInfo.type = static_cast<int>(event);
         cbInfo.mac = tmpBuf;
+#ifdef FEATURE_CARPLAY_SUPPORTED
+        if (event == HAL_CBK_CMD_STA_LEAVE) {
+            const char *exStatr = apCbParm->content + len + 1 + WIFI_HDI_STR_MAC_LENGTH;
+            size_t contentLen = strlen(apCbParm->content);
+            size_t extPos = len + 1 + WIFI_HDI_STR_MAC_LENGTH;
+            if (contentLen > extPos + 1 && exStatr[0] == ' ') {
+                int reasonCode = 0;
+                int isActive = 0;
+                int rssi = 0;
+                if (sscanf(exStatr + 1, "%d %d %d", &reasonCode, &isActive, &rssi) == 3) {
+                    cbInfo.reasonCode = reasonCode;
+                    cbInfo.locallyGenerated = (isActive != 0);
+                    cbInfo.rssi = rssi;
+                }
+            }
+        }
+#endif
         cbk.onStaJoinOrLeave(cbInfo);
     }
     return 0;
