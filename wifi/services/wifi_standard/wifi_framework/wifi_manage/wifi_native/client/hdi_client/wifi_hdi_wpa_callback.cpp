@@ -27,6 +27,11 @@
 #include "wifi_config_center.h"
 #include "wifi_log.h"
 #include "wifi_hisysevent.h"
+#ifdef FEATURE_CARPLAY_SUPPORTED
+#include <cerrno>
+#include <climits>
+#include <cstdlib>
+#endif
 #ifdef UT_TEST
 #define static
 #endif
@@ -409,6 +414,45 @@ int32_t OnEventScanResult(struct IWpaCallback *self,
     return 0;
 }
 
+#ifdef FEATURE_CARPLAY_SUPPORTED
+static bool ParseIntField(const char *&cursor, int &value)
+{
+    char *endPtr = nullptr;
+    errno = 0;
+    long parsed = strtol(cursor, &endPtr, 10);
+    if (endPtr == cursor || errno == ERANGE || parsed < INT_MIN || parsed > INT_MAX) {
+        return false;
+    }
+    cursor = endPtr;
+    value = static_cast<int>(parsed);
+    return true;
+}
+
+static void ParseStaLeaveExtInfo(const char *content, uint8_t len,
+    OHOS::Wifi::WifiHalApConnectionNofify &cbInfo)
+{
+    /* content format: "AP-STA-DISCONNECTED <mac> <reasonCode> <locallyGenerated> <rssi>" */
+    const size_t extPos = static_cast<size_t>(len) + 1 + WIFI_HDI_STR_MAC_LENGTH;
+    if (strlen(content) <= extPos + 1 || content[extPos] != ' ') {
+        return;
+    }
+
+    const char *cursor = content + extPos + 1;
+    int reasonCode = 0;
+    int locallyGenerated = 0;
+    int rssi = 0;
+    if (!ParseIntField(cursor, reasonCode) ||
+        !ParseIntField(cursor, locallyGenerated) ||
+        !ParseIntField(cursor, rssi)) {
+        return;
+    }
+
+    cbInfo.reasonCode = reasonCode;
+    cbInfo.locallyGenerated = (locallyGenerated != 0);
+    cbInfo.rssi = rssi;
+}
+#endif
+
 int32_t onEventStaJoin(struct IHostapdCallback *self, const struct HdiApCbParm *apCbParm, const char* ifName)
 {
     LOGI("onEvenStaJoin: callback enter!");
@@ -446,19 +490,7 @@ int32_t onEventStaJoin(struct IHostapdCallback *self, const struct HdiApCbParm *
         cbInfo.mac = tmpBuf;
 #ifdef FEATURE_CARPLAY_SUPPORTED
         if (event == HAL_CBK_CMD_STA_LEAVE) {
-            const char *exStatr = apCbParm->content + len + 1 + WIFI_HDI_STR_MAC_LENGTH;
-            size_t contentLen = strlen(apCbParm->content);
-            size_t extPos = len + 1 + WIFI_HDI_STR_MAC_LENGTH;
-            if (contentLen > extPos + 1 && exStatr[0] == ' ') {
-                int reasonCode = 0;
-                int isActive = 0;
-                int rssi = 0;
-                if (sscanf(exStatr + 1, "%d %d %d", &reasonCode, &isActive, &rssi) == 3) {
-                    cbInfo.reasonCode = reasonCode;
-                    cbInfo.locallyGenerated = (isActive != 0);
-                    cbInfo.rssi = rssi;
-                }
-            }
+            ParseStaLeaveExtInfo(apCbParm->content, len, cbInfo);
         }
 #endif
         cbk.onStaJoinOrLeave(cbInfo);
