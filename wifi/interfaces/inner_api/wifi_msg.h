@@ -382,6 +382,18 @@ struct WifiLinkedInfo {
     }
 };
 
+/* Special wifi info */
+struct SpecialWifiInfo {
+    int networkId;
+    bool isCeairPlaneWifi;
+
+    SpecialWifiInfo()
+    {
+        networkId = INVALID_NETWORK_ID;
+        isCeairPlaneWifi = false;
+    }
+};
+
 /* Wifi access list info */
 struct WifiRestrictedInfo {
     std::string ssid;

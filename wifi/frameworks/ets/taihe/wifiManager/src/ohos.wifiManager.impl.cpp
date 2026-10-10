@@ -1887,6 +1887,26 @@ bool GetWifiCapability(::ohos::wifiManager::WifiCapability capability)
     return enabled;
 }
 
+::ohos::wifiManager::SpecialWifiInfo GetSpecialWifiInfo()
+{
+    WIFI_LOGI("GetSpecialWifiInfo enter");
+    SpecialWifiInfo specialWifiInfo;
+    if (g_wifiDevicePtr == nullptr) {
+        WIFI_LOGE("GetSpecialWifiInfo:g_wifiDevicePtr is nullptr");
+        WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, WIFI_OPT_FAILED, SYSCAP_WIFI_STA);
+        return {specialWifiInfo.networkId,
+            ::taihe::optional<bool>(std::in_place_t{}, specialWifiInfo.isCeairPlaneWifi)};
+    }
+    ErrCode ret = g_wifiDevicePtr->GetSpecialWifiInfo(specialWifiInfo);
+    WIFI_LOGI("GetSpecialWifiInfo:ret=%{public}d, isCeairPlaneWifi=%{public}d",
+        ret, specialWifiInfo.isCeairPlaneWifi);
+    if (ret != WIFI_OPT_SUCCESS) {
+        WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, ret, SYSCAP_WIFI_STA);
+    }
+    return {specialWifiInfo.networkId,
+        ::taihe::optional<bool>(std::in_place_t{}, specialWifiInfo.isCeairPlaneWifi)};
+}
+
 ::ohos::wifiManager::SpecialWifiType GetSpecialWifiType()
 {
     int specialWifiType = 0;
@@ -2010,4 +2030,5 @@ TH_EXPORT_CPP_API_OffP2pDiscoveryChange(OffP2pDiscoveryChange);
 TH_EXPORT_CPP_API_IsWlanSupported(IsWlanSupported);
 TH_EXPORT_CPP_API_SetWifiCapability(SetWifiCapability);
 TH_EXPORT_CPP_API_GetWifiCapability(GetWifiCapability);
+TH_EXPORT_CPP_API_GetSpecialWifiInfo(GetSpecialWifiInfo);
 TH_EXPORT_CPP_API_GetSpecialWifiType(GetSpecialWifiType);

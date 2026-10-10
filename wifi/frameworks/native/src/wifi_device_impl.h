@@ -744,6 +744,14 @@ public:
     ErrCode GetWifiCapability(int capability, bool &enabled) override;
 
     /**
+     * @Description Get special wifi info
+     *
+     * @param info - output special wifi info
+     * @return ErrCode - operation result
+     */
+    ErrCode GetSpecialWifiInfo(SpecialWifiInfo &info) override;
+
+    /**
      * @Description Get special wifi type
      *
      * @param specialWifiType - output special wifi type

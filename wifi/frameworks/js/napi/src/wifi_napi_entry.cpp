@@ -489,6 +489,7 @@ static napi_value Init(napi_env env, napi_value exports) {
         DECLARE_NAPI_FUNCTION("isRandomMacDisabled", IsRandomMacDisabled),
         DECLARE_NAPI_FUNCTION("setWifiCapability", SetWifiCapability),
         DECLARE_NAPI_FUNCTION("getWifiCapability", GetWifiCapability),
+        DECLARE_NAPI_FUNCTION("getSpecialWifiInfo", GetSpecialWifiInfo),
         DECLARE_NAPI_FUNCTION("getSpecialWifiType", GetSpecialWifiType),
     };
 

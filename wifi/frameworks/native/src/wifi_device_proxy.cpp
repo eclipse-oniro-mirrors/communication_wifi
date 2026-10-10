@@ -3223,6 +3223,41 @@ ErrCode WifiDeviceProxy::GetWifiCapability(int capability, bool &enabled)
     return WIFI_OPT_SUCCESS;
 }
 
+ErrCode WifiDeviceProxy::GetSpecialWifiInfo(SpecialWifiInfo &info)
+{
+    if (mRemoteDied) {
+        WIFI_LOGE("failed to GetSpecialWifiInfo, remote service is died!");
+        return WIFI_OPT_FAILED;
+    }
+    MessageOption option;
+    MessageParcel data;
+    MessageParcel reply;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        WIFI_LOGE("GetSpecialWifiInfo: Write interface token error");
+        return WIFI_OPT_FAILED;
+    }
+    data.WriteInt32(0);
+    int error = Remote()->SendRequest(static_cast<uint32_t>(DevInterfaceCode::WIFI_SVR_CMD_GET_SPECIAL_WIFI_INFO),
+        data, reply, option);
+    if (error != ERR_NONE) {
+        WIFI_LOGE("GetSpecialWifiInfo failed, error code is %{public}d", error);
+        return WIFI_OPT_FAILED;
+    }
+    int exception = reply.ReadInt32();
+    if (exception) {
+        WIFI_LOGE("GetSpecialWifiInfo error");
+        return WIFI_OPT_FAILED;
+    }
+    int ret = reply.ReadInt32();
+    if (ret != WIFI_OPT_SUCCESS) {
+        return ErrCode(ret);
+    }
+
+    info.networkId = reply.ReadInt32();
+    info.isCeairPlaneWifi = reply.ReadBool();
+    return WIFI_OPT_SUCCESS;
+}
+
 ErrCode WifiDeviceProxy::GetSpecialWifiType(int &specialWifiType)
 {
     if (mRemoteDied) {

@@ -1451,6 +1451,26 @@ void OnUpdate5gAutoIdentifyConnFeaturesTest()
     OnRemoteRequest(static_cast<uint32_t>(DevInterfaceCode::WIFI_SVR_CMD_5G_AUTO_IDENTIFY_CONN_FEATURE), datas);
 }
 
+void OnGetSpecialWifiInfoTest()
+{
+    MessageParcel datas;
+    if (!datas.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN)) {
+        LOGE("WriteInterfaceToken failed!");
+        return;
+    }
+    int32_t tmpInt = FDP->ConsumeIntegral<int32_t>();
+    std::string tmpBuffer = FDP->ConsumeBytesAsString(NUM_BYTES);
+    datas.WriteInt32(tmpInt);
+    datas.WriteBuffer(tmpBuffer.c_str(), tmpBuffer.size());
+    OnRemoteRequest(static_cast<uint32_t>(DevInterfaceCode::WIFI_SVR_CMD_GET_SPECIAL_WIFI_INFO), datas);
+}
+
+void GetSpecialWifiInfoTest()
+{
+    SpecialWifiInfo info;
+    pWifiDeviceServiceImpl->GetSpecialWifiInfo(info);
+}
+
 void OnGetSpecialWifiTypeTest()
 {
     MessageParcel datas;
@@ -1566,6 +1586,8 @@ void WifiDeviceFuzzTestPart2()
     OHOS::Wifi::OnIsRandomMacDisabledTest();
     OHOS::Wifi::OnSetRandomMacDisabledTest();
     OHOS::Wifi::OnUpdate5gAutoIdentifyConnFeaturesTest();
+    OHOS::Wifi::OnGetSpecialWifiInfoTest();
+    OHOS::Wifi::GetSpecialWifiInfoTest();
     OHOS::Wifi::OnGetSpecialWifiTypeTest();
     OHOS::Wifi::GetSpecialWifiTypeTest();
 }
