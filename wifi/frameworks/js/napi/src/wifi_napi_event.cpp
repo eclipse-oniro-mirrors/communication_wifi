@@ -158,11 +158,9 @@ napi_value NapiEvent::CreateResult(const napi_env& env, const StationInfo& info)
     SetValueUtf8String(env, "macAddress", info.bssid, result);
     SetValueInt32(env, "macAddressType", info.bssidType, result);
     SetValueUtf8String(env, "ipAddress", info.ipAddr, result);
-#ifdef FEATURE_CARPLAY_SUPPORTED
     SetValueInt32(env, "reasonCode", info.reasonCode, result);
     SetValueBool(env, "locallyGenerated", info.locallyGenerated, result);
     SetValueInt32(env, "rssi", info.rssi, result);
-#endif
     return result;
 }
 
