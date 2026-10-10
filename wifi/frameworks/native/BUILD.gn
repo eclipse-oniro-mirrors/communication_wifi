@@ -93,8 +93,12 @@ if (defined(ohos_lite)) {
       "$WIFI_ROOT_DIR/interfaces/innerkits",
       "$WIFI_ROOT_DIR/utils/inc",
     ]
+    defines = []
     if (wifi_feature_with_go_simulation_ap) {
-      defines = [ "FEATURE_WITH_GO_SIMULATION_AP" ]
+      defines += [ "FEATURE_WITH_GO_SIMULATION_AP" ]
+    }
+    if (wifi_feature_carplay_supported) {
+      defines += [ "FEATURE_CARPLAY_SUPPORTED" ]
     }
   }
 

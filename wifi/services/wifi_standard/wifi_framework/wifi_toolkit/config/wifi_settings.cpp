@@ -1505,7 +1505,11 @@ void WifiSettings::ClearHotspotConfig()
     std::unique_lock<std::mutex> lock(mApMutex);
     mHotspotConfig.clear();
     HotspotConfig config;
+#ifdef FEATURE_CARPLAY_SUPPORTED
+    config.SetSecurityType(KeyMgmt::WPA2_PSK_SAE);
+#else
     config.SetSecurityType(KeyMgmt::WPA2_PSK);
+#endif
     config.SetBand(BandType::BAND_2GHZ);
     config.SetChannel(AP_CHANNEL_DEFAULT);
     config.SetMaxConn(GetApMaxConnNum());
@@ -2356,7 +2360,11 @@ void WifiSettings::SetDeviceNameApSsid(std::string ssid)
 void WifiSettings::InitDefaultHotspotConfig()
 {
     HotspotConfig cfg;
+#ifdef FEATURE_CARPLAY_SUPPORTED
+    cfg.SetSecurityType(KeyMgmt::WPA2_PSK_SAE);
+#else
     cfg.SetSecurityType(KeyMgmt::WPA2_PSK);
+#endif
     cfg.SetBand(BandType::BAND_2GHZ);
     cfg.SetChannel(AP_CHANNEL_DEFAULT);
     cfg.SetMaxConn(GetApMaxConnNum());
@@ -2377,7 +2385,11 @@ void WifiSettings::InitDefaultHotspotConfig()
 #ifdef FEATURE_WITH_GO_SIMULATION_AP
 void WifiSettings::InitDefaultRptHotspotConfig()
 {
+#ifdef FEATURE_CARPLAY_SUPPORTED
+    mRptHotspotConfig.SetSecurityType(KeyMgmt::WPA2_PSK_SAE);
+#else
     mRptHotspotConfig.SetSecurityType(KeyMgmt::WPA2_PSK);
+#endif
     mRptHotspotConfig.SetBand(BandType::BAND_5GHZ);
     mRptHotspotConfig.SetChannel(AP_CHANNEL_5G_DEFAULT);
     mRptHotspotConfig.SetSsid(g_defaultApSsid.empty() ? GetDefaultApSsid() : g_defaultApSsid);

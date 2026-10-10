@@ -84,7 +84,8 @@
             "wifi_feature_with_p2p_untrust_invitation",
             "wifi_feature_with_bt_proxy_speed_limit",
             "wifi_feature_secure_schedule_supported",
-            "wifi_feature_with_go_simulation_ap"
+            "wifi_feature_with_go_simulation_ap",
+            "wifi_feature_carplay_supported"
         ],
         "adapted_system_type": [
             "small",

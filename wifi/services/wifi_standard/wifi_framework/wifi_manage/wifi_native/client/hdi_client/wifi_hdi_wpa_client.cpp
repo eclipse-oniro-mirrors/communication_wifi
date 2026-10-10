@@ -726,6 +726,16 @@ bool WifiHdiWpaClient::GetEncryptionString(const HotspotConfig &config, std::str
                 "wpa=2\n"
                 "rsn_pairwise=CCMP\n");
             break;
+#ifdef FEATURE_CARPLAY_SUPPORTED
+        case KeyMgmt::WPA2_PSK_SAE:
+            encryptionString = StringCombination(
+                "wpa=2\n"
+                "wpa_key_mgmt=WPA-PSK SAE\n"
+                "ieee80211w=1\n"
+                "sae_require_mfp=1\n"
+                "rsn_pairwise=CCMP\n");
+            break;
+#endif
         default:
             LOGE("unsupport security type");
             encryptionString = "";
