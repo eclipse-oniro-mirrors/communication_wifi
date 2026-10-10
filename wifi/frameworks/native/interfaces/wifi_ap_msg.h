@@ -217,7 +217,7 @@ struct StationInfo {
     std::string bssid;      /* Device Mac */
     int bssidType{0}; /* bssid type */
     std::string ipAddr;     /* Device IP address */
-    int reasonCode{1};  /* disconnect reason */
+    int reasonCode{WIFI_UNSPECIFIED_REASON_CODE};  /* disconnect reason */
     bool locallyGenerated{false}; /* locally/passive generated disconnect */
     int rssi{WIFI_INVALID_RSSI_VALUE}; /* signal strength in dBm at disconnect */
 };

@@ -26,6 +26,7 @@ enum class ServiceType {
 
 constexpr int RANDOM_DEVICE_ADDRESS = 0;
 constexpr int REAL_DEVICE_ADDRESS = 1;
+constexpr int WIFI_UNSPECIFIED_REASON_CODE = 1;
 constexpr int WIFI_INVALID_RSSI_VALUE = -127;
 
 enum class WifiMacAddrInfoType {

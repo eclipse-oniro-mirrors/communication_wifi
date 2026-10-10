@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 #include "wifi_native_define.h"
+#include "wifi_common_msg.h"
 
 namespace OHOS {
 namespace Wifi {
@@ -266,8 +267,8 @@ struct WifiHalApConnectionNofify {
     int reasonCode;
     bool locallyGenerated;
     int rssi;
-    WifiHalApConnectionNofify() : type(0), reasonCode(1), locallyGenerated(false),
-                                  rssi(-127)
+    WifiHalApConnectionNofify() : type(0), reasonCode(WIFI_UNSPECIFIED_REASON_CODE),
+                                  locallyGenerated(false), rssi(WIFI_INVALID_RSSI_VALUE)
     {}
 
     ~WifiHalApConnectionNofify()
