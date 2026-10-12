@@ -36,8 +36,8 @@ ohos_taihe("run_taihe") {
 }
 
 taihe_shared_library("wifiManager_taihe_native") { #调用taihe_shared_library模板编译so
-    shlib_type = "ani"
-    branch_protector_ret = "pac_ret"
+  shlib_type = "ani"
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true  # Enable/disable control flow integrity detection
     boundary_sanitize = false  # Enable boundary san detection
