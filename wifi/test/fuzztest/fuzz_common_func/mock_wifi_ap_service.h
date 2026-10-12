@@ -114,7 +114,7 @@ public:
     bool AddBlockList(const StationInfo &staInfo);
     bool DelBlockList(const StationInfo &staInfo);
     bool EnableAllBlockList();
-    void StationLeave(const std::string &mac);
+    void StationLeave(const StationInfo &staInfo);
     void StationJoin(const StationInfo &staInfo);
     bool DisConnectStation(const StationInfo &staInfo);
     std::vector<std::string> GetAllConnectedStations();

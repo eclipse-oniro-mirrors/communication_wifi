@@ -63,10 +63,10 @@ public:
 
     /**
      * @Description  Process the station disconnection reported.
-     * @param mac - address of the disconnected station
+     * @param staInfo - Information about the disconnected station
      * @return None
      */
-    void StationLeave(const std::string &mac) const;
+    void StationLeave(const StationInfo &staInfo) const;
 
     /**
      * @Description  Handling New station Connections.

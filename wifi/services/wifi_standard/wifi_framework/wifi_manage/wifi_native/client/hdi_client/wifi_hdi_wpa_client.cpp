@@ -35,7 +35,7 @@
 #include "wifi_hdi_wpa_proxy.h"
 #include "define.h"
 #ifdef FEATURE_CARPLAY_SUPPORTED
-#include "parameter.h"
+#include "parameters.h"
 #endif
 #ifndef UT_TEST
 #include "wifi_log.h"

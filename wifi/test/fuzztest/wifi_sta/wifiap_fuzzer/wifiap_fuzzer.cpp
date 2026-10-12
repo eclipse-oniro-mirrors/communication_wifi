@@ -152,8 +152,9 @@ void EnableAllBlockListFuzzTest()
 
 void StationLeaveFuzzTest(FuzzedDataProvider& FDP)
 {
-    std::string mac = FDP.ConsumeBytesAsString(NUM_BYTES);
-    pApStationsManager->StationLeave(mac);
+    StationInfo staInfo;
+    staInfo.bssid = FDP.ConsumeBytesAsString(NUM_BYTES);
+    pApStationsManager->StationLeave(staInfo);
 }
 
 void GetAllConnectedStationsFuzzTest()
