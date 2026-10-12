@@ -1066,11 +1066,8 @@ struct Index {
     });
     this.netConnect.on('netCapabilitiesChange', (data: connection.NetCapabilityInfo) => {
       hilog.info(DOMAIN, TAG, '%{public}s', 'netCapabilitiesChange' + JSON.stringify(data));
-      if (!data.netCap) {
-        return;
-      }
-      const bearerTypes = data.netCap.bearerTypes || [];
-      const networkCap = data.netCap.networkCap || [];
+      const bearerTypes = data.netCap?.bearerTypes || [];
+      const networkCap = data.netCap?.networkCap || [];
       if (bearerTypes.includes(connection.NetBearType.BEARER_WIFI) &&
           networkCap.includes(connection.NetCap.NET_CAPABILITY_VALIDATED) &&
           !networkCap.includes(connection.NetCap.NET_CAPABILITY_PORTAL)) {
