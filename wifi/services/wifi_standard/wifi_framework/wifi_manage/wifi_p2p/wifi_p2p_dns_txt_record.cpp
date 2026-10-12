@@ -78,17 +78,16 @@ int WifiP2PDnsTxtRecord::RemoveData(const std::string &key)
         dataStr += data[i];
     }
     std::transform(dataStr.begin(), dataStr.end(), dataStr.begin(), ::tolower);
-
+    std::string keyLower(key);
+    std::transform(keyLower.begin(), keyLower.end(), keyLower.begin(), ::tolower);
     for (int index = 0; aDataStart < data.size(); ++index) {
         unsigned long aDataLength = data[aDataStart];
-        if (aDataStart + key.length() + 1 >= data.size()) {
-            break;
-        }
         if (key.length() <= aDataLength &&
-            (key.length() == aDataLength || data[aDataStart + key.length() + 1] == '=')) {
+            (key.length() == aDataLength ||
+             (aDataStart + key.length() + 1 < data.size() &&
+              data[aDataStart + key.length() + 1] == '='))) {
             std::string tmp(dataStr, aDataStart + 1, key.length());
-            std::transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
-            if (dataStr == tmp) {
+            if (keyLower == tmp) {
                 std::vector<unsigned char> oldData = data;
                 data.clear();
                 data.insert(data.begin(), oldData.begin(), oldData.begin() + aDataStart);
