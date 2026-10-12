@@ -1066,12 +1066,14 @@ struct Index {
     });
     this.netConnect.on('netCapabilitiesChange', (data: connection.NetCapabilityInfo) => {
       hilog.info(DOMAIN, TAG, '%{public}s', 'netCapabilitiesChange' + JSON.stringify(data));
-      // 判断是否为WiFi网络（bearerTypes为[1]表示WiFi）
-      // 同时networkCap包含16(NET_CAPABILITY_VALIDATED)且不包含17(NET_CAPABILITY_PORTAL)表示portal认证成功
-      const networkCap = data.netCap?.networkCap || [];
-      const hasValidated = networkCap.includes(16);
-      const hasPortal = networkCap.includes(17);
-      if (data.netCap && data.netCap.bearerTypes && data.netCap.bearerTypes.includes(1) && hasValidated && !hasPortal) {
+      if (!data.netCap) {
+        return;
+      }
+      const bearerTypes = data.netCap.bearerTypes || [];
+      const networkCap = data.netCap.networkCap || [];
+      if (bearerTypes.includes(connection.NetBearType.BEARER_WIFI) &&
+          networkCap.includes(connection.NetCap.NET_CAPABILITY_VALIDATED) &&
+          !networkCap.includes(connection.NetCap.NET_CAPABILITY_PORTAL)) {
         hilog.info(DOMAIN, TAG, '%{public}s', 'Network capabilities change, bearerTypes is WiFi, portal auth success');
         const ERR_NETWORK_CHANGED:number = -21;
         const SUCCEEDED:number = 1;
