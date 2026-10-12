@@ -109,22 +109,22 @@ bool MessageQueue::DeleteMessageFromQueue(int messageName)
     if (pTop == nullptr) {
         return true;
     }
-
     InternalMessagePtr pCurrent = pTop;
+    InternalMessagePtr pPrev = nullptr;
     while (pCurrent != nullptr) {
-        InternalMessagePtr pPrev = pCurrent;
-        pCurrent = pCurrent->GetNextMsg();
-        if ((pCurrent != nullptr) && (pCurrent->GetMessageName() == messageName)) {
+        if (pCurrent->GetMessageName() == messageName) {
             InternalMessagePtr pNextMsg = pCurrent->GetNextMsg();
-            pPrev->SetNextMsg(pNextMsg);
+            if (pPrev == nullptr) {
+                pMessageQueue = pNextMsg;
+            } else {
+                pPrev->SetNextMsg(pNextMsg);
+            }
             MessageManage::GetInstance().ReclaimMsg(pCurrent);
             pCurrent = pNextMsg;
+        } else {
+            pPrev = pCurrent;
+            pCurrent = pCurrent->GetNextMsg();
         }
-    }
-
-    if (pTop->GetMessageName() == messageName) {
-        pMessageQueue = pTop->GetNextMsg();
-        MessageManage::GetInstance().ReclaimMsg(pTop);
     }
     return true;
 }
