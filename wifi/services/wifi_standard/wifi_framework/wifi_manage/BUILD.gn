@@ -669,6 +669,10 @@ if (defined(ohos_lite)) {
       defines += [ "FEATURE_AUTO_STARTUP_SUPPORT" ]
     }
 
+    if (wifi_feature_carplay_supported) {
+      defines += [ "FEATURE_CARPLAY_SUPPORTED" ]
+    }
+
     if (wifi_feature_with_ipv6_selfcure) {
       defines += [ "FEATURE_IPV6_SELF_CURE" ]
     }

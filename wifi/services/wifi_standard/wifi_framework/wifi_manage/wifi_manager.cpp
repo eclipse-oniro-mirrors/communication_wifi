@@ -159,7 +159,7 @@ int WifiManager::Init()
 void WifiManager::CheckPoxiaoType() {
     char supportType[PROP_POXIAO_TYPE_LEN] = {0};
     int errCode = GetParamValue(POXIAO_TYPE_PARAM, 0, supportType, PROP_POXIAO_TYPE_LEN);
-    if (errCode) {
+    if (errCode < 0) {
         WIFI_LOGI("CheckPoxiaoType no poxiao type");
         return;
     }
