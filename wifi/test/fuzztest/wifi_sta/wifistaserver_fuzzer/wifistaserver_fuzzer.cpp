@@ -204,6 +204,7 @@ void StaServerFuzzTest(const uint8_t* data, size_t size)
     pStaInterface->RegisterCommonBuilder(tagType, tagName, commonBuilder);
     pStaInterface->DeregisterCommonBuilder(tagType, tagName);
     pStaInterface->DeliverAudioState(networkId);
+    pStaInterface->InitStaServiceLocked();
     pStaInterface->OnFoldStateChanged(networkId);
     VoWifiSignalInfo signalInfo;
     pStaInterface->FetchWifiSignalInfoForVoWiFi(signalInfo);
@@ -564,6 +565,7 @@ void StaServiceFuzzTest(FuzzedDataProvider& FDP)
     std::string conditionName = FDP.ConsumeBytesAsString(NUM_BYTES);
     std::string ditionName = FDP.ConsumeBytesAsString(NUM_BYTES);
     AppExecFwk::AppStateData appData;
+    pStaService->EnableStaService();
     pStaService->DisableStaService();
     pStaService->RegisterAutoJoinCondition(conditionName, []() {return true;});
     pStaService->DeregisterAutoJoinCondition(ditionName);
