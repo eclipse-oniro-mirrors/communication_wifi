@@ -36,6 +36,14 @@ extern "C" {
 #define DEFAULT_UMASK_VALUE     027
 #define MAX_READ_EVENT_SIZE     512
 
+#ifdef FEATURE_CARPLAY_SUPPORTED
+#define POXIAO_TYPE_PARAM "hw.mc.poxiao.support_type"
+#define POXIAO_SUPPORTED_TYPE_PARAM "persist.poxiao.support_type"
+#define PROP_POXIAO_TYPE_LEN 10
+#define SUPPORTED_POXIAO_COMMERCIAL "1"
+#define SUPPORTED_POXIAO_CERTIFIED "2"
+#endif
+
 #ifndef MAC2STR
 #define MAC2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
 #define MACSTR "%02x:%02x:%02x:%02x:%02x:%02x"

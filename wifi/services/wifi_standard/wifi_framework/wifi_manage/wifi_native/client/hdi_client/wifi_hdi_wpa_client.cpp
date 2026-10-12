@@ -804,14 +804,10 @@ WifiErrorNo WifiHdiWpaClient::SetSoftApConfig(const std::string &ifName, const H
     GetChannelString(config, channelString);
     GetModeString(config, modeString);
 #ifdef FEATURE_CARPLAY_SUPPORTED
-    /* CarPlay customization: set hostapd DTIM period according to the system parameter.
-     * Parameter value "1"/"2" means the customization is supported and the DTIM period
-     * should be set to 1 (to improve downlink real-time performance). */
-    constexpr char CARPLAY_SUPPORT_TYPE_KEY[] = "persist.poxiao.support_type";
     constexpr char HOSTAPD_DTIM_PERIOD_CFG[] = "dtim_period=1";
-    std::string supportType = OHOS::system::GetParameter(CARPLAY_SUPPORT_TYPE_KEY, "");
+    std::string supportType = OHOS::system::GetParameter(POXIAO_SUPPORTED_TYPE_PARAM, "");
     std::string extraConfig;
-    if (supportType == "1" || supportType == "2") {
+    if (supportType == SUPPORTED_POXIAO_COMMERCIAL || supportType == SUPPORTED_POXIAO_CERTIFIED) {
         extraConfig = HOSTAPD_DTIM_PERIOD_CFG;
     }
 #endif
