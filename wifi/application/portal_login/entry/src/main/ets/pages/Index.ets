@@ -31,7 +31,7 @@ import {
 } from '../common/utils';
 import {
   updateFinalUrl, updateOnHttpErrorReceive, updateOnErrorReceive, updateOnSslErrorEvent, safeAnonymize,
-  updatePortalSuccess
+  updatePortalSuccess, updateCHR
 } from '../common/chr';
 
 const DOMAIN = 0x01560;
@@ -1064,20 +1064,30 @@ struct Index {
           hilog.error(DOMAIN, TAG, '%{public}s', 'on new want bindToNetById failed.');
         });
     });
-    this.netConnect.on('netAvailable', (data: connection.NetHandle) => {
-      const ERR_NETWORK_CHANGED:number = -21;
-      const SUCCEEDED:number = 1;
-      updatePortalSuccess(SUCCEEDED);
-      setTimeout(() => {
-        if (this.webviewError === ERR_NETWORK_CHANGED) {
-          hilog.info(DOMAIN, TAG, '%{public}s', 'web err refresh');
-          try {
-            this.webviewController.refresh();
-          } catch (error) {
-            hilog.error(DOMAIN, TAG, '%{public}s', `Failed refresh. Code:${error.code}, message:${error.message}`);
+    this.netConnect.on('netCapabilitiesChange', (data: connection.NetCapabilityInfo) => {
+      hilog.info(DOMAIN, TAG, '%{public}s', 'netCapabilitiesChange' + JSON.stringify(data));
+      // 判断是否为WiFi网络（bearerTypes为[1]表示WiFi）
+      // 同时networkCap包含16(NET_CAPABILITY_VALIDATED)且不包含17(NET_CAPABILITY_PORTAL)表示portal认证成功
+      const networkCap = data.netCap?.networkCap || [];
+      const hasValidated = networkCap.includes(16);
+      const hasPortal = networkCap.includes(17);
+      if (data.netCap && data.netCap.bearerTypes && data.netCap.bearerTypes.includes(1) && hasValidated && !hasPortal) {
+        hilog.info(DOMAIN, TAG, '%{public}s', 'Network capabilities change, bearerTypes is WiFi, portal auth success');
+        const ERR_NETWORK_CHANGED:number = -21;
+        const SUCCEEDED:number = 1;
+        updatePortalSuccess(SUCCEEDED);
+        setTimeout(() => {
+          updateCHR();
+          if (this.webviewError === ERR_NETWORK_CHANGED) {
+            hilog.info(DOMAIN, TAG, '%{public}s', 'web err refresh');
+            try {
+              this.webviewController.refresh();
+            } catch (error) {
+              hilog.error(DOMAIN, TAG, '%{public}s', `Failed refresh. Code:${error.code}, message:${error.message}`);
+            }
           }
-        }
-      }, 300);
+        }, 300);
+      }
     });
     this.netConnect.register((err: BusinessError) => {
       hilog.error(DOMAIN, TAG, '%{public}s', 'Failed to register netconnect.' + JSON.stringify(err));

@@ -117,7 +117,7 @@ function portalHiSysEvent() {
   });
 }
 
-export function updateOnBackground() {
+export function updateCHR() {
   if (!isUpload_) {
     portalHiSysEvent();
     isUpload_ = true;
