@@ -2973,6 +2973,30 @@ ErrCode WifiDeviceServiceImpl::GetWifiCapability(int capability, bool &enabled)
 #endif
 }
 
+ErrCode WifiDeviceServiceImpl::GetSpecialWifiInfo(SpecialWifiInfo &info)
+{
+    if (!WifiAuthCenter::IsSystemAccess()) {
+        WIFI_LOGE("GetSpecialWifiInfo:NOT System APP, PERMISSION_DENIED!");
+        return WIFI_OPT_NON_SYSTEMAPP;
+    }
+    if (WifiPermissionUtils::VerifyGetWifiInfoPermission() == PERMISSION_DENIED) {
+        WIFI_LOGE("GetSpecialWifiInfo:VerifyGetWifiInfoPermission() PERMISSION_DENIED!");
+        return WIFI_OPT_PERMISSION_DENIED;
+    }
+
+    info.networkId = INVALID_NETWORK_ID;
+    info.isCeairPlaneWifi = false;
+    WifiLinkedInfo linkedInfo;
+    WifiConfigCenter::GetInstance().GetLinkedInfo(linkedInfo, m_instId);
+    info.networkId = linkedInfo.networkId;
+    if (linkedInfo.ssid == "CEAIR-WIFI") {
+        info.isCeairPlaneWifi = true;
+    }
+    WIFI_LOGI("GetSpecialWifiInfo:networkId=%{public}d, ssid=%{public}s, isCeairPlaneWifi=%{public}d",
+        info.networkId, SsidAnonymize(linkedInfo.ssid).c_str(), info.isCeairPlaneWifi);
+    return WIFI_OPT_SUCCESS;
+}
+
 ErrCode WifiDeviceServiceImpl::GetSpecialWifiType(int &specialWifiType)
 {
     if (!WifiAuthCenter::IsSystemAccess()) {

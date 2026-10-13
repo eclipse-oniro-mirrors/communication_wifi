@@ -315,6 +315,11 @@ struct WifiLinkedInfo {
     wifiTxRxValid: Optional<bool>;
 }
 
+struct SpecialWifiInfo {
+    networkId: i32;
+    isCeairPlaneWifi: Optional<bool>;
+}
+
 struct IpInfo {
     ipAddress: i32;
     gateway: i32;
@@ -486,6 +491,7 @@ function IsWlanSupported(): bool;
 
 function SetWifiCapability(capability: WifiCapability, enable: bool): void;
 function GetWifiCapability(capability: WifiCapability): bool;
+function GetSpecialWifiInfo(): SpecialWifiInfo;
 function GetSpecialWifiType(): SpecialWifiType;
 
 @gen_promise("connectToCandidateConfigWithUserAction")
