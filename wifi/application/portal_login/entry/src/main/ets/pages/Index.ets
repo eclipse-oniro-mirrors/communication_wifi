@@ -473,9 +473,9 @@ struct Index {
           }
         })
         .onOverrideUrlLoading((request) => {
-          this.webUrl = request.getRequestUrl();
-          if (validateURL(this.webUrl) && !this.webUrl.startsWith('http') && !this.webUrl.startsWith('https')) {
-            (this.getUIContext().getHostContext() as common.UIAbilityContext).openLink(this.webUrl)
+          const webUrl = request.getRequestUrl();
+          if (validateURL(webUrl) && !webUrl.startsWith('http') && !webUrl.startsWith('https')) {
+            (this.getUIContext().getHostContext() as common.UIAbilityContext).openLink(webUrl)
               .then(() => {
                 hilog.info(DOMAIN, TAG, 'open link success.');
               }).catch((err: BusinessError) => {
