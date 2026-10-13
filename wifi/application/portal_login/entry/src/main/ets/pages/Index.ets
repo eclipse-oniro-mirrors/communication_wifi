@@ -483,6 +483,7 @@ struct Index {
               })
             return true;
           }
+          this.webUrl = webUrl;
           return false;
         })
         .onLoadIntercept((event) => {
