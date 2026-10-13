@@ -268,7 +268,7 @@ struct WifiHalApConnectionNofify {
     bool locallyGenerated;
     int rssi;
     WifiHalApConnectionNofify() : type(0), reasonCode(WIFI_UNSPECIFIED_REASON_CODE),
-                                  locallyGenerated(false), rssi(WIFI_INVALID_RSSI_VALUE)
+                                  locallyGenerated(false), rssi(INVALID_RSSI_VALUE)
     {}
 
     ~WifiHalApConnectionNofify()

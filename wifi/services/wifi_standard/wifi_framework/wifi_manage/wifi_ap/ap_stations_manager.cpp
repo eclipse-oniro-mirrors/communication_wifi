@@ -122,7 +122,7 @@ bool ApStationsManager::EnableAllBlockList() const
 
 void ApStationsManager::StationLeave(const StationInfo &staInfo) const
 {
-    StationInfo staInfoTemp = staInfo;
+    StationInfo staInfoTemp;
     std::vector<StationInfo> results;
     if (WifiConfigCenter::GetInstance().GetStationList(results, m_id)) {
         WIFI_LOGE("Instance is %{public}d failed to GetStationList.", m_id);
@@ -131,8 +131,7 @@ void ApStationsManager::StationLeave(const StationInfo &staInfo) const
     auto it = results.begin();
     for (; it != results.end(); ++it) {
         if (it->bssid == staInfo.bssid) {
-            staInfoTemp.deviceName = it->deviceName;
-            staInfoTemp.ipAddr = it->ipAddr;
+            staInfoTemp = *it;
             if (!DelAssociationStation(staInfoTemp)) {
                 WIFI_LOGE("Instance is %{public}d del AssociationStation failed.", m_id);
                 return;
@@ -141,7 +140,7 @@ void ApStationsManager::StationLeave(const StationInfo &staInfo) const
         }
     }
     if (m_stationChangeCallback) {
-        m_stationChangeCallback(staInfoTemp, ApStatemachineEvent::CMD_STATION_LEAVE);
+        m_stationChangeCallback(staInfo, ApStatemachineEvent::CMD_STATION_LEAVE);
     }
     return;
 }
