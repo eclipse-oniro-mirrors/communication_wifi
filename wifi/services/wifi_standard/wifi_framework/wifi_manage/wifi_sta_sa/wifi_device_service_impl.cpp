@@ -2988,10 +2988,6 @@ ErrCode WifiDeviceServiceImpl::GetSpecialWifiInfo(SpecialWifiInfo &info)
     info.isCeairPlaneWifi = false;
     WifiLinkedInfo linkedInfo;
     WifiConfigCenter::GetInstance().GetLinkedInfo(linkedInfo, m_instId);
-    if (linkedInfo.ssid.empty()) {
-        WIFI_LOGE("GetSpecialWifiInfo:ssid is empty!");
-        return WIFI_OPT_FAILED;
-    }
     info.networkId = linkedInfo.networkId;
     if (linkedInfo.ssid == "CEAIR-WIFI") {
         info.isCeairPlaneWifi = true;
