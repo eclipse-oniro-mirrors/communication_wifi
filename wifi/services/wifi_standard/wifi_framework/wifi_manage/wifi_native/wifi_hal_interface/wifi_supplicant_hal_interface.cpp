@@ -106,6 +106,8 @@ WifiErrorNo WifiSupplicantHalInterface::RegisterSupplicantEventCallback(Supplica
     std::lock_guard<std::mutex> lock(mSupplicantHalMutex);
     mCallback = callback;
     return WIFI_HAL_OPT_OK;
+#elif defined(HDI_WPA_INTERFACE_SUPPORT)
+    return WIFI_HAL_OPT_FAILED;
 #else
     CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
     WifiErrorNo err = mIdlClient->ReqRegisterSupplicantEventCallback(callback);
@@ -122,6 +124,8 @@ WifiErrorNo WifiSupplicantHalInterface::UnRegisterSupplicantEventCallback(void)
     std::lock_guard<std::mutex> lock(mSupplicantHalMutex);
     mCallback.onScanNotify = nullptr;
     return WIFI_HAL_OPT_OK;
+#elif defined(HDI_WPA_INTERFACE_SUPPORT)
+    return WIFI_HAL_OPT_FAILED;
 #else
     CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
     WifiErrorNo err = mIdlClient->ReqUnRegisterSupplicantEventCallback();

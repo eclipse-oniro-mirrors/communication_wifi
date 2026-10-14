@@ -191,6 +191,8 @@ WifiErrorNo WifiApHalInterface::GetFrequenciesByBand(const std::string &ifaceNam
         return WIFI_HAL_OPT_FAILED;
     }
     return WIFI_HAL_OPT_OK;
+#elif defined(HDI_WPA_INTERFACE_SUPPORT)
+    return WIFI_HAL_OPT_FAILED;
 #else
     CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
     return mIdlClient->GetFrequenciesByBand(band, frequencies);
@@ -219,6 +221,8 @@ WifiErrorNo WifiApHalInterface::SetWifiCountryCode(const std::string &ifaceName,
         return WIFI_HAL_OPT_FAILED;
     }
     return WIFI_HAL_OPT_OK;
+#elif defined(HDI_WPA_INTERFACE_SUPPORT)
+    return WIFI_HAL_OPT_FAILED;
 #else
     CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
     return mIdlClient->SetWifiCountryCode(code);
@@ -252,6 +256,8 @@ WifiErrorNo WifiApHalInterface::GetPowerModel(const std::string &ifaceName, int&
         return WIFI_HAL_OPT_FAILED;
     }
     return WIFI_HAL_OPT_OK;
+#elif defined(HDI_WPA_INTERFACE_SUPPORT)
+    return WIFI_HAL_OPT_FAILED;
 #else
     CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
     return mIdlClient->ReqGetPowerModel(model);
@@ -265,6 +271,8 @@ WifiErrorNo WifiApHalInterface::SetPowerModel(const std::string &ifaceName, int 
         return WIFI_HAL_OPT_FAILED;
     }
     return WIFI_HAL_OPT_OK;
+#elif defined(HDI_WPA_INTERFACE_SUPPORT)
+    return WIFI_HAL_OPT_FAILED;
 #else
     CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
     return mIdlClient->ReqSetPowerModel(model);
@@ -278,6 +286,8 @@ WifiErrorNo WifiApHalInterface::SetConnectMacAddr(const std::string &ifaceName, 
         return WIFI_HAL_OPT_FAILED;
     }
     return WIFI_HAL_OPT_OK;
+#elif defined(HDI_WPA_INTERFACE_SUPPORT)
+    return WIFI_HAL_OPT_FAILED;
 #else
     CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
     return mIdlClient->SetConnectMacAddr(mac, HAL_PORT_TYPE_AP);

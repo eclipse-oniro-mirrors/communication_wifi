@@ -557,6 +557,8 @@ WifiErrorNo WifiP2PHalInterface::P2pGetSupportFrequenciesByBand(const std::strin
         return WIFI_HAL_OPT_FAILED;
     }
     return WIFI_HAL_OPT_OK;
+#elif defined(HDI_WPA_INTERFACE_SUPPORT)
+    return WIFI_HAL_OPT_FAILED;
 #else
     CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
     return mIdlClient->GetSupportFrequencies(band, frequencies);
