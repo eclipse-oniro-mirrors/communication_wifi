@@ -88,6 +88,18 @@ do { \
 #endif
 #endif /* #endif ENABLE_NAPI_WIFI_MANAGER */
 
+#ifndef WIFI_NAPI_ASSERT_NUM_CODE
+#define WIFI_NAPI_ASSERT_NUM_CODE(env, cond, errCode, sysCap) \
+do { \
+    if (!(cond)) { \
+        napi_value res = nullptr; \
+        HandleSyncErrCodeByNum(env, errCode, sysCap); \
+        napi_get_undefined(env, &res); \
+        return res; \
+    } \
+} while (0)
+#endif
+
 #ifndef WIFI_NAPI_RETURN_NUM_CODE
 #define WIFI_NAPI_RETURN_NUM_CODE(env, cond, errCode, sysCap) \
 do { \

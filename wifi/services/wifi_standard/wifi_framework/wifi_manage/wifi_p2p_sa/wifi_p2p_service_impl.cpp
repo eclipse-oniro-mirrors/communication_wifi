@@ -236,8 +236,7 @@ ErrCode WifiP2pServiceImpl::StopDiscoverDevices(void)
 ErrCode WifiP2pServiceImpl::DiscoverServices(void)
 {
     WIFI_LOGI("DiscoverServices");
-    if (WifiPermissionUtils::VerifyGetWifiLocalMacPermission() == PERMISSION_DENIED ||
-        WifiPermissionUtils::VerifyGetWifiPeersMacPermission() == PERMISSION_DENIED) {
+    if (WifiPermissionUtils::VerifyGetWifiPeersMacPermission() == PERMISSION_DENIED) {
         WIFI_LOGE("DiscoverServices:VerifyGetWifiLocalMacPermission or"
             "VerifyGetWifiPeersPermission PERMISSION_DENIED!");
         return WIFI_OPT_PERMISSION_DENIED;

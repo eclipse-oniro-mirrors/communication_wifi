@@ -95,7 +95,6 @@ public:
     napi_value CreateResult(const napi_env& env, napi_value placehoders);
     napi_value CreateResult(const napi_env& env, const WifiP2pDevice& device);
     napi_value CreateResult(const napi_env& env, const std::vector<WifiP2pDevice>& devices);
-    napi_value CreateResult(const napi_env& env, const std::vector<WifiP2pServiceInfo>& services);
     napi_value CreateResult(const napi_env& env, const WifiP2pLinkedInfo& info);
     napi_value CreateResult(const napi_env& env, const P2pServiceDiscoveryEvent& event);
     void EventNotify(AsyncEventData *asyncEvent);

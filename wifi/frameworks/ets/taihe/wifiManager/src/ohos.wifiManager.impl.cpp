@@ -1212,7 +1212,6 @@ void AddDnsSdServiceRequest(
         WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
         return;
     }
-    /* 接口层顺序为 (serviceType, instanceName)；底层仍为 (instanceName, serviceType) */
     ErrCode ret = g_wifiP2pPtr->AddDnsSdServiceRequest(
         (instanceName != nullptr) ? std::string(*instanceName) : "",
         (serviceType != nullptr) ? std::string(*serviceType) : "");

@@ -192,38 +192,6 @@ napi_value NapiEvent::CreateResult(const napi_env& env, const std::vector<WifiP2
     return arrayResult;
 }
 
-static void ServiceInfoToJsEvent(const napi_env& env, const WifiP2pServiceInfo& info, napi_value& result)
-{
-    SetValueUtf8String(env, "serviceName", info.GetServiceName().c_str(), result);
-    SetValueUtf8String(env, "deviceAddress", info.GetDeviceAddress().c_str(), result);
-    SetValueInt32(env, "protocolType", static_cast<int>(info.GetServicerProtocolType()), result);
-    const std::vector<std::string>& queries = info.GetQueryList();
-    napi_value queryArray = nullptr;
-    napi_create_array_with_length(env, queries.size(), &queryArray);
-    for (uint32_t i = 0; i < queries.size(); ++i) {
-        napi_value item = nullptr;
-        napi_create_string_utf8(env, queries[i].c_str(), NAPI_AUTO_LENGTH, &item);
-        napi_set_element(env, queryArray, i, item);
-    }
-    napi_set_named_property(env, result, "queryList", queryArray);
-}
-
-napi_value NapiEvent::CreateResult(const napi_env& env, const std::vector<WifiP2pServiceInfo>& services)
-{
-    uint32_t idx = 0;
-    napi_value arrayResult;
-    napi_create_array_with_length(env, services.size(), &arrayResult);
-    for (auto& each : services) {
-        napi_value item;
-        napi_create_object(env, &item);
-        ServiceInfoToJsEvent(env, each, item);
-        if (napi_set_element(env, arrayResult, idx++, item) != napi_ok) {
-            WIFI_LOGE("Array result set element error, idx: %{public}u", idx - 1);
-        }
-    }
-    return arrayResult;
-}
-
 napi_value NapiEvent::CreateResult(const napi_env& env, const WifiP2pLinkedInfo& info)
 {
     napi_value result;
@@ -682,12 +650,12 @@ napi_value OnP2pServiceDiscovery(napi_env env, napi_callback_info cbinfo)
     napi_value argv[1] = {0};
     napi_get_cb_info(env, cbinfo, &argc, argv, nullptr, nullptr);
     if (argc < 1) {
-        WIFI_NAPI_RETURN(env, false, WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+        WIFI_NAPI_RETURN_NUM_CODE(env, false, WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
     }
     napi_valuetype handler = napi_undefined;
     napi_typeof(env, argv[0], &handler);
     if (handler != napi_function) {
-        WIFI_NAPI_RETURN(env, false, WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+        WIFI_NAPI_RETURN_NUM_CODE(env, false, WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
     }
     EventRegister::GetInstance().Register(env, EVENT_P2P_SERVICE_DISCOVERY, argv[0]);
     napi_value result = nullptr;
@@ -705,7 +673,7 @@ napi_value OffP2pServiceDiscovery(napi_env env, napi_callback_info cbinfo)
     if (argc >= 1) {
         napi_typeof(env, argv[0], &handler);
         if (handler != napi_function && handler != napi_null && handler != napi_undefined) {
-            WIFI_NAPI_RETURN(env, false, WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+            WIFI_NAPI_RETURN_NUM_CODE(env, false, WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
         }
     }
     if (argc >= 1 && handler == napi_function) {
@@ -931,6 +899,10 @@ void EventRegister::Register(const napi_env& env, const std::string& type, napi_
         }
         g_eventRegisterInfo[type] = std::vector<RegObj>{regObj};
     } else {
+        if (iter->second.size() > REGISTERINFO_MAX_NUM) {
+            WIFI_LOGE("RegisterInfo for %{public}s exceeds the maximum value!", type.c_str());
+            return;
+        }
         iter->second.emplace_back(regObj);
     }
 }

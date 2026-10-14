@@ -533,19 +533,19 @@ NO_SANITIZE("cfi") napi_value AddDnsSdLocalP2pService(napi_env env, napi_callbac
     napi_value argv[PARAMS_NUM];
     napi_value thisVar = nullptr;
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, &thisVar, NULL));
-    WIFI_NAPI_ASSERT(env, argc == PARAMS_NUM, WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
-    WIFI_NAPI_ASSERT(env, wifiP2pPtr != nullptr, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, argc == PARAMS_NUM, WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, wifiP2pPtr != nullptr, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
 
     std::string instanceName;
     std::string serviceType;
     std::map<std::string, std::string> txtMap;
     std::string serviceName;
-    WIFI_NAPI_ASSERT(env, JsToString(env, argv[0], instanceName), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
-    WIFI_NAPI_ASSERT(env, JsToString(env, argv[1], serviceType), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
-    WIFI_NAPI_ASSERT(env, JsToStringMap(env, argv[2], txtMap), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
-    WIFI_NAPI_ASSERT(env, JsToString(env, argv[3], serviceName), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, JsToString(env, argv[0], instanceName), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, JsToString(env, argv[1], serviceType), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, JsToStringMap(env, argv[2], txtMap), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, JsToString(env, argv[3], serviceName), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
     ErrCode ret = wifiP2pPtr->AddDnsSdLocalP2pService(instanceName, serviceType, txtMap, serviceName);
-    WIFI_NAPI_RETURN(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_RETURN_NUM_CODE(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
 }
 
 NO_SANITIZE("cfi") napi_value AddUpnpLocalP2pService(napi_env env, napi_callback_info info)
@@ -556,20 +556,20 @@ NO_SANITIZE("cfi") napi_value AddUpnpLocalP2pService(napi_env env, napi_callback
     napi_value argv[PARAMS_NUM];
     napi_value thisVar = nullptr;
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, &thisVar, NULL));
-    WIFI_NAPI_ASSERT(env, argc == PARAMS_NUM, WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
-    WIFI_NAPI_ASSERT(env, wifiP2pPtr != nullptr, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, argc == PARAMS_NUM, WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, wifiP2pPtr != nullptr, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
 
     std::string uuid;
     std::string device;
     std::vector<std::string> services;
     std::string serviceName;
-    WIFI_NAPI_ASSERT(env, JsToString(env, argv[0], uuid), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
-    WIFI_NAPI_ASSERT(env, JsToString(env, argv[1], device), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
-    WIFI_NAPI_ASSERT(env, JsToStringVector(env, argv[2], services), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
-    WIFI_NAPI_ASSERT(env, JsToString(env, argv[3], serviceName), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, JsToString(env, argv[0], uuid), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, JsToString(env, argv[1], device), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, JsToStringVector(env, argv[2], services), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, JsToString(env, argv[3], serviceName), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
 
     ErrCode ret = wifiP2pPtr->AddUpnpLocalP2pService(uuid, device, services, serviceName);
-    WIFI_NAPI_RETURN(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_RETURN_NUM_CODE(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
 }
 
 NO_SANITIZE("cfi") napi_value RemoveLocalP2pService(napi_env env, napi_callback_info info)
@@ -580,13 +580,13 @@ NO_SANITIZE("cfi") napi_value RemoveLocalP2pService(napi_env env, napi_callback_
     napi_value argv[PARAMS_NUM];
     napi_value thisVar = nullptr;
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, &thisVar, NULL));
-    WIFI_NAPI_ASSERT(env, argc == PARAMS_NUM, WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
-    WIFI_NAPI_ASSERT(env, wifiP2pPtr != nullptr, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, argc == PARAMS_NUM, WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, wifiP2pPtr != nullptr, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
 
     WifiP2pServiceInfo srvInfo;
-    WIFI_NAPI_ASSERT(env, JsObjToServiceInfo(env, argv[0], srvInfo), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, JsObjToServiceInfo(env, argv[0], srvInfo), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
     ErrCode ret = wifiP2pPtr->DeleteLocalP2pService(srvInfo);
-    WIFI_NAPI_RETURN(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_RETURN_NUM_CODE(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
 }
 
 static void ServiceRequestToJs(const napi_env& env, const WifiP2pServiceRequest& request, napi_value& result)
@@ -642,20 +642,20 @@ NO_SANITIZE("cfi") napi_value AddDnsSdServiceRequest(napi_env env, napi_callback
     size_t argc = 2;
     napi_value argv[2] = {nullptr, nullptr};
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-    WIFI_NAPI_ASSERT(env, wifiP2pPtr != nullptr, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, wifiP2pPtr != nullptr, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
 
     /* 接口层顺序：(serviceType = "", instanceName = "")；底层仍为 (instanceName, serviceType) */
     std::string serviceType;
     std::string instanceName;
     if (argc >= 1) {
-        WIFI_NAPI_ASSERT(env, JsToString(env, argv[0], serviceType), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+        WIFI_NAPI_ASSERT_NUM_CODE(env, JsToString(env, argv[0], serviceType), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
     }
     if (argc >= 2) {
-        WIFI_NAPI_ASSERT(env, JsToString(env, argv[1], instanceName), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+        WIFI_NAPI_ASSERT_NUM_CODE(env, JsToString(env, argv[1], instanceName), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
     }
 
     ErrCode ret = wifiP2pPtr->AddDnsSdServiceRequest(instanceName, serviceType);
-    WIFI_NAPI_RETURN(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_RETURN_NUM_CODE(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
 }
 
 NO_SANITIZE("cfi") napi_value AddUpnpServiceRequest(napi_env env, napi_callback_info info)
@@ -664,17 +664,17 @@ NO_SANITIZE("cfi") napi_value AddUpnpServiceRequest(napi_env env, napi_callback_
     size_t argc = 1;
     napi_value argv[1] = {nullptr};
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-    WIFI_NAPI_ASSERT(env, wifiP2pPtr != nullptr, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, wifiP2pPtr != nullptr, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
 
     std::string searchTarget;
     if (argc == 0) {
         /* match all UPnP */
     } else {
-        WIFI_NAPI_ASSERT(env, JsToString(env, argv[0], searchTarget), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+        WIFI_NAPI_ASSERT_NUM_CODE(env, JsToString(env, argv[0], searchTarget), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
     }
 
     ErrCode ret = wifiP2pPtr->AddUpnpServiceRequest(searchTarget);
-    WIFI_NAPI_RETURN(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_RETURN_NUM_CODE(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
 }
 
 NO_SANITIZE("cfi") napi_value RemoveP2pServiceRequest(napi_env env, napi_callback_info info)
@@ -683,36 +683,36 @@ NO_SANITIZE("cfi") napi_value RemoveP2pServiceRequest(napi_env env, napi_callbac
     size_t argc = 1;
     napi_value argv[1];
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-    WIFI_NAPI_ASSERT(env, argc == 1 && wifiP2pPtr != nullptr, WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, argc == 1 && wifiP2pPtr != nullptr, WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
     WifiP2pServiceRequest request;
-    WIFI_NAPI_ASSERT(env, JsObjToServiceRequest(env, argv[0], request), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, JsObjToServiceRequest(env, argv[0], request), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
     ErrCode ret = wifiP2pPtr->RemoveP2pServiceRequest(request);
-    WIFI_NAPI_RETURN(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_RETURN_NUM_CODE(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
 }
 
 NO_SANITIZE("cfi") napi_value ClearP2pServiceRequests(napi_env env, napi_callback_info info)
 {
     TRACE_FUNC_CALL;
-    WIFI_NAPI_ASSERT(env, wifiP2pPtr != nullptr, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, wifiP2pPtr != nullptr, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
     ErrCode ret = wifiP2pPtr->ClearP2pServiceRequests();
-    WIFI_NAPI_RETURN(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_RETURN_NUM_CODE(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
 }
 
 NO_SANITIZE("cfi") napi_value DiscoverServices(napi_env env, napi_callback_info info)
 {
     TRACE_FUNC_CALL;
-    WIFI_NAPI_ASSERT(env, wifiP2pPtr != nullptr, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, wifiP2pPtr != nullptr, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
     ErrCode ret = wifiP2pPtr->DiscoverServices();
-    WIFI_NAPI_RETURN(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_RETURN_NUM_CODE(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
 }
 
 NO_SANITIZE("cfi") napi_value GetLocalP2pServices(napi_env env, napi_callback_info info)
 {
     TRACE_FUNC_CALL;
-    WIFI_NAPI_ASSERT(env, wifiP2pPtr != nullptr, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, wifiP2pPtr != nullptr, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
     std::vector<WifiP2pServiceInfo> services;
     ErrCode ret = wifiP2pPtr->QueryLocalP2pServices(services);
-    WIFI_NAPI_ASSERT(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
     napi_value arrayResult = nullptr;
     napi_create_array_with_length(env, services.size(), &arrayResult);
     uint32_t idx = 0;
@@ -728,10 +728,10 @@ NO_SANITIZE("cfi") napi_value GetLocalP2pServices(napi_env env, napi_callback_in
 NO_SANITIZE("cfi") napi_value GetP2pServiceRequest(napi_env env, napi_callback_info info)
 {
     TRACE_FUNC_CALL;
-    WIFI_NAPI_ASSERT(env, wifiP2pPtr != nullptr, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, wifiP2pPtr != nullptr, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
     std::vector<WifiP2pServiceRequest> requests;
     ErrCode ret = wifiP2pPtr->QueryP2pServiceRequests(requests);
-    WIFI_NAPI_ASSERT(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
     napi_value arrayResult = nullptr;
     napi_create_array_with_length(env, requests.size(), &arrayResult);
     uint32_t idx = 0;

@@ -560,15 +560,8 @@ function AddDnsSdLocalP2pService(instanceName: String, serviceType: String, txtR
 function AddUpnpLocalP2pService(uuid: String, device: String, services: Array<String>, serviceName: String): void;
 function RemoveLocalP2pService(srvInfo: WifiP2pServiceInfo): void;
 
-/* serviceType / instanceName 缺省为 ""：皆空=match all；仅 serviceType=按类型；二者皆有=按实例+类型 */
-function AddDnsSdServiceRequest(
-    @optional serviceType: Optional<String>,
-    @optional instanceName: Optional<String>
-): void;
-
-/* searchTarget 缺省为 ""：空=match all */
+function AddDnsSdServiceRequest(@optional serviceType: Optional<String>,  @optional instanceName: Optional<String>): void;
 function AddUpnpServiceRequest(@optional searchTarget: Optional<String>): void;
-
 function RemoveP2pServiceRequest(request: WifiP2pServiceRequest): void;
 function ClearP2pServiceRequests(): void;
 function DiscoverServices(): void;
