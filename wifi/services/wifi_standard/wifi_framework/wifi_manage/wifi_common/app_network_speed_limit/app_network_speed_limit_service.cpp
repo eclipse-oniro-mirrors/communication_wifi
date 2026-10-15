@@ -714,7 +714,7 @@ void AppNetworkSpeedLimitService::GameNetworkSpeedLimitConfigs(const WifiNetwork
         case GameSceneId::MSG_GAME_STATE_START:
         case GameSceneId::MSG_GAME_STATE_FOREGROUND:
             SetActivePowerScenes(POWER_SCENE_GAME, false);
-            SetGameSceneOpt(true);
+            SetGameSceneOpt(networkControlInfo.state);
             if (AppParser::GetInstance().IsOverGameLowRttThresh(networkControlInfo.bundleName,
                 networkControlInfo.rtt)) {
                 SendLimitCmd2Drv(BG_LIMIT_CONTROL_ID_GAME, BG_LIMIT_LEVEL_7, GAME_BOOST_ENABLE,
@@ -728,7 +728,7 @@ void AppNetworkSpeedLimitService::GameNetworkSpeedLimitConfigs(const WifiNetwork
         case GameSceneId::MSG_GAME_STATE_END:
             WifiConfigCenter::GetInstance().SetNetworkControlInfo(WifiNetworkControlInfo()); // clear game info
             SetActivePowerScenes(POWER_SCENE_GAME, false);
-            SetGameSceneOpt(false);
+            SetGameSceneOpt(networkControlInfo.state);
             SendLimitCmd2Drv(BG_LIMIT_CONTROL_ID_GAME, BG_LIMIT_OFF, GAME_BOOST_DISABLE, networkControlInfo.uid);
             break;
         case GameSceneId::MSG_GAME_ENTER_PVP_BATTLE:
@@ -870,29 +870,21 @@ void AppNetworkSpeedLimitService::SetActivePowerScenes(PowerSceneFlag scene, boo
     UpdatePowerModeByScenes();
 }
 
-void AppNetworkSpeedLimitService::SetGameSceneOpt(bool enable)
+void AppNetworkSpeedLimitService::SetGameSceneOpt(const int &scene)
 {
-    uint32_t bits = 1U << static_cast<uint32_t>(SceneOpt::SCENE_11K) |
-                    1U << static_cast<uint32_t>(SceneOpt::SCENE_LOCK_CPU_FREQ);
-    uint32_t sceneOptValue = WifiCmdClient::GetInstance().GetSceneOptValue();
-    if (enable) {
-        sceneOptValue |= bits;
-    } else {
-        sceneOptValue &= ~bits;
+    uint32_t sceneOptValue = 0;
+    std::string ifaceName = WifiConfigCenter::GetInstance().GetStaIfaceName();
+    if (scene == static_cast<int>(GameSceneId::MSG_GAME_STATE_START) ||
+        scene == static_cast<int>(GameSceneId::MSG_GAME_STATE_FOREGROUND)) {
+        sceneOptValue =  1U << static_cast<uint32_t>(SceneOpt::SCENE_11K) |
+                         1U << static_cast<uint32_t>(SceneOpt::SCENE_LOCK_CPU_FREQ);
     }
-    if (sceneOptValue == WifiCmdClient::GetInstance().GetSceneOptValue()) {
-        WIFI_LOGW("%{public}s set duplicate scene option.", __func__);
-        return;
-    }
-    WIFI_LOGI("%{public}s enter, enable: %{public}d, lastValue: %{public}u, curValue: %{public}u",
-        __FUNCTION__, static_cast<int>(enable), WifiCmdClient::GetInstance().GetSceneOptValue(), sceneOptValue);
-    int ret = WifiCmdClient::GetInstance().SendCmdToDriver(
-        WifiConfigCenter::GetInstance().GetStaIfaceName(), CMD_GAME_OPT, std::to_string(sceneOptValue));
+    WIFI_LOGI("%{public}s enter, curValue: %{public}u", __FUNCTION__, sceneOptValue);
+    int ret = WifiCmdClient::GetInstance().SendCmdToDriver(ifaceName, CMD_GAME_OPT, std::to_string(sceneOptValue));
     if (ret != 0) {
         WIFI_LOGE("%{public}s send game scene opt failed, ret: %{public}d", __FUNCTION__, ret);
         return;
     }
-    WifiCmdClient::GetInstance().SetSceneOptValue(sceneOptValue);
 }
 
 void AppNetworkSpeedLimitService::UpdatePowerModeByScenes()

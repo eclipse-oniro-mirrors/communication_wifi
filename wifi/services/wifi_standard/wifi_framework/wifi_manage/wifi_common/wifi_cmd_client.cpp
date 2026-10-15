@@ -278,15 +278,5 @@ int WifiCmdClient::SetSceneOpt(const std::string &ifName, const std::string &par
     cmdParm.append(param);
     return SendCommandToDriverByInterfaceName(ifName, cmdParm);
 }
- 
-uint32_t WifiCmdClient::GetSceneOptValue()
-{
-    return sceneOptValue_.load();
-}
-void WifiCmdClient::SetSceneOptValue(uint32_t sceneOptValue)
-{
-    sceneOptValue_.store(sceneOptValue);
-}
-
 } // namespace Wifi
 } // namespace OHOS

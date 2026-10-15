@@ -110,7 +110,7 @@ private:
     void VideoCallNetworkSpeedLimitConfigs(const WifiNetworkControlInfo &networkControlInfo);
     void LogSpeedLimitConfigs();
     void SetActivePowerScenes(PowerSceneFlag scene, bool active);
-    void SetGameSceneOpt(bool enable);
+    void SetGameSceneOpt(const int &scene);
     void UpdatePowerModeByScenes();
     void ResetPowerMode();
     void CheckAndResetGamePowerMode(const std::string &bundleName);

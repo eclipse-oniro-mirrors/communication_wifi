@@ -49,8 +49,6 @@ public:
     static WifiCmdClient &GetInstance();
     int SendCmdToDriver(const std::string &ifName, int commandId, const std::string &param) const;
     std::string VoWifiDetectInternal(std::string cmd);
-    uint32_t GetSceneOptValue();
-    void SetSceneOptValue(uint32_t sceneOptValue);
 
 private:
     int SendCommandToDriverByInterfaceName(const std::string &ifName, const std::string &cmdParm,
@@ -64,8 +62,6 @@ private:
     int StartMldLinkSwitch(const std::string &ifName, const std::string &param) const;
     int SetFoldStatus(const std::string &ifName, const std::string &param) const;
     int SetSceneOpt(const std::string &ifName, const std::string &param) const;
-private:
-    std::atomic<uint32_t> sceneOptValue_ = 0;
 };
 } // namespace Wifi
 } // namespace OHOS
