@@ -308,7 +308,7 @@ void ApStartedState::ProcessCmdStationLeave(InternalMessagePtr msg)
     StationInfo staInfo;
     WriteSoftApAbDisconnectHiSysEvent(AP_ERR_CODE);
     if (msg->GetMessageObj(staInfo)) {
-        m_ApStateMachine.m_ApStationsManager.StationLeave(staInfo.bssid);
+        m_ApStateMachine.m_ApStationsManager.StationLeave(staInfo);
     } else {
         WIFI_LOGE("failed to get station info.");
     }

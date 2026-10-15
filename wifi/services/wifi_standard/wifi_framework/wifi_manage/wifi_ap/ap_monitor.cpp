@@ -47,6 +47,11 @@ void ApMonitor::OnStaJoinOrLeave(const WifiHalApConnectionNofify &cbInfo)
     info.bssidType = REAL_DEVICE_ADDRESS;
     info.deviceName = GETTING_INFO;
     info.ipAddr = GETTING_INFO;
+#ifdef FEATURE_CARPLAY_SUPPORTED
+    info.reasonCode = cbInfo.reasonCode;
+    info.locallyGenerated = cbInfo.locallyGenerated;
+    info.rssi = cbInfo.rssi;
+#endif
     int event = cbInfo.type;
     std::any anySta = info;
     WIFI_LOGI("StationChangeEvent  event: [%{public}d(join=105)] %{public}s . %{private}s . %{private}s.,",

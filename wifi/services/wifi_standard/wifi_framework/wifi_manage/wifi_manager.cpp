@@ -63,6 +63,10 @@ int WifiManager::Init()
 {
     std::unique_lock<std::mutex> lock(initStatusMutex);
     WifiConfigCenter::GetInstance().SetSystemMode(IsFactoryMode() ? SystemMode::M_FACTORY_MODE : SystemMode::M_DEFAULT);
+#ifdef FEATURE_CARPLAY_SUPPORTED
+    CheckPoxiaoType();
+#endif
+
 #ifdef WIFI_EXCEPTION_RECORD_ENABLE
     WifiExceptionRecordUtils exceptionRecordUtils;
     exceptionRecordUtils.ClearExceptions();
@@ -150,6 +154,24 @@ int WifiManager::Init()
     CheckSapcoExist();
     return 0;
 }
+
+#ifdef FEATURE_CARPLAY_SUPPORTED
+void WifiManager::CheckPoxiaoType()
+{
+    char supportType[PROP_POXIAO_TYPE_LEN] = {0};
+    int errCode = GetParamValue(POXIAO_TYPE_PARAM, 0, supportType, PROP_POXIAO_TYPE_LEN);
+    if (errCode < 0) {
+        WIFI_LOGI("CheckPoxiaoType no poxiao type");
+        return;
+    }
+    if (strncmp(supportType, SUPPORTED_POXIAO_COMMERCIAL, PROP_POXIAO_TYPE_LEN) == 0 ||
+        strncmp(supportType, SUPPORTED_POXIAO_CERTIFIED, PROP_POXIAO_TYPE_LEN) == 0) {
+        SetParamValue(POXIAO_SUPPORTED_TYPE_PARAM, supportType);
+    }
+    return;
+}
+#endif
+
 
 void WifiManager::Exit()
 {

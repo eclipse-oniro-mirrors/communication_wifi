@@ -33,6 +33,7 @@
 #include "wifi_native_struct.h"
 #include "wifi_chr_utils.h"
 #include "network_selection_manager.h"
+#include "wifi_common_msg.h"
 #ifdef WIFI_EXCEPTION_RECORD_ENABLE
 #include "wifi_exception_record_utils.h"
 #endif
@@ -88,7 +89,6 @@ constexpr int DHCP_TIME = 15;
 /* Subnet mask length threshold for mobile hotspot detection */
 constexpr int HOTSPOT_SUBNETMASK_MIN_LENGTH = 24;
 /* rssi thresholds */
-constexpr int INVALID_RSSI_VALUE = -127;
 constexpr int MAX_RSSI_VALUE = 200;
 constexpr int SIGNAL_INFO = 256;
 constexpr int RSSI_LEVEL_2 = 2;

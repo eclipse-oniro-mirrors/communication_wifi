@@ -160,6 +160,9 @@ private:
     void AutoStartServiceThread();
     void InitPidfile(void);
     void CheckSapcoExist(void);
+#ifdef FEATURE_CARPLAY_SUPPORTED
+    void CheckPoxiaoType(void);
+#endif
     void ProcessExtMsg(WifiCloseServiceCode code);
     void GetZeroWaitSupportFeatures(bool &support) const;
 private:

@@ -29,7 +29,7 @@ public:
     MOCK_CONST_METHOD1(AddBlockList, bool(const StationInfo &staInfo));
     MOCK_CONST_METHOD1(DelBlockList, bool(const StationInfo &staInfo));
     MOCK_CONST_METHOD0(EnableAllBlockList, bool());
-    MOCK_CONST_METHOD1(StationLeave, void(const std::string &mac));
+    MOCK_CONST_METHOD1(StationLeave, void(const StationInfo &staInfo));
     MOCK_CONST_METHOD1(StationJoin, void(const StationInfo &staInfo));
     MOCK_CONST_METHOD1(DisConnectStation, bool(const StationInfo &staInfo));
     MOCK_CONST_METHOD0(GetAllConnectedStations, std::vector<std::string>());

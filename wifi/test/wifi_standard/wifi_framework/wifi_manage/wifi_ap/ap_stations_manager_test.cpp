@@ -179,7 +179,7 @@ HWTEST_F(ApStationsManager_test, StationLeave, TestSize.Level1)
     EXPECT_CALL(WifiConfigCenter::GetInstance(), GetStationList(Eq(valueCom), 0))
         .WillOnce(DoAll(testing::SetArgReferee<0>(valueList), Return(0)));
     EXPECT_CALL(WifiConfigCenter::GetInstance(), ManageStation(Eq(value2), Eq(1), 0)).WillOnce(Return(0));
-    pApStaMgr->StationLeave(value1.bssid);
+    pApStaMgr->StationLeave(value1);
 }
 HWTEST_F(ApStationsManager_test, StationLeave1, TestSize.Level1)
 {
@@ -196,7 +196,7 @@ HWTEST_F(ApStationsManager_test, StationLeave1, TestSize.Level1)
     valueList.push_back(value3);
     EXPECT_CALL(WifiConfigCenter::GetInstance(), GetStationList(Eq(valueCom), 0))
         .WillOnce(DoAll(testing::SetArgReferee<0>(valueList), Return(1)));
-    pApStaMgr->StationLeave(value1.bssid);
+    pApStaMgr->StationLeave(value1);
     EXPECT_STREQ("AA:BB:CC:DD:EE:FF", Mac.c_str());
 }
 HWTEST_F(ApStationsManager_test, StationLeave2, TestSize.Level1)
@@ -215,7 +215,7 @@ HWTEST_F(ApStationsManager_test, StationLeave2, TestSize.Level1)
     EXPECT_CALL(WifiConfigCenter::GetInstance(), GetStationList(Eq(valueCom), 0))
         .WillOnce(DoAll(testing::SetArgReferee<0>(valueList), Return(0)));
     EXPECT_CALL(WifiConfigCenter::GetInstance(), ManageStation(Eq(value1), Eq(1), 0)).WillOnce(Return(1));
-    pApStaMgr->StationLeave(value1.bssid);
+    pApStaMgr->StationLeave(value1);
     EXPECT_STREQ("AA:BB:CC:DD:EE:FF", Mac.c_str());
 }
 
