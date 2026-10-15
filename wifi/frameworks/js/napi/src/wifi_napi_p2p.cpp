@@ -685,7 +685,8 @@ NO_SANITIZE("cfi") napi_value RemoveP2pServiceRequest(napi_env env, napi_callbac
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
     WIFI_NAPI_ASSERT_NUM_CODE(env, argc == 1 && wifiP2pPtr != nullptr, WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
     WifiP2pServiceRequest request;
-    WIFI_NAPI_ASSERT_NUM_CODE(env, JsObjToServiceRequest(env, argv[0], request), WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+    WIFI_NAPI_ASSERT_NUM_CODE(env, JsObjToServiceRequest(env, argv[0], request),
+        WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
     ErrCode ret = wifiP2pPtr->RemoveP2pServiceRequest(request);
     WIFI_NAPI_RETURN_NUM_CODE(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
 }
