@@ -113,7 +113,7 @@ HWTEST_F(WifiInternalEventDispatcherTest, AddScanCallback, TestSize.Level1)
 {
     sptr<IRemoteObject> remote;
     sptr<IWifiScanCallback> callback;
-    int pid = 1;
+    int pid = 0;
     EXPECT_EQ(WIFI_OPT_INVALID_PARAM, WifiInternalEventDispatcher::GetInstance().AddScanCallback(remote, callback, pid,
         EVENT_STA_SCAN_STATE_CHANGE, 0));
 }
