@@ -36,6 +36,10 @@ WifiP2PHalInterface &WifiP2PHalInterface::GetInstance(void)
             if (inst.InitHdiWpaClient()) {
                 initFlag = 1;
             }
+#else
+            if (inst.InitIdlClient()) {
+                initFlag = 1;
+            }
 #endif
         }
     }
@@ -47,8 +51,10 @@ WifiErrorNo WifiP2PHalInterface::StartP2p(const std::string &ifaceName, const bo
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pStart(ifaceName, hasPersisentGroup);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pStart();
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::StopP2p(void) const
@@ -56,16 +62,20 @@ WifiErrorNo WifiP2PHalInterface::StopP2p(void) const
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pStop();
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pStop();
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::RegisterP2pCallback(const P2pHalCallback &callbacks)
 {
-    WifiErrorNo err = WIFI_HAL_OPT_FAILED;
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
-    err = mHdiWpaClient->ReqP2pRegisterCallback(callbacks);
+    WifiErrorNo err = mHdiWpaClient->ReqP2pRegisterCallback(callbacks);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    WifiErrorNo err = mIdlClient->ReqP2pRegisterCallback(callbacks);
 #endif
     if (err == WIFI_HAL_OPT_OK || callbacks.onConnectSupplicant == nullptr) {
         mP2pCallback = callbacks;
@@ -78,8 +88,10 @@ WifiErrorNo WifiP2PHalInterface::StartWpsPbc(const std::string &groupInterface, 
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pSetupWpsPbc(groupInterface, bssid);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pSetupWpsPbc(groupInterface, bssid);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::CancelWpsPbc(const std::string &groupInterface) const
@@ -98,8 +110,10 @@ WifiErrorNo WifiP2PHalInterface::StartWpsPin(const std::string &groupInterface, 
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pSetupWpsPin(groupInterface, address, pin, result);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pSetupWpsPin(groupInterface, address, pin, result);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::RemoveNetwork(int networkId) const
@@ -107,8 +121,10 @@ WifiErrorNo WifiP2PHalInterface::RemoveNetwork(int networkId) const
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pRemoveNetwork(networkId);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pRemoveNetwork(networkId);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::ListNetworks(std::map<int, WifiP2pGroupInfo> &mapGroups) const
@@ -116,8 +132,10 @@ WifiErrorNo WifiP2PHalInterface::ListNetworks(std::map<int, WifiP2pGroupInfo> &m
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pListNetworks(mapGroups);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pListNetworks(mapGroups);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::SetP2pDeviceName(const std::string &name) const
@@ -125,8 +143,10 @@ WifiErrorNo WifiP2PHalInterface::SetP2pDeviceName(const std::string &name) const
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pSetDeviceName(name);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pSetDeviceName(name);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::SetP2pDeviceType(const std::string &type) const
@@ -134,8 +154,10 @@ WifiErrorNo WifiP2PHalInterface::SetP2pDeviceType(const std::string &type) const
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pSetWpsDeviceType(type);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pSetWpsDeviceType(type);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::SetP2pSecondaryDeviceType(const std::string &type)
@@ -143,8 +165,10 @@ WifiErrorNo WifiP2PHalInterface::SetP2pSecondaryDeviceType(const std::string &ty
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pSetWpsSecondaryDeviceType(type);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pSetWpsSecondaryDeviceType(type);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::SetP2pConfigMethods(const std::string &methods) const
@@ -152,8 +176,10 @@ WifiErrorNo WifiP2PHalInterface::SetP2pConfigMethods(const std::string &methods)
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pSetWpsConfigMethods(methods);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pSetWpsConfigMethods(methods);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::SetP2pSsidPostfix(const std::string &postfixName) const
@@ -161,8 +187,10 @@ WifiErrorNo WifiP2PHalInterface::SetP2pSsidPostfix(const std::string &postfixNam
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pSetSsidPostfixName(postfixName);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pSetSsidPostfixName(postfixName);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::SetP2pGroupIdle(const std::string &groupInterface, size_t time) const
@@ -170,8 +198,10 @@ WifiErrorNo WifiP2PHalInterface::SetP2pGroupIdle(const std::string &groupInterfa
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pSetGroupMaxIdle(groupInterface, time);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pSetGroupMaxIdle(groupInterface, time);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::SetP2pPowerSave(const std::string &groupInterface, bool enable) const
@@ -179,8 +209,10 @@ WifiErrorNo WifiP2PHalInterface::SetP2pPowerSave(const std::string &groupInterfa
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pSetPowerSave(groupInterface, enable);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pSetPowerSave(groupInterface, enable);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::SetWfdEnable(bool enable) const
@@ -188,8 +220,10 @@ WifiErrorNo WifiP2PHalInterface::SetWfdEnable(bool enable) const
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pSetWfdEnable(enable);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pSetWfdEnable(enable);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::SetWfdDeviceConfig(const std::string &config) const
@@ -197,8 +231,10 @@ WifiErrorNo WifiP2PHalInterface::SetWfdDeviceConfig(const std::string &config) c
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pSetWfdDeviceConfig(config);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pSetWfdDeviceConfig(config);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::P2pFind(size_t timeout) const
@@ -206,8 +242,10 @@ WifiErrorNo WifiP2PHalInterface::P2pFind(size_t timeout) const
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pStartFind(timeout);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pStartFind(timeout);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::P2pStopFind() const
@@ -215,8 +253,10 @@ WifiErrorNo WifiP2PHalInterface::P2pStopFind() const
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pStopFind();
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pStopFind();
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::P2pConfigureListen(bool enable, size_t period, size_t interval) const
@@ -224,8 +264,10 @@ WifiErrorNo WifiP2PHalInterface::P2pConfigureListen(bool enable, size_t period, 
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pSetExtListen(enable, period, interval);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pSetExtListen(enable, period, interval);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::SetListenChannel(size_t channel, unsigned char regClass) const
@@ -233,8 +275,10 @@ WifiErrorNo WifiP2PHalInterface::SetListenChannel(size_t channel, unsigned char 
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pSetListenChannel(channel, regClass);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pSetListenChannel(channel, regClass);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::P2pFlush() const
@@ -242,8 +286,10 @@ WifiErrorNo WifiP2PHalInterface::P2pFlush() const
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pFlush();
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pFlush();
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::Connect(const WifiP2pConfigInternal &config, bool isJoinExistingGroup,
@@ -252,8 +298,10 @@ WifiErrorNo WifiP2PHalInterface::Connect(const WifiP2pConfigInternal &config, bo
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pConnect(config, isJoinExistingGroup, pin);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pConnect(config, isJoinExistingGroup, pin);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::CancelConnect() const
@@ -261,8 +309,10 @@ WifiErrorNo WifiP2PHalInterface::CancelConnect() const
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pCancelConnect();
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pCancelConnect();
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::ProvisionDiscovery(const WifiP2pConfigInternal &config) const
@@ -270,8 +320,10 @@ WifiErrorNo WifiP2PHalInterface::ProvisionDiscovery(const WifiP2pConfigInternal 
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pProvisionDiscovery(config);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pProvisionDiscovery(config);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::GroupAdd(bool isPersistent, int networkId, int freq) const
@@ -279,8 +331,10 @@ WifiErrorNo WifiP2PHalInterface::GroupAdd(bool isPersistent, int networkId, int 
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pAddGroup(isPersistent, networkId, freq);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pAddGroup(isPersistent, networkId, freq);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::GroupRemove(const std::string &groupInterface) const
@@ -288,8 +342,10 @@ WifiErrorNo WifiP2PHalInterface::GroupRemove(const std::string &groupInterface) 
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pRemoveGroup(groupInterface);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pRemoveGroup(groupInterface);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::GroupClientRemove(const std::string &deviceMac) const
@@ -298,8 +354,10 @@ WifiErrorNo WifiP2PHalInterface::GroupClientRemove(const std::string &deviceMac)
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     std::string ifName = WifiConfigCenter::GetInstance().GetP2pIfaceName();
     return mHdiWpaClient->ReqP2pRemoveGroupClient(deviceMac, ifName);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pRemoveGroupClient(deviceMac);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::Invite(const WifiP2pGroupInfo &group, const std::string &deviceAddr) const
@@ -307,8 +365,10 @@ WifiErrorNo WifiP2PHalInterface::Invite(const WifiP2pGroupInfo &group, const std
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pInvite(group, deviceAddr);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pInvite(group, deviceAddr);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::Reinvoke(int networkId, const std::string &deviceAddr) const
@@ -316,8 +376,10 @@ WifiErrorNo WifiP2PHalInterface::Reinvoke(int networkId, const std::string &devi
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pReinvoke(networkId, deviceAddr);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pReinvoke(networkId, deviceAddr);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::GetDeviceAddress(std::string &deviceAddress) const
@@ -325,8 +387,10 @@ WifiErrorNo WifiP2PHalInterface::GetDeviceAddress(std::string &deviceAddress) co
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pGetDeviceAddress(deviceAddress);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pGetDeviceAddress(deviceAddress);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::GetGroupCapability(const std::string &deviceAddress, uint32_t &cap) const
@@ -334,8 +398,10 @@ WifiErrorNo WifiP2PHalInterface::GetGroupCapability(const std::string &deviceAdd
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pGetGroupCapability(deviceAddress, cap);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pGetGroupCapability(deviceAddress, cap);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::P2pServiceAdd(const WifiP2pServiceInfo &info) const
@@ -343,8 +409,10 @@ WifiErrorNo WifiP2PHalInterface::P2pServiceAdd(const WifiP2pServiceInfo &info) c
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pAddService(info);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pAddService(info);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::P2pServiceRemove(const WifiP2pServiceInfo &info) const
@@ -352,8 +420,10 @@ WifiErrorNo WifiP2PHalInterface::P2pServiceRemove(const WifiP2pServiceInfo &info
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pRemoveService(info);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pRemoveService(info);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::FlushService() const
@@ -361,8 +431,10 @@ WifiErrorNo WifiP2PHalInterface::FlushService() const
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pFlushService();
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pFlushService();
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::SaveConfig() const
@@ -370,8 +442,10 @@ WifiErrorNo WifiP2PHalInterface::SaveConfig() const
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pSaveConfig();
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pSaveConfig();
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::ReqServiceDiscovery(const std::string &deviceAddress,
@@ -380,8 +454,10 @@ WifiErrorNo WifiP2PHalInterface::ReqServiceDiscovery(const std::string &deviceAd
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pReqServiceDiscovery(deviceAddress, tlvs, reqID);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pReqServiceDiscovery(deviceAddress, tlvs, reqID);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::CancelReqServiceDiscovery(const std::string &id) const
@@ -389,8 +465,10 @@ WifiErrorNo WifiP2PHalInterface::CancelReqServiceDiscovery(const std::string &id
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pCancelServiceDiscovery(id);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pCancelServiceDiscovery(id);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::SetRandomMacAddr(bool enable) const
@@ -398,8 +476,10 @@ WifiErrorNo WifiP2PHalInterface::SetRandomMacAddr(bool enable) const
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pSetRandomMac(enable);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pSetRandomMac(enable);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::SetMiracastMode(int type) const
@@ -407,8 +487,10 @@ WifiErrorNo WifiP2PHalInterface::SetMiracastMode(int type) const
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pSetMiracastType(type);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pSetMiracastType(type);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::SetPersistentReconnect(int mode) const
@@ -416,8 +498,10 @@ WifiErrorNo WifiP2PHalInterface::SetPersistentReconnect(int mode) const
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqSetPersistentReconnect(mode);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqSetPersistentReconnect(mode);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::RespServiceDiscovery(const WifiP2pDevice &device, int frequency, int dialogToken,
@@ -426,8 +510,10 @@ WifiErrorNo WifiP2PHalInterface::RespServiceDiscovery(const WifiP2pDevice &devic
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqRespServiceDiscovery(device, frequency, dialogToken, tlvs);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqRespServiceDiscovery(device, frequency, dialogToken, tlvs);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::SetServiceDiscoveryExternal(bool isExternalProcess) const
@@ -435,8 +521,10 @@ WifiErrorNo WifiP2PHalInterface::SetServiceDiscoveryExternal(bool isExternalProc
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqSetServiceDiscoveryExternal(isExternalProcess);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqSetServiceDiscoveryExternal(isExternalProcess);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::GetP2pPeer(const std::string &deviceAddress, WifiP2pDevice &device) const
@@ -444,13 +532,21 @@ WifiErrorNo WifiP2PHalInterface::GetP2pPeer(const std::string &deviceAddress, Wi
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqGetP2pPeer(deviceAddress, device);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqGetP2pPeer(deviceAddress, device);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::GetChba0Freq(int &chba0Freq) const
 {
+#ifdef HDI_WPA_INTERFACE_SUPPORT
+    LOGE("call WifiP2PHalInterface::%{public}s!", __func__);
     return WIFI_HAL_OPT_FAILED;
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pGetChba0Freq(chba0Freq);
+#endif
 }
 
 WifiErrorNo WifiP2PHalInterface::P2pGetSupportFrequenciesByBand(const std::string &ifaceName, int band,
@@ -461,8 +557,12 @@ WifiErrorNo WifiP2PHalInterface::P2pGetSupportFrequenciesByBand(const std::strin
         return WIFI_HAL_OPT_FAILED;
     }
     return WIFI_HAL_OPT_OK;
-#endif
+#elif defined(HDI_WPA_INTERFACE_SUPPORT)
     return WIFI_HAL_OPT_FAILED;
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->GetSupportFrequencies(band, frequencies);
+#endif
 }
 
 WifiErrorNo WifiP2PHalInterface::P2pSetSingleConfig(int networkId, const std::string &key,
@@ -471,8 +571,9 @@ WifiErrorNo WifiP2PHalInterface::P2pSetSingleConfig(int networkId, const std::st
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pSetSingleConfig(networkId, key, value);
-#endif
+#else
     return WIFI_HAL_OPT_FAILED;
+#endif
 }
 
 WifiErrorNo WifiP2PHalInterface::P2pSetGroupConfig(int networkId, const HalP2pGroupConfig &config) const
@@ -480,8 +581,10 @@ WifiErrorNo WifiP2PHalInterface::P2pSetGroupConfig(int networkId, const HalP2pGr
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pSetGroupConfig(networkId, config);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pSetGroupConfig(networkId, config);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::P2pGetGroupConfig(int networkId, HalP2pGroupConfig &config) const
@@ -489,8 +592,10 @@ WifiErrorNo WifiP2PHalInterface::P2pGetGroupConfig(int networkId, HalP2pGroupCon
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pGetGroupConfig(networkId, config);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pGetGroupConfig(networkId, config);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::P2pAddNetwork(int &networkId) const
@@ -498,8 +603,10 @@ WifiErrorNo WifiP2PHalInterface::P2pAddNetwork(int &networkId) const
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pAddNetwork(networkId);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pAddNetwork(networkId);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 const P2pHalCallback &WifiP2PHalInterface::GetP2pCallbackInst(void) const
@@ -512,8 +619,10 @@ WifiErrorNo WifiP2PHalInterface::Hid2dConnect(const Hid2dConnectConfig &config) 
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->ReqP2pHid2dConnect(config);
+#else
+    CHECK_NULL_AND_RETURN(mIdlClient, WIFI_HAL_OPT_FAILED);
+    return mIdlClient->ReqP2pHid2dConnect(config);
 #endif
-    return WIFI_HAL_OPT_FAILED;
 }
 
 WifiErrorNo WifiP2PHalInterface::DeliverP2pData(int32_t cmdType, int32_t dataType, const std::string &carryData) const
@@ -521,8 +630,10 @@ WifiErrorNo WifiP2PHalInterface::DeliverP2pData(int32_t cmdType, int32_t dataTyp
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->DeliverP2pData(cmdType, dataType, carryData.c_str());
-#endif
+#else
+    LOGE("DeliverP2pData enter Ipc");
     return WIFI_HAL_OPT_FAILED;
+#endif
 }
 
 WifiErrorNo WifiP2PHalInterface::SetRptBlockList(const std::string &ifaceName, const std::string &interfaceName,
@@ -533,8 +644,9 @@ WifiErrorNo WifiP2PHalInterface::SetRptBlockList(const std::string &ifaceName, c
         return WIFI_HAL_OPT_FAILED;
     }
     return WIFI_HAL_OPT_OK;
-#endif
+#else
     return WIFI_HAL_OPT_FAILED;
+#endif
 }
 
 WifiErrorNo WifiP2PHalInterface::DisAssociateSta(const std::string &ifaceName, const std::string &interfaceName,
@@ -545,8 +657,9 @@ WifiErrorNo WifiP2PHalInterface::DisAssociateSta(const std::string &ifaceName, c
         return WIFI_HAL_OPT_FAILED;
     }
     return WIFI_HAL_OPT_OK;
-#endif
+#else
     return WIFI_HAL_OPT_FAILED;
+#endif
 }
 
 WifiErrorNo WifiP2PHalInterface::P2pReject(const std::string &mac)
@@ -554,8 +667,9 @@ WifiErrorNo WifiP2PHalInterface::P2pReject(const std::string &mac)
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->P2pReject(mac);
-#endif
+#else
     return WIFI_HAL_OPT_FAILED;
+#endif
 }
 
 WifiErrorNo WifiP2PHalInterface::SetMiracastSinkConfig(const std::string &config)
@@ -563,8 +677,9 @@ WifiErrorNo WifiP2PHalInterface::SetMiracastSinkConfig(const std::string &config
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     CHECK_NULL_AND_RETURN(mHdiWpaClient, WIFI_HAL_OPT_FAILED);
     return mHdiWpaClient->SetMiracastSinkConfig(config);
-#endif
+#else
     return WIFI_HAL_OPT_FAILED;
+#endif
 }
 
 WifiErrorNo WifiP2PHalInterface::P2pSetTempConfig(int networkId, const HalP2pGroupConfig &config) const

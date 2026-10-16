@@ -16,6 +16,7 @@
 #ifndef OHOS_WIFI_BASE_HAL_INTERFACE_H
 #define OHOS_WIFI_BASE_HAL_INTERFACE_H
 
+#include "wifi_idl_client.h"
 #ifdef HDI_WPA_INTERFACE_SUPPORT
 #include "wifi_hdi_wpa_client.h"
 #endif
@@ -35,6 +36,17 @@ public:
      *
      */
     virtual ~WifiBaseHalInterface();
+    /**
+     * @Description Init IdlClient.
+     *
+     */
+    bool InitIdlClient(void);
+    /**
+     * @Description WifiManagerService When exiting, send a message to the HAL layer to
+     *              clear the data.
+     *
+     */
+    void ExitAllIdlClient(void);
 
     /**
      * @Description Init HdiWpaClinet.
@@ -45,6 +57,8 @@ public:
 public:
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     WifiHdiWpaClient *mHdiWpaClient;
+#else
+    WifiIdlClient *mIdlClient;
 #endif
 };
 }  // namespace Wifi

@@ -25,6 +25,8 @@ WifiBaseHalInterface::WifiBaseHalInterface()
 {
 #ifdef HDI_WPA_INTERFACE_SUPPORT
     mHdiWpaClient = nullptr;
+#else
+    mIdlClient = nullptr;
 #endif
 }
 
@@ -34,6 +36,11 @@ WifiBaseHalInterface::~WifiBaseHalInterface()
     if (mHdiWpaClient != nullptr) {
         delete mHdiWpaClient;
         mHdiWpaClient = nullptr;
+    }
+#else
+    if (mIdlClient != nullptr) {
+        delete mIdlClient;
+        mIdlClient = nullptr;
     }
 #endif
 }
@@ -49,6 +56,31 @@ bool WifiBaseHalInterface::InitHdiWpaClient(void)
         return false;
     }
     return true;
+}
+#else
+bool WifiBaseHalInterface::InitIdlClient(void)
+{
+    if (mIdlClient == nullptr) {
+        mIdlClient = new (std::nothrow) WifiIdlClient;
+    }
+    if (mIdlClient == nullptr) {
+        LOGE("Failed to create idl client");
+        return false;
+    }
+    if (mIdlClient->InitClient() != 0) {
+        LOGE("Failed to init idl client");
+        return false;
+    }
+    return true;
+}
+
+void WifiBaseHalInterface::ExitAllIdlClient(void)
+{
+    LOGI("Exit all idl client!");
+    if (mIdlClient != nullptr) {
+        mIdlClient->ExitAllClient();
+    }
+    return;
 }
 #endif
 }  // namespace Wifi
