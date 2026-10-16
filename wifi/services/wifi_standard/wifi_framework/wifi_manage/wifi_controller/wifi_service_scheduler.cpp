@@ -800,6 +800,10 @@ void WifiServiceScheduler::DispatchWifiOpenRes(OperateResState state, int instId
 #ifdef EXTENSIBLE_AUTHENTICATION
         NetEapObserver::GetInstance().OnWifiStateOpen(static_cast<int>(state));
 #endif
+
+#ifndef OHOS_ARCH_LITE
+        AppNetworkSpeedLimitService::GetInstance().OnWifiStateOpen(static_cast<int>(state));
+#endif
         return;
     }
     if (state == OperateResState::OPEN_WIFI_FAILED) {

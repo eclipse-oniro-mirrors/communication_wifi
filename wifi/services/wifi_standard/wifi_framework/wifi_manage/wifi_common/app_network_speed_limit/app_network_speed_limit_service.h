@@ -74,6 +74,7 @@ public:
     void LimitSpeed(const int controlId, const int limitMode);
     void HandleNetworkConnectivityChange(int32_t bearType, int32_t code);
     void UpdateGameRttData(int rtt);
+    void OnWifiStateOpen(int state);
 
 private:
     void Init();
@@ -110,7 +111,7 @@ private:
     void VideoCallNetworkSpeedLimitConfigs(const WifiNetworkControlInfo &networkControlInfo);
     void LogSpeedLimitConfigs();
     void SetActivePowerScenes(PowerSceneFlag scene, bool active);
-    void SetGameSceneOpt(const int &scene);
+    void SetGameSceneOpt(const int &scene = -1);
     void UpdatePowerModeByScenes();
     void ResetPowerMode();
     void CheckAndResetGamePowerMode(const std::string &bundleName);

@@ -958,6 +958,14 @@ void AppNetworkSpeedLimitService::UpdateGameRttData(int rtt)
     }
 }
 
+void AppNetworkSpeedLimitService::OnWifiStateOpen(int state)
+{
+    if (state == static_cast<int>(OperateResState::OPEN_WIFI_SUCCEED)) {
+        WIFI_LOGI("%{public}s enter, reset game scene opt when wifi is opened.", __FUNCTION__);
+        SetGameSceneOpt();
+    }
+}
+
 void AppNetworkSpeedLimitService::ReportGameLatencyFeature(bool enabled, const std::string& featureName)
 {
     IEnhanceService *pEnhanceService = WifiServiceManager::GetInstance().GetEnhanceServiceInst();
