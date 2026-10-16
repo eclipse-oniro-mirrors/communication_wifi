@@ -198,6 +198,19 @@ public:
     virtual ErrCode ConnectToCandidateConfig(ConnectSettings &connectSettings) = 0;
 
     /**
+     * @Description Disconnect a candidate network identified by networkId for a period of time.
+     *
+     * @param networkId - Identifies the candidate network to be disconnected.
+     * @param blockDuration - Duration for which the network is blocked from re-associated, in seconds.
+     *     If the value is -1, the candidate network is permanently blocked from re-associated.
+     * @return ErrCode - operation result
+     */
+    virtual ErrCode DisconnectFromCandidateConfig(int networkId, int64_t blockDuration)
+    {
+        return WIFI_OPT_NOT_SUPPORTED;
+    }
+
+    /**
      * @Description Connect To a network base WifiDeviceConfig object
      *
      * @param config - WifiDeviceConfig object

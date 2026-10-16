@@ -276,6 +276,40 @@ ErrCode StaService::RemoveAllCandidateConfig(const int uid) const
     return WIFI_OPT_SUCCESS;
 }
 
+ErrCode StaService::DisconnectFromCandidateConfig(const int uid, const int networkId,
+    const int64_t blockDuration) const
+{
+    WifiDeviceConfig config;
+    if (WifiSettings::GetInstance().GetCandidateConfig(uid, networkId, config) == INVALID_NETWORK_ID) {
+        LOGE("DisconnectFromCandidateConfig-GetCandidateConfig not found failed!");
+        return WIFI_OPT_FAILED;
+    }
+
+    DisabledReason reason;
+    int64_t durationUs = -1;
+    if (blockDuration == -1) {
+        reason = DisabledReason::DISABLED_BY_WIFI_MANAGER;
+    } else if (blockDuration >= 0) {
+        reason = DisabledReason::USER_FORCE_DISCONNECT;
+        durationUs = blockDuration * SECOND_TO_MICROSECOND; // convert to microseconds
+    } else {
+        LOGE("DisconnectFromCandidateConfig: invalid blockDuration: %{public}" PRId64, blockDuration);
+        return WIFI_OPT_FAILED;
+    }
+    if (!BlockConnectService::GetInstance().UpdateNetworkSelectStatus(networkId, reason, durationUs)) {
+        LOGE("DisconnectFromCandidateConfig failed!");
+        return WIFI_OPT_FAILED;
+    }
+    /* If the currently connected network is the target one, disconnect it. */
+    WifiLinkedInfo linkedInfo;
+    WifiConfigCenter::GetInstance().GetLinkedInfo(linkedInfo, m_instId);
+    if (linkedInfo.connState == ConnState::CONNECTED && linkedInfo.networkId == networkId) {
+        CHECK_NULL_AND_RETURN(pStaStateMachine, WIFI_OPT_FAILED);
+        pStaStateMachine->SendMessage(WIFI_SVR_CMD_STA_DISCONNECT);
+    }
+    return WIFI_OPT_SUCCESS;
+}
+
 void StaService::NotifyCandidateApprovalStatus(CandidateApprovalStatus status) const
 {
 #ifndef OHOS_ARCH_LITE

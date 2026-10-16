@@ -85,6 +85,8 @@ public:
 
     ErrCode ConnectToCandidateConfig(ConnectSettings &connectSettings) override;
 
+    ErrCode DisconnectFromCandidateConfig(int networkId, int64_t blockDuration) override;
+
     ErrCode ConnectToDevice(const WifiDeviceConfig &config) override;
 
     ErrCode StartRoamToNetwork(const int networkId, const std::string bssid, const bool isCandidate) override;

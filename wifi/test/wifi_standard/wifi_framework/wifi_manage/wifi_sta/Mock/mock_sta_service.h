@@ -46,6 +46,8 @@ public:
     MOCK_METHOD1(ConnectToCandidateConfig, ErrCode(ConnectSettings &connectSettings));
     MOCK_CONST_METHOD2(RemoveCandidateConfig, ErrCode(const int uid, const int networkId));
     MOCK_CONST_METHOD1(RemoveAllCandidateConfig, ErrCode(const int uid));
+    MOCK_CONST_METHOD3(DisconnectFromCandidateConfig,
+        ErrCode(const int uid, const int networkId, const int64_t blockDuration));
     MOCK_CONST_METHOD1(SetSuspendMode, ErrCode(bool mode));
     MOCK_CONST_METHOD0(RemoveAllDevice, ErrCode());
     MOCK_CONST_METHOD3(AddCandidateConfig, ErrCode(const int uid, const WifiDeviceConfig &config, int& netWorkId));

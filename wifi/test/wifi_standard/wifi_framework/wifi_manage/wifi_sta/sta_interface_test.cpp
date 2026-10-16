@@ -307,6 +307,26 @@ public:
         EXPECT_TRUE(pStaInterface->RemoveAllCandidateConfig(uid) == WIFI_OPT_FAILED);
     }
 
+    void DisconnectFromCandidateConfigSuccess()
+    {
+        int uid = 1;
+        int networkId = 0;
+        int64_t blockDuration = -1;
+        EXPECT_CALL(*pMockStaService, DisconnectFromCandidateConfig(_, _, _))
+            .WillRepeatedly(Return(WIFI_OPT_SUCCESS));
+        EXPECT_TRUE(pStaInterface->DisconnectFromCandidateConfig(uid, networkId, blockDuration) == WIFI_OPT_SUCCESS);
+    }
+
+    void DisconnectFromCandidateConfigFail()
+    {
+        int uid = 1;
+        int networkId = 0;
+        int64_t blockDuration = -1;
+        EXPECT_CALL(*pMockStaService, DisconnectFromCandidateConfig(_, _, _))
+            .WillRepeatedly(Return(WIFI_OPT_FAILED));
+        EXPECT_TRUE(pStaInterface->DisconnectFromCandidateConfig(uid, networkId, blockDuration) == WIFI_OPT_FAILED);
+    }
+
     void AddCandidateConfigSuccess()
     {
         int uid = 1;
@@ -642,6 +662,16 @@ HWTEST_F(StaInterfaceTest, RemoveAllCandidateConfigSuccess, TestSize.Level1)
 HWTEST_F(StaInterfaceTest, RemoveAllCandidateConfigFail, TestSize.Level1)
 {
     RemoveAllCandidateConfigFail();
+}
+
+HWTEST_F(StaInterfaceTest, DisconnectFromCandidateConfigSuccess, TestSize.Level1)
+{
+    DisconnectFromCandidateConfigSuccess();
+}
+
+HWTEST_F(StaInterfaceTest, DisconnectFromCandidateConfigFail, TestSize.Level1)
+{
+    DisconnectFromCandidateConfigFail();
 }
 
 HWTEST_F(StaInterfaceTest, AddCandidateConfigSuccess, TestSize.Level1)
