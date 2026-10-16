@@ -31,6 +31,12 @@ inline const int CMD_AX_SELFCURE = 132;
 inline const int CMD_BE_BLA_LIST = 221;
 inline const int CMD_EMLSR_MODE = 222;
 inline const int CMD_MLD_LINK_SWITCH = 223;
+inline const int CMD_GAME_OPT = 224;
+ 
+enum class SceneOpt {
+    SCENE_11K = 0,           /* bit0: 禁止11k Beacon Response能力 */
+    SCENE_LOCK_CPU_FREQ = 1, /* bit1: 禁止超大核锁最高频 */
+};
 
 struct WifiPrivCmd {
     uint8_t *buf;
@@ -55,6 +61,7 @@ private:
     int SetEmlsrMode(const std::string &ifName, const std::string &param) const;
     int StartMldLinkSwitch(const std::string &ifName, const std::string &param) const;
     int SetFoldStatus(const std::string &ifName, const std::string &param) const;
+    int SetSceneOpt(const std::string &ifName, const std::string &param) const;
 };
 } // namespace Wifi
 } // namespace OHOS
