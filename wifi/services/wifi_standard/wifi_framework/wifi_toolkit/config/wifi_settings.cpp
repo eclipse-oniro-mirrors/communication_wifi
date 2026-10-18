@@ -26,7 +26,7 @@
 #include "wifi_country_code_define.h"
 #include "network_parser.h"
 #include "softap_parser.h"
-#include "package_parser.h"
+#include "wifi_app_parser.h"
 #include "wifi_backup_config.h"
 #include "cJSON.h"
 #endif
@@ -148,7 +148,6 @@ int WifiSettings::Init()
     ReloadTrustListPolicies();
     ReloadMovingFreezePolicy();
     ReloadStaRandomMac();
-    InitPackageInfoConfig();
     IncreaseNumRebootsSinceLastUse();
     return 0;
 }
@@ -1375,20 +1374,20 @@ const MovingFreezePolicy WifiSettings::ReloadMovingFreezePolicy()
 
 int WifiSettings::GetPackageInfoMap(std::map<std::string, std::vector<PackageInfo>> &packageInfoMap)
 {
-    std::unique_lock<std::mutex> lock(mPackageConfMutex);
-    packageInfoMap = mPackageInfoMap;
+#ifndef OHOS_ARCH_LITE
+    return AppParser::GetInstance().GetPackageInfoMap(packageInfoMap);
+#else
     return 0;
+#endif
 }
 
 int WifiSettings::GetPackageInfoByName(std::string name, std::vector<PackageInfo> &packageInfo)
 {
-    std::unique_lock<std::mutex> lock(mPackageConfMutex);
-    auto iter = mPackageInfoMap.find(name);
-    if (iter != mPackageInfoMap.end()) {
-        packageInfo = iter->second;
-        return 0;
-    }
+#ifndef OHOS_ARCH_LITE
+    return AppParser::GetInstance().GetPackageInfoByName(name, packageInfo);
+#else
     return -1;
+#endif
 }
 
 int WifiSettings::SyncHotspotConfig()
@@ -2264,58 +2263,13 @@ int WifiSettings::ReloadStaRandomMac()
     return 0;
 }
 
-void WifiSettings::InitPackageInfoConfig()
-{
-#ifndef OHOS_ARCH_LITE
-    std::unique_ptr<PackageXmlParser> xmlParser = std::make_unique<PackageXmlParser>();
-    bool ret = xmlParser->LoadConfiguration(PACKAGE_FILTER_CONFIG_FILE_PATH);
-    if (!ret) {
-        LOGE("PackageXmlParser load fail");
-        return;
-    }
-    ret = xmlParser->Parse();
-    if (!ret) {
-        LOGE("PackageXmlParser Parse fail");
-        return;
-    }
-    std::map<std::string, std::vector<PackageInfo>> scanControlPackageMap;
-    std::vector<PackageInfo> candidateList;
-    std::map<std::string, std::vector<PackageInfo>> variableMap;
-    std::vector<PackageInfo> permissionTrustList;
-    std::vector<PackageInfo> scanLimitPackage;
-    std::vector<PackageInfo> landscapeSwitchLimitList;
-    std::vector<PackageInfo> scanForegroundAllowLimitList;
-    std::vector<PackageInfo> scanBackgroundAllowLimitList;
-    xmlParser->GetScanControlPackages(scanControlPackageMap);
-    xmlParser->GetCandidateFilterPackages(candidateList);
-    xmlParser->GetCorePackages(variableMap);
-    xmlParser->GetAclAuthPackages(permissionTrustList);
-    xmlParser->GetScanLimitPackages(scanLimitPackage);
-    xmlParser->GetLandscapeSwitchLimitList(landscapeSwitchLimitList);
-    xmlParser->GetScanForegroundAllowLimitList(scanForegroundAllowLimitList);
-    xmlParser->GetScanBackgroundAllowLimitList(scanBackgroundAllowLimitList);
-    
-    std::unique_lock<std::mutex> lock(mPackageConfMutex);
-    mPackageInfoMap.insert(scanControlPackageMap.begin(), scanControlPackageMap.end());
-    mPackageInfoMap.insert_or_assign("CandidateFilterPackages", candidateList);
-    mPackageInfoMap.insert(variableMap.begin(), variableMap.end());
-    mPackageInfoMap.insert_or_assign("AclAuthPackages", permissionTrustList);
-    mPackageInfoMap.insert_or_assign("ScanLimitPackages", scanLimitPackage);
-    mPackageInfoMap.insert_or_assign("LandscapeSwitchLimitList", landscapeSwitchLimitList);
-    mPackageInfoMap.insert_or_assign("ScanForegroundAllowLimitList", scanForegroundAllowLimitList);
-    mPackageInfoMap.insert_or_assign("ScanBackgroundAllowLimitList", scanBackgroundAllowLimitList);
-#endif
-}
-
 std::string WifiSettings::GetPackageName(std::string tag)
 {
-    std::unique_lock<std::mutex> lock(mPackageConfMutex);
-    for (auto iter = mPackageInfoMap.begin(); iter != mPackageInfoMap.end(); iter++) {
-        if (iter->first == tag && !iter->second.empty()) {
-            return iter->second[0].name;
-        }
-    }
+#ifndef OHOS_ARCH_LITE
+    return AppParser::GetInstance().GetPackageName(tag);
+#else
     return "";
+#endif
 }
 
 std::string WifiSettings::GetSubstringByBytes(const std::string& value, int size) const

@@ -16,10 +16,16 @@
 #ifndef OHOS_WIFI_APP_PARSE_H
 #define OHOS_WIFI_APP_PARSE_H
 
-#include "xml_parser.h"
-#include <vector>
-#include <string>
+#include "cJSON.h"
+#include "wifi_common_msg.h"
+#include <functional>
+#include <map>
+#include <memory>
+#include <mutex>
 #include <shared_mutex>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace OHOS {
 namespace Wifi {
@@ -77,38 +83,15 @@ struct AppParserResult {
     std::string m_delayTime = "";
 };
 
-class AppParserInner : public XmlParser {
-public:
-    AppParserInner();
-    ~AppParserInner() override;
-    bool Init(AppParserResult &result, std::vector<const char*> appFileList = {});
-private:
-    bool InitAppParser(const char *appXmlFilePath);
-    bool ParseInternal(xmlNodePtr node) override;
-    void ParseAppList(const xmlNodePtr &innode);
-    void ParseNetworkControlAppList(const xmlNodePtr &innode);
-    LowLatencyAppInfo ParseLowLatencyAppInfo(const xmlNodePtr &innode);
-    WhiteListAppInfo ParseWhiteAppInfo(const xmlNodePtr &innode);
-    BlackListAppInfo ParseBlackAppInfo(const xmlNodePtr &innode);
-    MultiLinkAppInfo ParseMultiLinkAppInfo(const xmlNodePtr &innode);
-    ChariotAppInfo ParseChariotAppInfo(const xmlNodePtr &innode);
-    KeyForegroundListAppInfo ParseKeyForegroundListAppInfo(const xmlNodePtr &innode);
-    KeyBackgroundLimitListAppInfo ParseKeyBackgroundLimitListAppInfo(const xmlNodePtr &innode);
-    LiveStreamAppInfo ParseLiveStreamAppInfo(const xmlNodePtr &innode);
-    GameBackgroundLimitListAppInfo ParseGameBackgroundLimitListAppInfo(const xmlNodePtr &innode);
-    RssGameListAppInfo ParseRssGameListAppInfo(const xmlNodePtr &innode);
-    void ParseAsyncLimitSpeedDelayTime(const xmlNodePtr &innode);
-    HiGameExcludeAppInfo ParseHiGameExcludeAppInfo(const xmlNodePtr &innode);
-    AppType GetAppTypeAsInt(const xmlNodePtr &innode);
-private:
-    AppParserResult result_;
-    std::atomic<bool> initFlag_ {false};
-};
-
 class AppParser {
 public:
     static AppParser &GetInstance();
     bool Init();
+    bool UpdateAllConfigs(const std::function<bool()> &updateFunc);
+    bool ParseMonitorAppConfig(cJSON *root);
+    bool ParseNetworkControlAppConfig(cJSON *root);
+    bool ParsePackageFilterConfig(cJSON *root);
+
     bool IsLowLatencyApp(const std::string &bundleName) const;
     bool IsWhiteListApp(const std::string &bundleName) const;
     bool IsBlackListApp(const std::string &bundleName) const;
@@ -123,14 +106,25 @@ public:
     bool IsHiGameExcludeApp(const std::string &bundleName) const;
     bool IsOverGameRtt(const std::string &bundleName, const int gameRtt) const;
     bool IsOverGameLowRttThresh(const std::string &bundleName, const int gameRtt) const;
+    /* Package filter (wifi_package_filter.json) query interfaces. */
+    std::string GetPackageName(const std::string &tag) const;
+    int GetPackageInfoByName(const std::string &name, std::vector<PackageInfo> &packageInfo) const;
+    int GetPackageInfoMap(std::map<std::string, std::vector<PackageInfo>> &packageInfoMap) const;
+    void DumpAppParserResult(const std::string &trigger) const;
+
 private:
     AppParser();
     ~AppParser();
+    bool InitAppParser(const char *appJsonFilePath, bool (AppParser::*parseFunc)(cJSON *root));
+    AppParser(const AppParser &) = delete;
+    AppParser &operator=(const AppParser &) = delete;
+
 private:
     mutable std::shared_mutex appParserMutex_;
-    std::unique_ptr<AppParserInner> appParserInner_;
+    std::mutex configUpdateMutex_;
     AppParserResult result_;
-    std::atomic<bool> initFlag_ {false};
+    std::map<std::string, std::vector<PackageInfo>> mPackageInfoMap_ {};
+    bool initFlag_ {false};
 };
 } // namespace Wifi
 } // namespace OHOS

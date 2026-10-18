@@ -86,7 +86,6 @@ inline constexpr char WIFI_MOVING_FREEZE_POLICY_FILE_PATH[] = CONFIG_ROOR_DIR"/m
 inline constexpr char WIFI_STA_RANDOM_MAC_FILE_PATH[] = CONFIG_ROOR_DIR"/sta_randomMac.conf";
 inline constexpr char DUAL_WIFI_CONFIG_FILE_PATH[] = CONFIG_ROOR_DIR"/WifiConfigStore.xml";
 inline constexpr char DUAL_SOFTAP_CONFIG_FILE_PATH[] = CONFIG_ROOR_DIR"/WifiConfigStoreSoftAp.xml";
-inline constexpr char PACKAGE_FILTER_CONFIG_FILE_PATH[] = "/system/etc/wifi/wifi_package_filter.xml";
 inline constexpr char P2P_SUPPLICANT_CONFIG_FILE[] = CONFIG_ROOR_DIR"/wpa_supplicant/p2p_supplicant.conf";
 inline constexpr char WIFI_MDM_RESTRICTED_LIST[] = CONFIG_ROOR_DIR"/WifiMdmRestrictedList.conf";
 
@@ -431,7 +430,6 @@ private:
     int IncreaseNumRebootsSinceLastUse();
     void EncryptionWifiDeviceConfigOnBoot();
     int ReloadStaRandomMac();
-    void InitPackageInfoConfig();
     void InitDefaultHotspotConfig();
     void InitHotspotConfig();
 #ifdef FEATURE_WITH_GO_SIMULATION_AP
@@ -521,12 +519,10 @@ private:
 
     // COMMON
     std::mutex mWifiConfigMutex;
-    std::mutex mPackageConfMutex;
     std::atomic<int> mApMaxConnNum;
     std::atomic<int> mMaxNumConfigs;
     std::map<int, WifiConfig> mWifiConfig;
     WifiConfigFileImpl<WifiConfig> mSavedWifiConfig;
-    std::map<std::string, std::vector<PackageInfo>> mPackageInfoMap;
 };
 }  // namespace Wifi
 }  // namespace OHOS

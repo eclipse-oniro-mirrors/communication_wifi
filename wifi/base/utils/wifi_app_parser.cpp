@@ -13,414 +13,311 @@
  * limitations under the License.
  */
 #include "wifi_app_parser.h"
+#include <algorithm>
+#include <fstream>
+#include <mutex>
+#include <type_traits>
 #include <unordered_map>
-#include "wifi_common_def.h"
-#include "wifi_config_file_impl.h"
 #include "wifi_logger.h"
 
 namespace OHOS {
 namespace Wifi {
-DEFINE_WIFILOG_LABEL("WifiAppXmlParser");
+DEFINE_WIFILOG_LABEL("WifiAppJsonParser");
 
-constexpr auto WIFI_MONITOR_APP_FILE_PATH = "/system/etc/wifi/wifi_monitor_apps.xml";
-constexpr auto WIFI_NETWORK_CONTROL_APP_FILE_PATH = "/system/etc/wifi/wifi_network_control_apps.xml";
-constexpr auto XML_TAG_SECTION_HEADER_MONITOR_APP = "MonitorAPP";
-constexpr auto XML_TAG_SECTION_HEADER_NETWORK_CONTROL_APP = "NetworkControlAPP";
-constexpr auto XML_TAG_SECTION_HEADER_GAME_INFO = "GameInfo";
-constexpr auto XML_TAG_SECTION_HEADER_APP_WHITE_LIST = "AppWhiteList";
-constexpr auto XML_TAG_SECTION_HEADER_APP_BLACK_LIST = "AppBlackList";
-constexpr auto XML_TAG_SECTION_HEADER_MULTILINK_BLACK_LIST = "MultiLinkBlackList";
-constexpr auto XML_TAG_SECTION_HEADER_CHARIOT_APP = "ChariotApp";
-constexpr auto XML_TAG_SECTION_HEADER_APP_KEY_FOREGROUND_LIST = "KeyAppForegroundList";
-constexpr auto XML_TAG_SECTION_HEADER_APP_KEY_BACKGROUND_LIMIT_LIST = "KeyBackgroundLimitListApp";
-constexpr auto XML_TAG_SECTION_HEADER_APP_LIVE_STREAM_LIST = "AppLiveStream";
-constexpr auto XML_TAG_SECTION_HEADER_APP_GAME_BACKGROUND_LIMIT_LIST = "GameBackgroundLimitListApp";
-constexpr auto XML_TAG_SECTION_HEADER_RSS_GAME_LIST = "RssGameList";
-constexpr auto XML_TAG_SECTION_HEADER_ASYNC_DELAY_TIME = "AsyncDelayTime";
-constexpr auto XML_TAG_SECTION_HEADER_HIGAME_EXCLUDE_LIST = "HiGameExcludeList";
-constexpr auto XML_TAG_SECTION_KEY_GAME_RTT = "mGameRtt";
-constexpr auto XML_TAG_SECTION_KEY_GAME_RTT_GAP = "mGameRttGap";
-constexpr auto XML_TAG_SECTION_KEY_GAME_NAME = "gameName";
-constexpr auto XML_TAG_SECTION_KEY_PACKAGE_NAME = "packageName";
-constexpr auto XML_TAG_SECTION_KEY_DELAY_TIME = "delayTime";
+constexpr auto WIFI_MONITOR_APP_FILE_PATH = "/system/etc/wifi/wifi_monitor_apps.json";
+constexpr auto WIFI_NETWORK_CONTROL_APP_FILE_PATH = "/system/etc/wifi/wifi_network_control_apps.json";
+constexpr auto WIFI_PACKAGE_FILTER_FILE_PATH = "/system/etc/wifi/wifi_package_filter.json";
 
-const std::unordered_map<std::string, AppType> appTypeMap = {
-    { XML_TAG_SECTION_HEADER_GAME_INFO, AppType::LOW_LATENCY_APP },
-    { XML_TAG_SECTION_HEADER_APP_WHITE_LIST, AppType::WHITE_LIST_APP },
-    { XML_TAG_SECTION_HEADER_APP_BLACK_LIST, AppType::BLACK_LIST_APP },
-    { XML_TAG_SECTION_HEADER_MULTILINK_BLACK_LIST, AppType::MULTILINK_BLACK_LIST_APP },
-    { XML_TAG_SECTION_HEADER_CHARIOT_APP, AppType::CHARIOT_APP },
-    { XML_TAG_SECTION_HEADER_APP_KEY_FOREGROUND_LIST, AppType::KEY_FOREGROUND_LIST_APP},
-    { XML_TAG_SECTION_HEADER_APP_KEY_BACKGROUND_LIMIT_LIST, AppType::KEY_BACKGROUND_LIMIT_LIST_APP},
-    { XML_TAG_SECTION_HEADER_ASYNC_DELAY_TIME, AppType::ASYNC_DELAY_TIME},
-    { XML_TAG_SECTION_HEADER_APP_LIVE_STREAM_LIST, AppType::LIVE_STREAM_APP},
-    { XML_TAG_SECTION_HEADER_APP_GAME_BACKGROUND_LIMIT_LIST, AppType::GAME_BACKGROUND_LIMIT_LIST_APP},
-    { XML_TAG_SECTION_HEADER_RSS_GAME_LIST, AppType::RSS_GAME_LIST_APP},
-    { XML_TAG_SECTION_HEADER_HIGAME_EXCLUDE_LIST, AppType::HIGAME_EXCLUDE_LIST_APP},
-    { XML_TAG_SECTION_KEY_GAME_RTT, AppType::GAME_RTT},
-};
+/* common keys */
+constexpr auto JSON_KEY_NAME = "name";
+constexpr auto JSON_KEY_APPID = "appid";
 
-AppParserInner::AppParserInner()
+/* wifi_monitor_apps.json keys */
+constexpr auto JSON_KEY_GAME_INFO = "GameInfo";
+constexpr auto JSON_KEY_GAME_NAME = "gameName";
+constexpr auto JSON_KEY_GAME_RTT = "mGameRtt";
+constexpr auto JSON_KEY_GAME_RTT_GAP = "mGameRttGap";
+constexpr auto JSON_KEY_APP_WHITE_LIST = "AppWhiteList";
+constexpr auto JSON_KEY_APP_BLACK_LIST = "AppBlackList";
+constexpr auto JSON_KEY_MULTILINK_BLACK_LIST = "MultiLinkBlackList";
+constexpr auto JSON_KEY_CHARIOT_APP = "ChariotApp";
+constexpr auto JSON_KEY_HIGAME_EXCLUDE_LIST = "HiGameExcludeList";
+
+/* wifi_network_control_apps.json keys */
+constexpr auto JSON_KEY_APP_KEY_FOREGROUND_LIST = "KeyAppForegroundList";
+constexpr auto JSON_KEY_APP_KEY_BACKGROUND_LIMIT_LIST = "KeyBackgroundLimitListApp";
+constexpr auto JSON_KEY_APP_GAME_BACKGROUND_LIMIT_LIST = "GameBackgroundLimitListApp";
+constexpr auto JSON_KEY_RSS_GAME_LIST = "RssGameList";
+constexpr auto JSON_KEY_APP_LIVE_STREAM_LIST = "AppLiveStream";
+constexpr auto JSON_KEY_ASYNC_DELAY_TIME = "AsyncDelayTime";
+
+/* wifi_package_filter.json keys */
+constexpr auto JSON_KEY_SCAN_CONTROL_PACKAGES = "ScanControlPackages";
+constexpr auto JSON_KEY_CANDIDATE_FILTER_PACKAGES = "CandidateFilterPackages";
+constexpr auto JSON_KEY_CORE_PACKAGES = "CorePackages";
+constexpr auto JSON_KEY_ACL_AUTH_PACKAGES = "AclAuthPackages";
+constexpr auto JSON_KEY_SCAN_LIMIT_PACKAGES = "ScanLimitPackages";
+constexpr auto JSON_KEY_LANDSCAPE_SWITCH_LIMIT_LIST = "LandscapeSwitchLimitList";
+
+constexpr int MAX_JSON_FILE_SIZE = 1024 * 1024;
+
+namespace {
+cJSON *LoadJsonFile(const char *jsonFilePath)
 {
-    WIFI_LOGI("%{public}s enter", __FUNCTION__);
-}
-
-AppParserInner::~AppParserInner()
-{
-    WIFI_LOGI("%{public}s enter", __FUNCTION__);
-}
-
-bool AppParserInner::Init(AppParserResult &result, std::vector<const char*> appFileList)
-{
-    if (!initFlag_) {
-        bool parserRet = true;
-        for (auto filePath: appFileList) {
-            bool ret = InitAppParser(filePath);
-            WIFI_LOGI("%{public}s InitAppParser result %{public}s : %{public}d",
-                __FUNCTION__, filePath, static_cast<int>(ret));
-            parserRet &= ret;
-        }
-        if (parserRet) {
-            initFlag_ = true;
-            result = result_;
-            WIFI_LOGD("%{public}s InitAppParser successful", __FUNCTION__);
-        } else {
-            WIFI_LOGE("%{public}s InitAppParser fail", __FUNCTION__);
-        };
+    if (jsonFilePath == nullptr) {
+        return nullptr;
     }
-    return initFlag_;
+    std::ifstream inFile(jsonFilePath, std::ios::in | std::ios::binary);
+    if (!inFile.is_open()) {
+        WIFI_LOGE("%{public}s open %{public}s failed", __FUNCTION__, jsonFilePath);
+        return nullptr;
+    }
+    std::string content((std::istreambuf_iterator<char>(inFile)), std::istreambuf_iterator<char>());
+    inFile.close();
+    if (content.empty() || content.size() > static_cast<size_t>(MAX_JSON_FILE_SIZE)) {
+        WIFI_LOGE("%{public}s %{public}s content invalid, size:%{public}zu", __FUNCTION__,
+            jsonFilePath, content.size());
+        return nullptr;
+    }
+    cJSON *root = cJSON_Parse(content.c_str());
+    if (root == nullptr) {
+        WIFI_LOGE("%{public}s parse %{public}s failed", __FUNCTION__, jsonFilePath);
+    }
+    return root;
 }
 
-
-bool AppParserInner::InitAppParser(const char *appXmlFilePath)
+bool GetStringFromItem(const cJSON *item, std::string &out)
 {
-    if (appXmlFilePath == nullptr) {
-        WIFI_LOGE("%{public}s appXmlFilePath is null", __FUNCTION__);
+    if (item == nullptr || !cJSON_IsString(item) || item->valuestring == nullptr) {
         return false;
     }
-    std::string xmlPath(appXmlFilePath);
-    std::filesystem::path pathName = xmlPath;
-    std::error_code code;
-    if (!std::filesystem::exists(pathName, code)) {
-        WIFI_LOGE("%{public}s %{public}s not exists", __FUNCTION__, appXmlFilePath);
-        return false;
-    }
-    bool ret = LoadConfiguration(appXmlFilePath);
-    if (!ret) {
-        WIFI_LOGE("%{public}s load failed", __FUNCTION__);
-        return ret;
-    }
-    ret = Parse();
-    if (!ret) {
-        WIFI_LOGE("%{public}s parse failed", __FUNCTION__);
-        return ret;
-    }
-    WIFI_LOGD("%{public}s, wifi monitor app xml parsed successfully", __FUNCTION__);
-    return ret;
-}
-
-bool AppParserInner::ParseInternal(xmlNodePtr node)
-{
-    if (node == nullptr) {
-        WIFI_LOGE("%{public}s node is null", __FUNCTION__);
-        return false;
-    }
-    ParseAppList(node);
-    ParseNetworkControlAppList(node);
+    out = item->valuestring;
     return true;
 }
 
-void AppParserInner::ParseAppList(const xmlNodePtr &innode)
+/* Parse a string array section (e.g. "AppWhiteList": ["pkg1", "pkg2"]) directly
+ * into the typed app info list. */
+template<typename T>
+void ParseStringArray(const cJSON *root, const char *key, std::vector<T> &out)
 {
-    if (innode == nullptr) {
+    static_assert(std::is_base_of_v<CommonAppInfo, T>, "T must derive from CommonAppInfo");
+    cJSON *array = cJSON_GetObjectItem(root, key);
+    if (array == nullptr || !cJSON_IsArray(array)) {
         return;
     }
-    if (innode->name == nullptr || xmlStrcmp(innode->name, BAD_CAST(XML_TAG_SECTION_HEADER_MONITOR_APP)) != 0) {
-        WIFI_LOGE("innode name=%{public}s not equal MonitorAPP", innode->name);
-        return;
-    }
-    result_.m_lowLatencyAppVec.clear();
-    result_.m_whiteAppVec.clear();
-    result_.m_multilinkAppVec.clear();
-    result_.m_chariotAppVec.clear();
-    result_.m_blackAppVec.clear();
-    for (xmlNodePtr node = innode->children; node != nullptr; node = node->next) {
-        switch (GetAppTypeAsInt(node)) {
-            case AppType::LOW_LATENCY_APP:
-                result_.m_lowLatencyAppVec.push_back(ParseLowLatencyAppInfo(node));
-                break;
-            case AppType::WHITE_LIST_APP:
-                result_.m_whiteAppVec.push_back(ParseWhiteAppInfo(node));
-                break;
-            case AppType::MULTILINK_BLACK_LIST_APP:
-                result_.m_multilinkAppVec.push_back(ParseMultiLinkAppInfo(node));
-                break;
-            case AppType::BLACK_LIST_APP:
-                result_.m_blackAppVec.push_back(ParseBlackAppInfo(node));
-                break;
-            case AppType::CHARIOT_APP:
-                result_.m_chariotAppVec.push_back(ParseChariotAppInfo(node));
-                break;
-            case AppType::HIGAME_EXCLUDE_LIST_APP:
-                result_.m_hiGameExcludeAppVec.push_back(ParseHiGameExcludeAppInfo(node));
-                break;
-            default:
-                WIFI_LOGD("app type: %{public}s is not monitored", GetNodeValue(node).c_str());
-                break;
+    int size = cJSON_GetArraySize(array);
+    for (int i = 0; i < size; ++i) {
+        cJSON *item = cJSON_GetArrayItem(array, i);
+        std::string packageName;
+        if (GetStringFromItem(item, packageName) && !packageName.empty()) {
+            T appInfo {};
+            appInfo.packageName = packageName;
+            out.push_back(appInfo);
+        } else {
+            WIFI_LOGE("%{public}s parse %{public}s item error, index:%{public}d", __FUNCTION__, key, i);
         }
     }
 }
 
-void AppParserInner::ParseNetworkControlAppList(const xmlNodePtr &innode)
+/* Parse the game info array (e.g. [{"gameName": "pkg", "mGameRtt": 50, "mGameRttGap": 10}]). */
+void ParseGameInfoArray(const cJSON *root, AppParserResult &out)
 {
-    if (innode == nullptr || innode->name == nullptr) {
+    cJSON *gameArray = cJSON_GetObjectItem(root, JSON_KEY_GAME_INFO);
+    if (gameArray == nullptr || !cJSON_IsArray(gameArray)) {
         return;
     }
-    if (xmlStrcmp(innode->name, BAD_CAST(XML_TAG_SECTION_HEADER_NETWORK_CONTROL_APP)) != 0) {
-        WIFI_LOGE("innode name=%{public}s not equal NetworkControlAPP", innode->name);
-        return;
-    }
-    result_.m_keyForegroundListAppVec.clear();
-    result_.m_keyBackgroundLimitListAppVec.clear();
-    result_.m_liveStreamAppVec.clear();
-    result_.m_gameBackgroundLimitListAppVec.clear();
-    result_.m_rssGameListAppVec.clear();
-
-    for (xmlNodePtr node = innode->children; node != nullptr; node = node->next) {
-        switch (GetAppTypeAsInt(node)) {
-            case AppType::KEY_FOREGROUND_LIST_APP:
-                result_.m_keyForegroundListAppVec.push_back(ParseKeyForegroundListAppInfo(node));
-                break;
-            case AppType::KEY_BACKGROUND_LIMIT_LIST_APP:
-                result_.m_keyBackgroundLimitListAppVec.push_back(ParseKeyBackgroundLimitListAppInfo(node));
-                break;
-            case AppType::GAME_BACKGROUND_LIMIT_LIST_APP:
-                result_.m_gameBackgroundLimitListAppVec.push_back(ParseGameBackgroundLimitListAppInfo(node));
-                break;
-            case AppType::RSS_GAME_LIST_APP:
-                result_.m_rssGameListAppVec.push_back(ParseRssGameListAppInfo(node));
-                break;
-            case AppType::LIVE_STREAM_APP:
-                result_.m_liveStreamAppVec.push_back(ParseLiveStreamAppInfo(node));
-                break;
-            case AppType::ASYNC_DELAY_TIME:
-                ParseAsyncLimitSpeedDelayTime(node);
-                break;
-            default:
-                WIFI_LOGD("app type: %{public}s is not limited", GetNodeValue(node).c_str());
-                break;
+    int size = cJSON_GetArraySize(gameArray);
+    for (int i = 0; i < size; ++i) {
+        cJSON *entry = cJSON_GetArrayItem(gameArray, i);
+        if (entry == nullptr || !cJSON_IsObject(entry)) {
+            continue;
+        }
+        std::string gameName;
+        if (!GetStringFromItem(cJSON_GetObjectItem(entry, JSON_KEY_GAME_NAME), gameName)
+            || gameName.empty()) {
+            WIFI_LOGE("%{public}s parse game info error, index:%{public}d", __FUNCTION__, i);
+            continue;
+        }
+        LowLatencyAppInfo appInfo {};
+        appInfo.packageName = gameName;
+        out.m_lowLatencyAppVec.push_back(appInfo);
+        cJSON *rttItem = cJSON_GetObjectItem(entry, JSON_KEY_GAME_RTT);
+        if (rttItem != nullptr && cJSON_IsNumber(rttItem)) {
+            out.m_gameInfo[gameName].rtt = rttItem->valueint;
+        }
+        cJSON *rttGapItem = cJSON_GetObjectItem(entry, JSON_KEY_GAME_RTT_GAP);
+        if (rttGapItem != nullptr && cJSON_IsNumber(rttGapItem)) {
+            out.m_gameInfo[gameName].rttGap = rttGapItem->valueint;
         }
     }
-    WIFI_LOGI("%{public}s out,result_.m_keyForegroundListAppVec count:%{public}d!",
-        __FUNCTION__, (int)result_.m_keyForegroundListAppVec.size());
-    WIFI_LOGI("%{public}s out,result_.m_keyBackgroundLimitListAppVec count:%{public}d!",
-        __FUNCTION__, (int)result_.m_keyBackgroundLimitListAppVec.size());
 }
 
-LowLatencyAppInfo AppParserInner::ParseLowLatencyAppInfo(const xmlNodePtr &innode)
+/* Parse the AsyncDelayTime field (number or numeric string).
+ * Returns true and fills delayTime if the key exists, otherwise keeps it untouched. */
+bool ParseAsyncDelayTime(const cJSON *root, std::string &delayTime)
 {
-    LowLatencyAppInfo appInfo{};
-    xmlChar *value = xmlGetProp(innode, BAD_CAST(XML_TAG_SECTION_KEY_GAME_NAME));
-    if (value == NULL) {
-        WIFI_LOGE("%{public}s xml parser low latency app info error.", __FUNCTION__);
-        return appInfo;
+    cJSON *delayItem = cJSON_GetObjectItem(root, JSON_KEY_ASYNC_DELAY_TIME);
+    if (delayItem == nullptr) {
+        return false;
     }
-    std::string gameName = std::string(reinterpret_cast<char *>(value));
-    appInfo.packageName = gameName;
-    xmlFree(value);
-    for (xmlNodePtr node = innode->children; node != nullptr; node = node->next) {
-        if (GetAppTypeAsInt(node) == AppType::GAME_RTT) {
-            xmlChar *rttValue = xmlNodeGetContent(node);
-            if (rttValue == NULL) {
-                WIFI_LOGE("%{public}s xml parser game rtt info error.", __FUNCTION__);
-                break;
-            }
-            std::string rtt = std::string(reinterpret_cast<char *>(rttValue));
-            result_.m_gameInfo[gameName].rtt = CheckDataLegal(rtt);
-            xmlFree(rttValue);
-        }
-        if (GetNodeValue(node) == XML_TAG_SECTION_KEY_GAME_RTT_GAP) {
-            xmlChar *rttGapValue = xmlNodeGetContent(node);
-            if (rttGapValue == NULL) {
-                WIFI_LOGE("%{public}s xml parser game rtt gap info error.", __FUNCTION__);
-                break;
-            }
-            std::string rttGap = std::string(reinterpret_cast<char *>(rttGapValue));
-            result_.m_gameInfo[gameName].rttGap = CheckDataLegal(rttGap);
-            xmlFree(rttGapValue);
-        }
+    if (cJSON_IsNumber(delayItem)) {
+        delayTime = std::to_string(delayItem->valueint);
+    } else {
+        GetStringFromItem(delayItem, delayTime);
     }
-    return appInfo;
-}
-
-WhiteListAppInfo AppParserInner::ParseWhiteAppInfo(const xmlNodePtr &innode)
-{
-    WhiteListAppInfo appInfo;
-    xmlChar *value = xmlGetProp(innode, BAD_CAST(XML_TAG_SECTION_KEY_PACKAGE_NAME));
-    if (value == NULL) {
-        WIFI_LOGE("%{public}s xml parser  app info error.", __FUNCTION__);
-        return appInfo;
-    }
-    std::string packageName = std::string(reinterpret_cast<char *>(value));
-    appInfo.packageName = packageName;
-    xmlFree(value);
-    return appInfo;
-}
-
-BlackListAppInfo AppParserInner::ParseBlackAppInfo(const xmlNodePtr &innode)
-{
-    BlackListAppInfo appInfo;
-    xmlChar *value = xmlGetProp(innode, BAD_CAST(XML_TAG_SECTION_KEY_PACKAGE_NAME));
-    if (value == NULL) {
-        WIFI_LOGE("%{public}s xml parser  app info error.", __FUNCTION__);
-        return appInfo;
-    }
-    std::string packageName = std::string(reinterpret_cast<char *>(value));
-    appInfo.packageName = packageName;
-    xmlFree(value);
-    return appInfo;
-}
-
-MultiLinkAppInfo AppParserInner::ParseMultiLinkAppInfo(const xmlNodePtr &innode)
-{
-    MultiLinkAppInfo appInfo;
-    xmlChar *value = xmlGetProp(innode, BAD_CAST(XML_TAG_SECTION_KEY_PACKAGE_NAME));
-    if (value == NULL) {
-        WIFI_LOGE("%{public}s xml parser  app info error.", __FUNCTION__);
-        return appInfo;
-    }
-    std::string packageName = std::string(reinterpret_cast<char *>(value));
-    appInfo.packageName = packageName;
-    WIFI_LOGD("%{public}s packageName:%{public}s", __FUNCTION__, packageName.c_str());
-    xmlFree(value);
-    return appInfo;
-}
-
-ChariotAppInfo AppParserInner::ParseChariotAppInfo(const xmlNodePtr &innode)
-{
-    ChariotAppInfo appInfo;
-    xmlChar *value = xmlGetProp(innode, BAD_CAST(XML_TAG_SECTION_KEY_PACKAGE_NAME));
-    if (value == NULL) {
-        WIFI_LOGE("%{public}s xml parser  app info error.", __FUNCTION__);
-        return appInfo;
-    }
-    std::string packageName = std::string(reinterpret_cast<char *>(value));
-    appInfo.packageName = packageName;
-    xmlFree(value);
-    return appInfo;
-}
-
-KeyForegroundListAppInfo AppParserInner::ParseKeyForegroundListAppInfo(const xmlNodePtr &innode)
-{
-    KeyForegroundListAppInfo appInfo;
-    xmlChar *value = xmlGetProp(innode, BAD_CAST(XML_TAG_SECTION_KEY_PACKAGE_NAME));
-    if (value == NULL) {
-        WIFI_LOGE("%{public}s xml parser  app info error.", __FUNCTION__);
-        return appInfo;
-    }
-    std::string packageName = std::string(reinterpret_cast<char *>(value));
-    appInfo.packageName = packageName;
-    xmlFree(value);
-    return appInfo;
-}
-
-KeyBackgroundLimitListAppInfo AppParserInner::ParseKeyBackgroundLimitListAppInfo(const xmlNodePtr &innode)
-{
-    KeyBackgroundLimitListAppInfo appInfo;
-    xmlChar *value = xmlGetProp(innode, BAD_CAST(XML_TAG_SECTION_KEY_PACKAGE_NAME));
-    if (value == NULL) {
-        WIFI_LOGE("%{public}s xml parser  app info error.", __FUNCTION__);
-        return appInfo;
-    }
-    std::string packageName = std::string(reinterpret_cast<char *>(value));
-    appInfo.packageName = packageName;
-    xmlFree(value);
-    return appInfo;
-}
-
-LiveStreamAppInfo AppParserInner::ParseLiveStreamAppInfo(const xmlNodePtr &innode)
-{
-    LiveStreamAppInfo appInfo{};
-    xmlChar *value = xmlGetProp(innode, BAD_CAST(XML_TAG_SECTION_KEY_PACKAGE_NAME));
-    if (value == NULL) {
-        WIFI_LOGE("%{public}s xml parser live stream app info error.", __FUNCTION__);
-        return appInfo;
-    }
-    std::string packageName = std::string(reinterpret_cast<char *>(value));
-    appInfo.packageName = packageName;
-    xmlFree(value);
-    return appInfo;
-}
-
-GameBackgroundLimitListAppInfo AppParserInner::ParseGameBackgroundLimitListAppInfo(const xmlNodePtr &innode)
-{
-    GameBackgroundLimitListAppInfo appInfo{};
-    xmlChar *value = xmlGetProp(innode, BAD_CAST(XML_TAG_SECTION_KEY_PACKAGE_NAME));
-    if (value == NULL) {
-        WIFI_LOGE("%{public}s xml parser game background limit app info error.", __FUNCTION__);
-        return appInfo;
-    }
-    std::string packageName = std::string(reinterpret_cast<char *>(value));
-    appInfo.packageName = packageName;
-    xmlFree(value);
-    return appInfo;
-}
-
-RssGameListAppInfo AppParserInner::ParseRssGameListAppInfo(const xmlNodePtr &innode)
-{
-    RssGameListAppInfo appInfo{};
-    xmlChar *value = xmlGetProp(innode, BAD_CAST(XML_TAG_SECTION_KEY_PACKAGE_NAME));
-    if (value == NULL) {
-        WIFI_LOGE("%{public}s xml parser RSS game app info error.", __FUNCTION__);
-        return appInfo;
-    }
-    std::string packageName = std::string(reinterpret_cast<char *>(value));
-    appInfo.packageName = packageName;
-    xmlFree(value);
-    return appInfo;
-}
-
-HiGameExcludeAppInfo AppParserInner::ParseHiGameExcludeAppInfo(const xmlNodePtr &innode)
-{
-    HiGameExcludeAppInfo appInfo;
-    xmlChar *value = xmlGetProp(innode, BAD_CAST(XML_TAG_SECTION_KEY_PACKAGE_NAME));
-    if (value == NULL) {
-        WIFI_LOGE("%{public}s xml parser HiGame exclude app info error.", __FUNCTION__);
-        return appInfo;
-    }
-    std::string packageName = std::string(reinterpret_cast<char *>(value));
-    appInfo.packageName = packageName;
-    WIFI_LOGD("%{public}s packageName:%{public}s", __FUNCTION__, packageName.c_str());
-    xmlFree(value);
-    return appInfo;
-}
-
-void AppParserInner::ParseAsyncLimitSpeedDelayTime(const xmlNodePtr &innode)
-{
-    xmlChar *value = xmlGetProp(innode, BAD_CAST(XML_TAG_SECTION_KEY_DELAY_TIME));
-    if (value == NULL) {
-        WIFI_LOGE("%{public}s xml parser info error.", __FUNCTION__);
-        return;
-    }
-    result_.m_delayTime = std::string(reinterpret_cast<char *>(value));
-    if (result_.m_delayTime.empty()) {
+    if (delayTime.empty()) {
         WIFI_LOGE("%{public}s delay time is null, will set 0.", __FUNCTION__);
-        result_.m_delayTime = "0";
+        delayTime = "0";
     }
-    xmlFree(value);
+    return true;
 }
 
-AppType AppParserInner::GetAppTypeAsInt(const xmlNodePtr &innode)
+/* wifi_package_filter.json section parsers: each function reads its own
+ * section from the config root and fills the package info map. */
+
+/* Parse a package name string array (e.g. ["pkg1", "pkg2"]) into a list. */
+void ParseNameList(const cJSON *array, std::vector<PackageInfo> &out)
 {
-    std::string tagName = GetNodeValue(innode);
-    if (appTypeMap.find(tagName) != appTypeMap.end()) {
-        return appTypeMap.at(tagName);
+    if (array == nullptr || !cJSON_IsArray(array)) {
+        return;
     }
-    WIFI_LOGD("%{public}s not find targName:%{public}s in appTypeMap", __FUNCTION__, tagName.c_str());
-    return AppType::OTHER_APP;
+    int size = cJSON_GetArraySize(array);
+    for (int i = 0; i < size; ++i) {
+        std::string name;
+        if (GetStringFromItem(cJSON_GetArrayItem(array, i), name) && !name.empty()) {
+            PackageInfo info {};
+            info.name = name;
+            out.push_back(info);
+        }
+    }
 }
 
-/* below: AppParser is used for judge whether application in certain list*/
+void ParseScanControlPackages(const cJSON *root, std::map<std::string, std::vector<PackageInfo>> &out)
+{
+    cJSON *section = cJSON_GetObjectItem(root, JSON_KEY_SCAN_CONTROL_PACKAGES);
+    if (section == nullptr || !cJSON_IsObject(section)) {
+        WIFI_LOGE("%{public}s ScanControlPackages section invalid", __FUNCTION__);
+        return;
+    }
+    cJSON *tagNode = section->child;
+    while (tagNode != nullptr) {
+        if (tagNode->string == nullptr || !cJSON_IsArray(tagNode)) {
+            tagNode = tagNode->next;
+            continue;
+        }
+        std::vector<PackageInfo> list;
+        ParseNameList(tagNode, list);
+        out.insert_or_assign(tagNode->string, list);
+        tagNode = tagNode->next;
+    }
+}
+
+void ParseCandidateFilterPackages(const cJSON *root, std::map<std::string, std::vector<PackageInfo>> &out)
+{
+    cJSON *section = cJSON_GetObjectItem(root, JSON_KEY_CANDIDATE_FILTER_PACKAGES);
+    if (section == nullptr || !cJSON_IsArray(section)) {
+        WIFI_LOGE("%{public}s CandidateFilterPackages section invalid", __FUNCTION__);
+        return;
+    }
+    std::vector<PackageInfo> list;
+    ParseNameList(section, list);
+    out.insert_or_assign(JSON_KEY_CANDIDATE_FILTER_PACKAGES, list);
+}
+
+void ParseCorePackages(const cJSON *root, std::map<std::string, std::vector<PackageInfo>> &out)
+{
+    cJSON *section = cJSON_GetObjectItem(root, JSON_KEY_CORE_PACKAGES);
+    if (section == nullptr || !cJSON_IsObject(section)) {
+        WIFI_LOGE("%{public}s CorePackages section invalid", __FUNCTION__);
+        return;
+    }
+    cJSON *tagNode = section->child;
+    while (tagNode != nullptr) {
+        std::string name;
+        if (tagNode->string != nullptr && GetStringFromItem(tagNode, name) && !name.empty()) {
+            PackageInfo info {};
+            info.name = name;
+            out.insert_or_assign(tagNode->string, std::vector<PackageInfo> {info});
+        }
+        tagNode = tagNode->next;
+    }
+}
+
+void ParseAclAuthPackages(const cJSON *root, std::map<std::string, std::vector<PackageInfo>> &out)
+{
+    cJSON *section = cJSON_GetObjectItem(root, JSON_KEY_ACL_AUTH_PACKAGES);
+    if (section == nullptr || !cJSON_IsArray(section)) {
+        WIFI_LOGE("%{public}s AclAuthPackages section invalid", __FUNCTION__);
+        return;
+    }
+    std::vector<PackageInfo> list;
+    int size = cJSON_GetArraySize(section);
+    for (int i = 0; i < size; ++i) {
+        cJSON *item = cJSON_GetArrayItem(section, i);
+        if (item == nullptr || !cJSON_IsObject(item)) {
+            continue;
+        }
+        PackageInfo info {};
+        if (!GetStringFromItem(cJSON_GetObjectItem(item, JSON_KEY_NAME), info.name) || info.name.empty()) {
+            WIFI_LOGE("%{public}s parse AclAuthPackages item error, index:%{public}d", __FUNCTION__, i);
+            continue;
+        }
+        /* appid is optional: keep the default empty value when absent or invalid */
+        (void)GetStringFromItem(cJSON_GetObjectItem(item, JSON_KEY_APPID), info.appid);
+        list.push_back(info);
+    }
+    out.insert_or_assign(JSON_KEY_ACL_AUTH_PACKAGES, list);
+}
+
+void ParseScanLimitPackages(const cJSON *root, std::map<std::string, std::vector<PackageInfo>> &out)
+{
+    cJSON *section = cJSON_GetObjectItem(root, JSON_KEY_SCAN_LIMIT_PACKAGES);
+    if (section == nullptr || !cJSON_IsArray(section)) {
+        WIFI_LOGE("%{public}s ScanLimitPackages section invalid", __FUNCTION__);
+        return;
+    }
+    std::vector<PackageInfo> list;
+    int size = cJSON_GetArraySize(section);
+    for (int i = 0; i < size; ++i) {
+        cJSON *item = cJSON_GetArrayItem(section, i);
+        if (item == nullptr || !cJSON_IsObject(item)) {
+            continue;
+        }
+        PackageInfo info {};
+        if (!GetStringFromItem(cJSON_GetObjectItem(item, JSON_KEY_NAME), info.name) || info.name.empty()) {
+            WIFI_LOGE("%{public}s parse ScanLimitPackages item error, index:%{public}d", __FUNCTION__, i);
+            continue;
+        }
+        /* appid is optional: keep the default empty value when absent or invalid */
+        (void)GetStringFromItem(cJSON_GetObjectItem(item, JSON_KEY_APPID), info.appid);
+        list.push_back(info);
+    }
+    out.insert_or_assign(JSON_KEY_SCAN_LIMIT_PACKAGES, list);
+}
+
+void ParseLandscapeSwitchLimitList(const cJSON *root, std::map<std::string, std::vector<PackageInfo>> &out)
+{
+    cJSON *section = cJSON_GetObjectItem(root, JSON_KEY_LANDSCAPE_SWITCH_LIMIT_LIST);
+    if (section == nullptr || !cJSON_IsArray(section)) {
+        WIFI_LOGE("%{public}s LandscapeSwitchLimitList section invalid", __FUNCTION__);
+        return;
+    }
+    std::vector<PackageInfo> list;
+    ParseNameList(section, list);
+    out.insert_or_assign(JSON_KEY_LANDSCAPE_SWITCH_LIMIT_LIST, list);
+}
+
+/* Log one app list with its key: the size first, then each package name. */
+template<typename T>
+void LogAppList(const char *key, const std::vector<T> &list)
+{
+    WIFI_LOGI("%{public}s %{public}s size:%{public}zu", __FUNCTION__, key, list.size());
+    for (size_t i = 0; i < list.size(); ++i) {
+        WIFI_LOGI("%{public}s %{public}s [%{public}zu]: %{public}s",
+            __FUNCTION__, key, i, list[i].packageName.c_str());
+    }
+}
+} // namespace
 
 AppParser::AppParser()
 {
@@ -440,14 +337,136 @@ AppParser &AppParser::GetInstance()
 
 bool AppParser::Init()
 {
-    std::unique_lock<std::shared_mutex> lock(appParserMutex_);
-    if (!initFlag_) {
-        appParserInner_ = std::make_unique<AppParserInner>();
-        std::vector<const char*> appFileList = {WIFI_MONITOR_APP_FILE_PATH, WIFI_NETWORK_CONTROL_APP_FILE_PATH};
-        initFlag_ = appParserInner_->Init(result_, appFileList);
-        appParserInner_ = nullptr; // release memory after use
+    std::lock_guard<std::mutex> lock(configUpdateMutex_);
+    if (initFlag_) {
+        return true;
     }
-    return initFlag_;
+    bool parserRet = InitAppParser(WIFI_MONITOR_APP_FILE_PATH, &AppParser::ParseMonitorAppConfig);
+    parserRet &= InitAppParser(WIFI_NETWORK_CONTROL_APP_FILE_PATH, &AppParser::ParseNetworkControlAppConfig);
+    parserRet &= InitAppParser(WIFI_PACKAGE_FILTER_FILE_PATH, &AppParser::ParsePackageFilterConfig);
+    if (!parserRet) {
+        WIFI_LOGE("%{public}s InitAppParser fail", __FUNCTION__);
+        return false;
+    }
+    initFlag_ = true;
+    WIFI_LOGD("%{public}s InitAppParser successful", __FUNCTION__);
+    DumpAppParserResult("init");
+    return true;
+}
+
+bool AppParser::InitAppParser(const char *appJsonFilePath, bool (AppParser::*parseFunc)(cJSON *root))
+{
+    if (appJsonFilePath == nullptr) {
+        WIFI_LOGE("%{public}s appJsonFilePath is null", __FUNCTION__);
+        return false;
+    }
+    cJSON *root = LoadJsonFile(appJsonFilePath);
+    if (root == nullptr) {
+        WIFI_LOGE("%{public}s load %{public}s failed", __FUNCTION__, appJsonFilePath);
+        return false;
+    }
+    bool ret = (this->*parseFunc)(root);
+    cJSON_Delete(root);
+    return ret;
+}
+
+bool AppParser::UpdateAllConfigs(const std::function<bool()> &updateFunc)
+{
+    if (updateFunc == nullptr) {
+        WIFI_LOGE("%{public}s updateFunc is null", __FUNCTION__);
+        return false;
+    }
+    std::lock_guard<std::mutex> lock(configUpdateMutex_);
+    bool success = updateFunc();
+    if (success) {
+        initFlag_ = true;
+    }
+    return success;
+}
+
+bool AppParser::ParseMonitorAppConfig(cJSON *root)
+{
+    if (root == nullptr) {
+        WIFI_LOGE("%{public}s invalid monitor app config", __FUNCTION__);
+        return false;
+    }
+    AppParserResult tmp {};
+    ParseGameInfoArray(root, tmp);
+    ParseStringArray(root, JSON_KEY_APP_WHITE_LIST, tmp.m_whiteAppVec);
+    ParseStringArray(root, JSON_KEY_APP_BLACK_LIST, tmp.m_blackAppVec);
+    ParseStringArray(root, JSON_KEY_MULTILINK_BLACK_LIST, tmp.m_multilinkAppVec);
+    ParseStringArray(root, JSON_KEY_CHARIOT_APP, tmp.m_chariotAppVec);
+    ParseStringArray(root, JSON_KEY_HIGAME_EXCLUDE_LIST, tmp.m_hiGameExcludeAppVec);
+    WIFI_LOGI("%{public}s out, lowLatency:%{public}zu whiteList:%{public}zu blackList:%{public}zu multilink:%{public}zu"
+        " chariot:%{public}zu hiGameExclude:%{public}zu gameInfo:%{public}zu",
+        __FUNCTION__, tmp.m_lowLatencyAppVec.size(), tmp.m_whiteAppVec.size(),
+        tmp.m_blackAppVec.size(), tmp.m_multilinkAppVec.size(), tmp.m_chariotAppVec.size(),
+        tmp.m_hiGameExcludeAppVec.size(), tmp.m_gameInfo.size());
+    {
+        std::unique_lock<std::shared_mutex> lock(appParserMutex_);
+        result_.m_lowLatencyAppVec = std::move(tmp.m_lowLatencyAppVec);
+        result_.m_whiteAppVec = std::move(tmp.m_whiteAppVec);
+        result_.m_blackAppVec = std::move(tmp.m_blackAppVec);
+        result_.m_multilinkAppVec = std::move(tmp.m_multilinkAppVec);
+        result_.m_chariotAppVec = std::move(tmp.m_chariotAppVec);
+        result_.m_hiGameExcludeAppVec = std::move(tmp.m_hiGameExcludeAppVec);
+        result_.m_gameInfo = std::move(tmp.m_gameInfo);
+    }
+    return true;
+}
+
+bool AppParser::ParseNetworkControlAppConfig(cJSON *root)
+{
+    if (root == nullptr) {
+        WIFI_LOGE("%{public}s invalid network control app config", __FUNCTION__);
+        return false;
+    }
+    AppParserResult tmp {};
+    ParseStringArray(root, JSON_KEY_APP_KEY_FOREGROUND_LIST, tmp.m_keyForegroundListAppVec);
+    ParseStringArray(root, JSON_KEY_APP_KEY_BACKGROUND_LIMIT_LIST, tmp.m_keyBackgroundLimitListAppVec);
+    ParseStringArray(root, JSON_KEY_APP_GAME_BACKGROUND_LIMIT_LIST, tmp.m_gameBackgroundLimitListAppVec);
+    ParseStringArray(root, JSON_KEY_RSS_GAME_LIST, tmp.m_rssGameListAppVec);
+    ParseStringArray(root, JSON_KEY_APP_LIVE_STREAM_LIST, tmp.m_liveStreamAppVec);
+    std::string delayTime;
+    bool hasDelayTime = ParseAsyncDelayTime(root, delayTime);
+    WIFI_LOGI("%{public}s out, keyForeground:%{public}zu keyBackgroundLimit:%{public}zu gameBackgroundLimit:%{public}zu"
+        " rssGame:%{public}zu liveStream:%{public}zu delayTime:%{public}s",
+        __FUNCTION__, tmp.m_keyForegroundListAppVec.size(), tmp.m_keyBackgroundLimitListAppVec.size(),
+        tmp.m_gameBackgroundLimitListAppVec.size(), tmp.m_rssGameListAppVec.size(),
+        tmp.m_liveStreamAppVec.size(), hasDelayTime ? delayTime.c_str() : "(keep)");
+    {
+        std::unique_lock<std::shared_mutex> lock(appParserMutex_);
+        result_.m_keyForegroundListAppVec = std::move(tmp.m_keyForegroundListAppVec);
+        result_.m_keyBackgroundLimitListAppVec = std::move(tmp.m_keyBackgroundLimitListAppVec);
+        result_.m_gameBackgroundLimitListAppVec = std::move(tmp.m_gameBackgroundLimitListAppVec);
+        result_.m_rssGameListAppVec = std::move(tmp.m_rssGameListAppVec);
+        result_.m_liveStreamAppVec = std::move(tmp.m_liveStreamAppVec);
+        if (hasDelayTime) {
+            result_.m_delayTime = delayTime;
+        }
+    }
+    return true;
+}
+
+bool AppParser::ParsePackageFilterConfig(cJSON *root)
+{
+    if (root == nullptr) {
+        WIFI_LOGE("%{public}s invalid package filter config", __FUNCTION__);
+        return false;
+    }
+    std::map<std::string, std::vector<PackageInfo>> tmpMap;
+    ParseScanControlPackages(root, tmpMap);
+    ParseCandidateFilterPackages(root, tmpMap);
+    ParseCorePackages(root, tmpMap);
+    ParseAclAuthPackages(root, tmpMap);
+    ParseScanLimitPackages(root, tmpMap);
+    ParseLandscapeSwitchLimitList(root, tmpMap);
+    WIFI_LOGI("%{public}s out, packageInfoMap size:%{public}zu", __FUNCTION__, tmpMap.size());
+    {
+        std::unique_lock<std::shared_mutex> lock(appParserMutex_);
+        mPackageInfoMap_ = std::move(tmpMap);
+    }
+    return true;
 }
 
 bool AppParser::IsLowLatencyApp(const std::string &bundleName) const
@@ -549,6 +568,71 @@ std::string AppParser::GetAsyncLimitSpeedDelayTime() const
 {
     std::shared_lock<std::shared_mutex> lock(appParserMutex_);
     return result_.m_delayTime;
+}
+
+std::string AppParser::GetPackageName(const std::string &tag) const
+{
+    std::shared_lock<std::shared_mutex> lock(appParserMutex_);
+    auto iter = mPackageInfoMap_.find(tag);
+    if (iter != mPackageInfoMap_.end() && !iter->second.empty()) {
+        return iter->second[0].name;
+    }
+    return "";
+}
+
+int AppParser::GetPackageInfoByName(const std::string &name, std::vector<PackageInfo> &packageInfo) const
+{
+    std::shared_lock<std::shared_mutex> lock(appParserMutex_);
+    auto iter = mPackageInfoMap_.find(name);
+    if (iter != mPackageInfoMap_.end()) {
+        packageInfo = iter->second;
+        return 0;
+    }
+    return -1;
+}
+
+int AppParser::GetPackageInfoMap(std::map<std::string, std::vector<PackageInfo>> &packageInfoMap) const
+{
+    std::shared_lock<std::shared_mutex> lock(appParserMutex_);
+    packageInfoMap = mPackageInfoMap_;
+    return 0;
+}
+
+void AppParser::DumpAppParserResult(const std::string &trigger) const
+{
+    std::shared_lock<std::shared_mutex> lock(appParserMutex_);
+    if (trigger != "cloudPush") {
+        return;
+    }
+    WIFI_LOGI("%{public}s enter", __FUNCTION__);
+    /* wifi_monitor_apps.json sections */
+    LogAppList("lowLatencyApp", result_.m_lowLatencyAppVec);
+    LogAppList("whiteApp", result_.m_whiteAppVec);
+    LogAppList("blackApp", result_.m_blackAppVec);
+    LogAppList("multilinkApp", result_.m_multilinkAppVec);
+    LogAppList("chariotApp", result_.m_chariotAppVec);
+    LogAppList("hiGameExcludeApp", result_.m_hiGameExcludeAppVec);
+    for (const auto &game : result_.m_gameInfo) {
+        WIFI_LOGI("%{public}s gameInfo %{public}s rtt:%{public}d rttGap:%{public}d",
+            __FUNCTION__, game.first.c_str(), game.second.rtt, game.second.rttGap);
+    }
+    /* wifi_network_control_apps.json sections */
+    LogAppList("keyForegroundApp", result_.m_keyForegroundListAppVec);
+    LogAppList("keyBackgroundLimitApp", result_.m_keyBackgroundLimitListAppVec);
+    LogAppList("gameBackgroundLimitApp", result_.m_gameBackgroundLimitListAppVec);
+    LogAppList("rssGameApp", result_.m_rssGameListAppVec);
+    LogAppList("liveStreamApp", result_.m_liveStreamAppVec);
+    WIFI_LOGI("%{public}s delayTime:%{public}s", __FUNCTION__, result_.m_delayTime.c_str());
+    /* wifi_package_filter.json sections */
+    for (const auto &tag : mPackageInfoMap_) {
+        WIFI_LOGI("%{public}s packageFilter %{public}s size:%{public}zu",
+            __FUNCTION__, tag.first.c_str(), tag.second.size());
+        for (size_t i = 0; i < tag.second.size(); ++i) {
+            WIFI_LOGI("%{public}s packageFilter %{public}s [%{public}zu] name:%{public}s appid:%{public}s",
+                __FUNCTION__, tag.first.c_str(), i, tag.second[i].name.c_str(), tag.second[i].appid.c_str());
+        }
+    }
+    WIFI_LOGI("%{public}s exit", __FUNCTION__);
 }
 } // namespace Wifi
 } // namespace OHOS
