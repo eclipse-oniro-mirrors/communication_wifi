@@ -171,6 +171,12 @@ HWTEST_F(AppParserTest, IsMultiLinkApp_False, TestSize.Level1)
     EXPECT_FALSE(parser.IsMultiLinkApp("other"));
 }
 
+HWTEST_F(AppParserTest, IsHiGameExcludeApp_False, TestSize.Level1)
+{
+    WIFI_LOGI("IsHiGameExcludeApp_False enter");
+    EXPECT_FALSE(parser.IsHiGameExcludeApp("other"));
+}
+
 HWTEST_F(AppParserTest, IsOverGameRtt_WithRtt, TestSize.Level1)
 {
     WIFI_LOGI("IsOverGameRtt_WithRtt enter");
