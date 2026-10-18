@@ -158,6 +158,13 @@ HWTEST_F(AppParserTest, IsBlackListApp_False, TestSize.Level1)
     EXPECT_FALSE(parser.IsBlackListApp("other"));
 }
 
+HWTEST_F(AppParserTest, IsChariotApp_False, TestSize.Level1)
+{
+    WIFI_LOGI("IsChariotApp_False enter");
+    EXPECT_FALSE(parser.IsChariotApp("other"));
+ 
+}
+
 HWTEST_F(AppParserTest, IsMultiLinkApp_False, TestSize.Level1)
 {
     WIFI_LOGI("IsMultiLinkApp_False enter");
