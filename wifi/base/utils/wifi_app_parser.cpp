@@ -14,8 +14,13 @@
  */
 #include "wifi_app_parser.h"
 #include <algorithm>
-#include <fstream>
+#include <cerrno>
+#include <cstdio>
+#include <cstdlib>
+#include <limits.h>
 #include <mutex>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <type_traits>
 #include <unordered_map>
 #include "wifi_logger.h"
@@ -60,6 +65,7 @@ constexpr auto JSON_KEY_SCAN_LIMIT_PACKAGES = "ScanLimitPackages";
 constexpr auto JSON_KEY_LANDSCAPE_SWITCH_LIMIT_LIST = "LandscapeSwitchLimitList";
 
 constexpr int MAX_JSON_FILE_SIZE = 1024 * 1024;
+constexpr int MIN_JSON_FILE_SIZE = 0;
 
 namespace {
 cJSON *LoadJsonFile(const char *jsonFilePath)
@@ -67,22 +73,48 @@ cJSON *LoadJsonFile(const char *jsonFilePath)
     if (jsonFilePath == nullptr) {
         return nullptr;
     }
-    std::ifstream inFile(jsonFilePath, std::ios::in | std::ios::binary);
-    if (!inFile.is_open()) {
-        WIFI_LOGE("%{public}s open %{public}s failed", __FUNCTION__, jsonFilePath);
+    char realFilePath[PATH_MAX] = {0};
+    if (realpath(jsonFilePath, realFilePath) == nullptr) {
+        WIFI_LOGE("%{public}s realpath fail, path:%{public}s, errno:%{public}d",
+            __FUNCTION__, jsonFilePath, errno);
         return nullptr;
     }
-    std::string content((std::istreambuf_iterator<char>(inFile)), std::istreambuf_iterator<char>());
-    inFile.close();
-    if (content.empty() || content.size() > static_cast<size_t>(MAX_JSON_FILE_SIZE)) {
-        WIFI_LOGE("%{public}s %{public}s content invalid, size:%{public}zu", __FUNCTION__,
-            jsonFilePath, content.size());
+    FILE *file = fopen(realFilePath, "r");
+    if (file == nullptr) {
+        WIFI_LOGE("%{public}s open %{public}s failed", __FUNCTION__, realFilePath);
         return nullptr;
     }
-    cJSON *root = cJSON_Parse(content.c_str());
+    struct stat statbuf = {0};
+    if (stat(realFilePath, &statbuf) != 0) {
+        WIFI_LOGE("%{public}s stat %{public}s failed", __FUNCTION__, realFilePath);
+        fclose(file);
+        return nullptr;
+    }
+    int fileSize = static_cast<int>(statbuf.st_size);
+    if (fileSize > MAX_JSON_FILE_SIZE || fileSize < MIN_JSON_FILE_SIZE) {
+        WIFI_LOGE("%{public}s %{public}s fileSize illegal:%{public}d", __FUNCTION__, realFilePath, fileSize);
+        fclose(file);
+        return nullptr;
+    }
+    char *jsonStr = reinterpret_cast<char *>(malloc(sizeof(char) * fileSize + 1));
+    if (jsonStr == nullptr) {
+        WIFI_LOGE("%{public}s malloc fail, size:%{public}d", __FUNCTION__, fileSize);
+        fclose(file);
+        return nullptr;
+    }
+    memset(jsonStr, 0, fileSize + 1);
+    if (fread(jsonStr, sizeof(char), fileSize, file) == 0) {
+        WIFI_LOGE("%{public}s read %{public}s failed", __FUNCTION__, realFilePath);
+        fclose(file);
+        free(jsonStr);
+        return nullptr;
+    }
+    fclose(file);
+    cJSON *root = cJSON_Parse(jsonStr);
     if (root == nullptr) {
-        WIFI_LOGE("%{public}s parse %{public}s failed", __FUNCTION__, jsonFilePath);
+        WIFI_LOGE("%{public}s parse %{public}s failed", __FUNCTION__, realFilePath);
     }
+    free(jsonStr);
     return root;
 }
 
