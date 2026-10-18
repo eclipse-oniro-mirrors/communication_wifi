@@ -35,7 +35,7 @@ constexpr const char *MONITOR_APP_JSON = "{"
     "\"MultiLinkBlackList\": [\"multiLinkApp\"],"
     "\"ChariotApp\": [\"chariotApp\"],"
     "\"HiGameExcludeList\": [\"hiGameApp\"]}";
- 
+
 constexpr const char *NETWORK_CONTROL_APP_JSON = "{"
     "\"Version\": 1.0,"
     "\"KeyAppForegroundList\": [\"keyFgApp\"],"
@@ -44,7 +44,7 @@ constexpr const char *NETWORK_CONTROL_APP_JSON = "{"
     "\"RssGameList\": [\"rssGameApp\"],"
     "\"AppLiveStream\": [\"liveApp\"],"
     "\"AsyncDelayTime\": 100}";
- 
+
 constexpr const char *PACKAGE_FILTER_JSON = "{"
     "\"Version\": 1.0,"
     "\"ScanControlPackages\": {\"scan_thermal_filter\": [\"thermalPkg\"]},"
@@ -54,7 +54,7 @@ constexpr const char *PACKAGE_FILTER_JSON = "{"
     "\"AclAuthPackages\": [{\"name\": \"aclPkg\", \"appid\": \"456\"}],"
     "\"ScanLimitPackages\": [{\"name\": \"scanLimitPkg\"}],"
     "\"LandscapeSwitchLimitList\": [\"landscapePkg\"]}";
- 
+
 cJSON *ParseJsonString(const char *jsonStr)
 {
     return cJSON_Parse(jsonStr);
@@ -95,7 +95,7 @@ HWTEST_F(AppParserTest, ParseMonitorAppConfig_Success, TestSize.Level1)
     ASSERT_NE(root, nullptr);
     EXPECT_TRUE(parser.ParseMonitorAppConfig(root));
     cJSON_Delete(root);
- 
+
     EXPECT_TRUE(parser.IsLowLatencyApp("gameApp"));
     EXPECT_TRUE(parser.IsLowLatencyApp("rttGame"));
     EXPECT_TRUE(parser.IsWhiteListApp("whiteListApp"));
@@ -113,7 +113,7 @@ HWTEST_F(AppParserTest, ParseMonitorAppConfig_InvalidItem, TestSize.Level1)
     ASSERT_NE(root, nullptr);
     EXPECT_TRUE(parser.ParseMonitorAppConfig(root));
     cJSON_Delete(root);
- 
+
     EXPECT_TRUE(parser.IsWhiteListApp("goodApp"));
     EXPECT_TRUE(parser.IsLowLatencyApp("validGame"));
     /* entry without gameName is skipped */
@@ -128,13 +128,13 @@ HWTEST_F(AppParserTest, ParseMonitorAppConfig_SectionsReplaced, TestSize.Level1)
     EXPECT_TRUE(parser.ParseMonitorAppConfig(root));
     cJSON_Delete(root);
     EXPECT_TRUE(parser.IsWhiteListApp("whiteListApp"));
- 
+
     /* parse a config without AppWhiteList: the section is wiped and refilled */
     cJSON *newRoot = ParseJsonString("{\"AppBlackList\": [\"newBlackApp\"]}");
     ASSERT_NE(newRoot, nullptr);
     EXPECT_TRUE(parser.ParseMonitorAppConfig(newRoot));
     cJSON_Delete(newRoot);
- 
+
     EXPECT_FALSE(parser.IsWhiteListApp("whiteListApp"));
     EXPECT_FALSE(parser.IsLowLatencyApp("gameApp"));
     EXPECT_TRUE(parser.IsBlackListApp("newBlackApp"));
@@ -162,7 +162,6 @@ HWTEST_F(AppParserTest, IsChariotApp_False, TestSize.Level1)
 {
     WIFI_LOGI("IsChariotApp_False enter");
     EXPECT_FALSE(parser.IsChariotApp("other"));
- 
 }
 
 HWTEST_F(AppParserTest, IsMultiLinkApp_False, TestSize.Level1)
@@ -184,12 +183,11 @@ HWTEST_F(AppParserTest, IsOverGameRtt_WithRtt, TestSize.Level1)
     ASSERT_NE(root, nullptr);
     EXPECT_TRUE(parser.ParseMonitorAppConfig(root));
     cJSON_Delete(root);
- 
+
     EXPECT_TRUE(parser.IsOverGameRtt("rttGame", 60));
     EXPECT_FALSE(parser.IsOverGameRtt("rttGame", 40));
- 
 }
- 
+
 HWTEST_F(AppParserTest, IsOverGameRtt_NotInGameInfo, TestSize.Level1)
 {
     WIFI_LOGI("IsOverGameRtt_NotInGameInfo enter");
@@ -197,12 +195,12 @@ HWTEST_F(AppParserTest, IsOverGameRtt_NotInGameInfo, TestSize.Level1)
     ASSERT_NE(root, nullptr);
     EXPECT_TRUE(parser.ParseMonitorAppConfig(root));
     cJSON_Delete(root);
- 
+
     /* gameApp has no mGameRtt: only in low latency list, not in game info */
     EXPECT_FALSE(parser.IsOverGameRtt("gameApp", 100));
     EXPECT_FALSE(parser.IsOverGameRtt("nonexistent", 100));
 }
- 
+
 HWTEST_F(AppParserTest, IsOverGameLowRttThresh_WithRttGap, TestSize.Level1)
 {
     WIFI_LOGI("IsOverGameLowRttThresh_WithRttGap enter");
@@ -210,19 +208,19 @@ HWTEST_F(AppParserTest, IsOverGameLowRttThresh_WithRttGap, TestSize.Level1)
     ASSERT_NE(root, nullptr);
     EXPECT_TRUE(parser.ParseMonitorAppConfig(root));
     cJSON_Delete(root);
- 
+
     /* rtt(50) - rttGap(10) = 40 */
     EXPECT_TRUE(parser.IsOverGameLowRttThresh("rttGame", 45));
     EXPECT_FALSE(parser.IsOverGameLowRttThresh("rttGame", 35));
     EXPECT_FALSE(parser.IsOverGameLowRttThresh("nonexistent", 100));
 }
- 
+
 HWTEST_F(AppParserTest, ParseNetworkControlAppConfig_NullRoot, TestSize.Level1)
 {
     WIFI_LOGI("ParseNetworkControlAppConfig_NullRoot enter");
     EXPECT_FALSE(parser.ParseNetworkControlAppConfig(nullptr));
 }
- 
+
 HWTEST_F(AppParserTest, ParseNetworkControlAppConfig_UnknownKey, TestSize.Level1)
 {
     WIFI_LOGI("ParseNetworkControlAppConfig_UnknownKey enter");
@@ -232,7 +230,7 @@ HWTEST_F(AppParserTest, ParseNetworkControlAppConfig_UnknownKey, TestSize.Level1
     EXPECT_TRUE(parser.ParseNetworkControlAppConfig(root));
     cJSON_Delete(root);
 }
- 
+
 HWTEST_F(AppParserTest, ParseNetworkControlAppConfig_Success, TestSize.Level1)
 {
     WIFI_LOGI("ParseNetworkControlAppConfig_Success enter");
@@ -240,14 +238,14 @@ HWTEST_F(AppParserTest, ParseNetworkControlAppConfig_Success, TestSize.Level1)
     ASSERT_NE(root, nullptr);
     EXPECT_TRUE(parser.ParseNetworkControlAppConfig(root));
     cJSON_Delete(root);
- 
+
     EXPECT_TRUE(parser.IsKeyForegroundApp("keyFgApp"));
     EXPECT_TRUE(parser.IsKeyBackgroundLimitApp("keyBgApp"));
     EXPECT_TRUE(parser.IsGameBackgroundLimitApp("gameBgApp"));
     EXPECT_TRUE(parser.IsRssGameApp("rssGameApp"));
     EXPECT_TRUE(parser.IsLiveStreamApp("liveApp"));
 }
- 
+
 HWTEST_F(AppParserTest, ParseNetworkControlAppConfig_DelayTimeNumber, TestSize.Level1)
 {
     WIFI_LOGI("ParseNetworkControlAppConfig_DelayTimeNumber enter");
@@ -255,10 +253,10 @@ HWTEST_F(AppParserTest, ParseNetworkControlAppConfig_DelayTimeNumber, TestSize.L
     ASSERT_NE(root, nullptr);
     EXPECT_TRUE(parser.ParseNetworkControlAppConfig(root));
     cJSON_Delete(root);
- 
+
     EXPECT_EQ(parser.GetAsyncLimitSpeedDelayTime(), "100");
 }
- 
+
 HWTEST_F(AppParserTest, ParseNetworkControlAppConfig_DelayTimeString, TestSize.Level1)
 {
     WIFI_LOGI("ParseNetworkControlAppConfig_DelayTimeString enter");
@@ -267,10 +265,10 @@ HWTEST_F(AppParserTest, ParseNetworkControlAppConfig_DelayTimeString, TestSize.L
     ASSERT_NE(root, nullptr);
     EXPECT_TRUE(parser.ParseNetworkControlAppConfig(root));
     cJSON_Delete(root);
- 
+
     EXPECT_EQ(parser.GetAsyncLimitSpeedDelayTime(), "200");
 }
- 
+
 HWTEST_F(AppParserTest, ParseNetworkControlAppConfig_DelayTimeKeptWhenAbsent, TestSize.Level1)
 {
     WIFI_LOGI("ParseNetworkControlAppConfig_DelayTimeKeptWhenAbsent enter");
@@ -279,52 +277,52 @@ HWTEST_F(AppParserTest, ParseNetworkControlAppConfig_DelayTimeKeptWhenAbsent, Te
     EXPECT_TRUE(parser.ParseNetworkControlAppConfig(root));
     cJSON_Delete(root);
     EXPECT_EQ(parser.GetAsyncLimitSpeedDelayTime(), "300");
- 
+
     /* AsyncDelayTime key absent: previous value is kept */
     cJSON *newRoot = ParseJsonString("{\"KeyAppForegroundList\": [\"keyFgApp\"]}");
     ASSERT_NE(newRoot, nullptr);
     EXPECT_TRUE(parser.ParseNetworkControlAppConfig(newRoot));
     cJSON_Delete(newRoot);
- 
+
     EXPECT_EQ(parser.GetAsyncLimitSpeedDelayTime(), "300");
 }
- 
+
 HWTEST_F(AppParserTest, IsKeyForegroundApp_False, TestSize.Level1)
 {
     WIFI_LOGI("IsKeyForegroundApp_False enter");
     EXPECT_FALSE(parser.IsKeyForegroundApp("other"));
 }
- 
+
 HWTEST_F(AppParserTest, IsKeyBackgroundLimitApp_False, TestSize.Level1)
 {
     WIFI_LOGI("IsKeyBackgroundLimitApp_False enter");
     EXPECT_FALSE(parser.IsKeyBackgroundLimitApp("other"));
 }
- 
+
 HWTEST_F(AppParserTest, IsLiveStreamApp_False, TestSize.Level1)
 {
     WIFI_LOGI("IsLiveStreamApp_False enter");
     EXPECT_FALSE(parser.IsLiveStreamApp("other"));
 }
- 
+
 HWTEST_F(AppParserTest, IsGameBackgroundLimitApp_False, TestSize.Level1)
 {
     WIFI_LOGI("IsGameBackgroundLimitApp_False enter");
     EXPECT_FALSE(parser.IsGameBackgroundLimitApp("other"));
 }
- 
+
 HWTEST_F(AppParserTest, IsRssGameApp_False, TestSize.Level1)
 {
     WIFI_LOGI("IsRssGameApp_False enter");
     EXPECT_FALSE(parser.IsRssGameApp("other"));
 }
- 
+
 HWTEST_F(AppParserTest, ParsePackageFilterConfig_NullRoot, TestSize.Level1)
 {
     WIFI_LOGI("ParsePackageFilterConfig_NullRoot enter");
     EXPECT_FALSE(parser.ParsePackageFilterConfig(nullptr));
 }
- 
+
 HWTEST_F(AppParserTest, ParsePackageFilterConfig_UnknownKey, TestSize.Level1)
 {
     WIFI_LOGI("ParsePackageFilterConfig_UnknownKey enter");
@@ -334,7 +332,7 @@ HWTEST_F(AppParserTest, ParsePackageFilterConfig_UnknownKey, TestSize.Level1)
     EXPECT_TRUE(parser.ParsePackageFilterConfig(root));
     cJSON_Delete(root);
 }
- 
+
 HWTEST_F(AppParserTest, ParsePackageFilterConfig_Success, TestSize.Level1)
 {
     WIFI_LOGI("ParsePackageFilterConfig_Success enter");
@@ -342,7 +340,7 @@ HWTEST_F(AppParserTest, ParsePackageFilterConfig_Success, TestSize.Level1)
     ASSERT_NE(root, nullptr);
     EXPECT_TRUE(parser.ParsePackageFilterConfig(root));
     cJSON_Delete(root);
- 
+
     EXPECT_EQ(parser.GetPackageName("CandidateFilterPackages"), "candidatePkg");
     EXPECT_EQ(parser.GetPackageName("scan_thermal_filter"), "thermalPkg");
     /* each section is parsed according to its fixed form */
@@ -350,7 +348,7 @@ HWTEST_F(AppParserTest, ParsePackageFilterConfig_Success, TestSize.Level1)
     EXPECT_EQ(parser.GetPackageName("BROWSER_BUNDLE"), "browserPkg");
     EXPECT_EQ(parser.GetPackageName("NoSuchTag"), "");
 }
- 
+
 HWTEST_F(AppParserTest, ParsePackageFilterConfig_GetPackageInfoByName, TestSize.Level1)
 {
     WIFI_LOGI("ParsePackageFilterConfig_GetPackageInfoByName enter");
@@ -358,22 +356,22 @@ HWTEST_F(AppParserTest, ParsePackageFilterConfig_GetPackageInfoByName, TestSize.
     ASSERT_NE(root, nullptr);
     EXPECT_TRUE(parser.ParsePackageFilterConfig(root));
     cJSON_Delete(root);
- 
+
     std::vector<PackageInfo> packageInfo;
     EXPECT_EQ(parser.GetPackageInfoByName("AclAuthPackages", packageInfo), 0);
     ASSERT_EQ(packageInfo.size(), 1);
     EXPECT_EQ(packageInfo[0].name, "aclPkg");
     EXPECT_EQ(packageInfo[0].appid, "456");
- 
+
     /* single string entry is normalized to a one-element list */
     packageInfo.clear();
     EXPECT_EQ(parser.GetPackageInfoByName("SETTINGS", packageInfo), 0);
     ASSERT_EQ(packageInfo.size(), 1);
     EXPECT_EQ(packageInfo[0].name, "settingsPkg");
- 
+
     EXPECT_EQ(parser.GetPackageInfoByName("NoSuchName", packageInfo), -1);
 }
- 
+
 HWTEST_F(AppParserTest, ParsePackageFilterConfig_GetPackageInfoMap, TestSize.Level1)
 {
     WIFI_LOGI("ParsePackageFilterConfig_GetPackageInfoMap enter");
@@ -381,7 +379,7 @@ HWTEST_F(AppParserTest, ParsePackageFilterConfig_GetPackageInfoMap, TestSize.Lev
     ASSERT_NE(root, nullptr);
     EXPECT_TRUE(parser.ParsePackageFilterConfig(root));
     cJSON_Delete(root);
- 
+
     std::map<std::string, std::vector<PackageInfo>> packageInfoMap;
     EXPECT_EQ(parser.GetPackageInfoMap(packageInfoMap), 0);
     EXPECT_NE(packageInfoMap.find("scan_thermal_filter"), packageInfoMap.end());
@@ -389,7 +387,7 @@ HWTEST_F(AppParserTest, ParsePackageFilterConfig_GetPackageInfoMap, TestSize.Lev
     EXPECT_NE(packageInfoMap.find("SETTINGS"), packageInfoMap.end());
     EXPECT_NE(packageInfoMap.find("LandscapeSwitchLimitList"), packageInfoMap.end());
 }
- 
+
 HWTEST_F(AppParserTest, ParsePackageFilterConfig_InvalidItem, TestSize.Level1)
 {
     WIFI_LOGI("ParsePackageFilterConfig_InvalidItem enter");
@@ -399,20 +397,20 @@ HWTEST_F(AppParserTest, ParsePackageFilterConfig_InvalidItem, TestSize.Level1)
     ASSERT_NE(root, nullptr);
     EXPECT_TRUE(parser.ParsePackageFilterConfig(root));
     cJSON_Delete(root);
- 
+
     std::vector<PackageInfo> packageInfo;
     EXPECT_EQ(parser.GetPackageInfoByName("ScanLimitPackages", packageInfo), 0);
     /* object without name is skipped */
     ASSERT_EQ(packageInfo.size(), 1);
     EXPECT_EQ(packageInfo[0].name, "validPkg");
- 
+
     packageInfo.clear();
     EXPECT_EQ(parser.GetPackageInfoByName("LandscapeSwitchLimitList", packageInfo), 0);
     /* empty name string is skipped */
     ASSERT_EQ(packageInfo.size(), 1);
     EXPECT_EQ(packageInfo[0].name, "validNamePkg");
 }
- 
+
 HWTEST_F(AppParserTest, ParsePackageFilterConfig_MapReplaced, TestSize.Level1)
 {
     WIFI_LOGI("ParsePackageFilterConfig_MapReplaced enter");
@@ -421,13 +419,13 @@ HWTEST_F(AppParserTest, ParsePackageFilterConfig_MapReplaced, TestSize.Level1)
     EXPECT_TRUE(parser.ParsePackageFilterConfig(root));
     cJSON_Delete(root);
     EXPECT_EQ(parser.GetPackageName("CandidateFilterPackages"), "candidatePkg");
- 
+
     /* parse a new filter config: the whole map is replaced */
     cJSON *newRoot = ParseJsonString("{\"ScanLimitPackages\": [{\"name\": \"newPkg\"}]}");
     ASSERT_NE(newRoot, nullptr);
     EXPECT_TRUE(parser.ParsePackageFilterConfig(newRoot));
     cJSON_Delete(newRoot);
- 
+
     EXPECT_EQ(parser.GetPackageName("CandidateFilterPackages"), "");
     EXPECT_EQ(parser.GetPackageName("ScanLimitPackages"), "newPkg");
 }
