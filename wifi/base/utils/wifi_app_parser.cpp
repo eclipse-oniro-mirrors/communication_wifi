@@ -17,12 +17,13 @@
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
-#include <limits.h>
+#include <climits>
 #include <mutex>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <type_traits>
 #include <unordered_map>
+#include "securec.h"
 #include "wifi_logger.h"
 
 namespace OHOS {
@@ -102,7 +103,7 @@ cJSON *LoadJsonFile(const char *jsonFilePath)
         fclose(file);
         return nullptr;
     }
-    memset(jsonStr, 0, fileSize + 1);
+    memset_s(jsonStr, fileSize + 1, 0, fileSize + 1);
     if (fread(jsonStr, sizeof(char), fileSize, file) == 0) {
         WIFI_LOGE("%{public}s read %{public}s failed", __FUNCTION__, realFilePath);
         fclose(file);

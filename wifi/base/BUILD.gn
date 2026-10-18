@@ -117,6 +117,7 @@ if (defined(ohos_lite)) {
       "ability_base:want",
       "ability_runtime:ability_connect_callback_stub",
       "ability_runtime:extension_manager",
+      "bounds_checking_function:libsec_shared",
       "c_utils:utils",
       "cJSON:cjson",
       "data_share:datashare_common",

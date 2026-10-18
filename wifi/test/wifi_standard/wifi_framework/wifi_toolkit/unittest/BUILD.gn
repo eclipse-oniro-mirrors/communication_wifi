@@ -124,6 +124,7 @@ ohos_unittest("toolkit_unittest") {
     "AP_INSTANCE_MAX_NUM=$wifi_feature_with_ap_num",
   ]
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "cJSON:cjson",
     "certificate_manager:cert_manager_sdk",
