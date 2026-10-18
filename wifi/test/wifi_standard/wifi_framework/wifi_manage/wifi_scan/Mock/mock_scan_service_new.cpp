@@ -139,11 +139,18 @@ void ScanService::ConvertScanInfo(WifiScanInfo &scanInfo, const InterScanInfo &i
 {
 }
 
+#ifdef WIFI_LOCAL_SECURITY_DETECT_ENABLE
 void ScanService::GetWifiRiskType(std::vector<InterScanInfo> &scanInfos)
 {
 }
+#endif
 
 void ScanService::MergeScanResult(std::vector<WifiScanInfo> &results, std::vector<WifiScanInfo> &storeInfoList)
+{
+}
+
+void ScanService::AddSsidToHiddenNetworkList(const std::string ssid,
+    std::vector<std::string> &hiddenNetworkSsidList)
 {
 }
 
@@ -301,7 +308,7 @@ ErrCode ScanService::AllowPnoScan(ScanType scanType, int &scanStyle)
     return WIFI_OPT_SUCCESS;
 }
 
-Error ScanService::AllowSystemSingleScan(ScanType scanType, int &scanStyle)
+ErrCode ScanService::AllowSystemSingleScan(ScanType scanType, int &scanStyle)
 {
     return WIFI_OPT_SUCCESS;
 }
