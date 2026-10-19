@@ -1105,6 +1105,18 @@ void RemoveCandidateConfigSync(int32_t networkId)
     }
 }
 
+void DisconnectFromCandidateConfig(int32_t networkId, int32_t blockDuration)
+{
+    if (g_wifiDevicePtr == nullptr) {
+        WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, WIFI_OPT_FAILED, SYSCAP_WIFI_STA);
+        return;
+    }
+    ErrCode ret = g_wifiDevicePtr->DisconnectFromCandidateConfig(networkId, blockDuration);
+    if (ret != WIFI_OPT_SUCCESS) {
+        WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, ret, SYSCAP_WIFI_STA);
+    }
+}
+
 ::ohos::wifiManager::WifiP2pDevice GetP2pLocalDeviceSync()
 {
     WifiP2pDevice deviceInfo;
@@ -1990,6 +2002,7 @@ TH_EXPORT_CPP_API_GetP2pPeerDevicesSync(GetP2pPeerDevicesSync);
 TH_EXPORT_CPP_API_GetP2pLinkedInfoSync(GetP2pLinkedInfoSync);
 TH_EXPORT_CPP_API_AddCandidateConfigSync(AddCandidateConfigSync);
 TH_EXPORT_CPP_API_RemoveCandidateConfigSync(RemoveCandidateConfigSync);
+TH_EXPORT_CPP_API_DisconnectFromCandidateConfig(DisconnectFromCandidateConfig);
 TH_EXPORT_CPP_API_GetP2pLocalDeviceSync(GetP2pLocalDeviceSync);
 TH_EXPORT_CPP_API_GetP2pGroupsSync(GetP2pGroupsSync);
 TH_EXPORT_CPP_API_GetCurrentGroupSync(GetCurrentGroupSync);

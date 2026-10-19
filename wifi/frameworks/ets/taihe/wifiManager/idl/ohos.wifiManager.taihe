@@ -521,6 +521,8 @@ function AddCandidateConfigSync(config: WifiDeviceConfig): i32;
 @gen_promise("removeCandidateConfig")
 function RemoveCandidateConfigSync(networkId: i32): void;
 
+function DisconnectFromCandidateConfig(networkId: i32, blockDuration: i32): void;
+
 @gen_async("getP2pLocalDevice")
 @gen_promise("getP2pLocalDevice")
 function GetP2pLocalDeviceSync(): WifiP2pDevice;
