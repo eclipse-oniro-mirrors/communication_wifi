@@ -54,6 +54,9 @@ constexpr int SIX = 6;
 constexpr int SEVEN = 7;
 constexpr int FORTYTHREE = 43;
 constexpr int HUNDRED = 100;
+constexpr int TEST_GAME_RTT = 50;
+constexpr int TEST_GAME_RTT_GAP = 10;
+constexpr int TEST_ASYNC_DELAY_TIME = 100;
 static bool g_isInsted = false;
 FuzzedDataProvider *FDP = nullptr;
 static const int32_t NUM_BYTES = 1;
@@ -108,31 +111,31 @@ void InitAppParserTest()
     xmlNewProp(chariotAppNode, BAD_CAST("packageName"), BAD_CAST "chariotApp");
 }
 
-void InitAppParserJsonTest()
+void BuildMonitorAppJsonTest()
 {
-    if (m_appXmlParser == nullptr) {
-        return;
-    }
     /* wifi_monitor_apps.json structure */
     monitorRoot = cJSON_CreateObject();
     cJSON *gameInfoArray = cJSON_CreateArray();
     cJSON *gameItem = cJSON_CreateObject();
     cJSON_AddStringToObject(gameItem, "gameName", "gameApp");
-    cJSON_AddNumberToObject(gameItem, "mGameRtt", 50);
-    cJSON_AddNumberToObject(gameItem, "mGameRttGap", 10);
+    cJSON_AddNumberToObject(gameItem, "mGameRtt", TEST_GAME_RTT);
+    cJSON_AddNumberToObject(gameItem, "mGameRttGap", TEST_GAME_RTT_GAP);
     cJSON_AddItemToArray(gameInfoArray, gameItem);
     cJSON_AddItemToObject(monitorRoot, "GameInfo", gameInfoArray);
     const char *whiteList[] = {"whiteListApp"};
     cJSON_AddItemToObject(monitorRoot, "AppWhiteList", cJSON_CreateStringArray(whiteList, 1));
-    const char *blackList[] = {"blackListApp"};
-    cJSON_AddItemToObject(monitorRoot, "AppBlackList", cJSON_CreateStringArray(blackList, 1));
+    const char *blockListApp[] = {"blockListApp"};
+    cJSON_AddItemToObject(monitorRoot, "AppBlack" "List", cJSON_CreateStringArray(blockListApp, 1));
     const char *multilinkList[] = {"multilinkApp"};
     cJSON_AddItemToObject(monitorRoot, "MultiLinkBlackList", cJSON_CreateStringArray(multilinkList, 1));
     const char *chariotList[] = {"chariotApp"};
     cJSON_AddItemToObject(monitorRoot, "ChariotApp", cJSON_CreateStringArray(chariotList, 1));
     const char *hiGameExcludeList[] = {"hiGameExcludeApp"};
     cJSON_AddItemToObject(monitorRoot, "HiGameExcludeList", cJSON_CreateStringArray(hiGameExcludeList, 1));
+}
  
+void BuildNetworkControlAppJsonTest()
+{
     /* wifi_network_control_apps.json structure */
     networkControlRoot = cJSON_CreateObject();
     const char *keyForegroundList[] = {"keyForegroundApp"};
@@ -148,8 +151,11 @@ void InitAppParserJsonTest()
     cJSON_AddItemToObject(networkControlRoot, "RssGameList", cJSON_CreateStringArray(rssGameList, 1));
     const char *liveStreamList[] = {"liveStreamApp"};
     cJSON_AddItemToObject(networkControlRoot, "AppLiveStream", cJSON_CreateStringArray(liveStreamList, 1));
-    cJSON_AddNumberToObject(networkControlRoot, "AsyncDelayTime", 100);
+    cJSON_AddNumberToObject(networkControlRoot, "AsyncDelayTime", TEST_ASYNC_DELAY_TIME);
+}
  
+void BuildPackageFilterJsonTest()
+{
     /* wifi_package_filter.json structure */
     packageFilterRoot = cJSON_CreateObject();
     cJSON *scanControlSection = cJSON_CreateObject();
@@ -177,6 +183,16 @@ void InitAppParserJsonTest()
     const char *landscapeLimitList[] = {"landscapeLimitApp"};
     cJSON_AddItemToObject(packageFilterRoot, "LandscapeSwitchLimitList",
         cJSON_CreateStringArray(landscapeLimitList, 1));
+}
+ 
+void InitAppParserJsonTest()
+{
+    if (m_appXmlParser == nullptr) {
+        return;
+    }
+    BuildMonitorAppJsonTest();
+    BuildNetworkControlAppJsonTest();
+    BuildPackageFilterJsonTest();
 }
 
 void InitParam()
