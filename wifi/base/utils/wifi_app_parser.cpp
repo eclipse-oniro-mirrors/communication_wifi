@@ -69,6 +69,13 @@ constexpr int MAX_JSON_FILE_SIZE = 1024 * 1024;
 constexpr int MIN_JSON_FILE_SIZE = 0;
 
 namespace {
+void CloseJsonFile(FILE *file)
+{
+    if (fclose(file) != 0) {
+        WIFI_LOGE("%{public}s fclose failed, errno:%{public}d", __FUNCTION__, errno);
+    }
+}
+
 cJSON *LoadJsonFile(const char *jsonFilePath)
 {
     if (jsonFilePath == nullptr) {
@@ -88,29 +95,29 @@ cJSON *LoadJsonFile(const char *jsonFilePath)
     struct stat statbuf = {0};
     if (stat(realFilePath, &statbuf) != 0) {
         WIFI_LOGE("%{public}s stat %{public}s failed", __FUNCTION__, realFilePath);
-        fclose(file);
+        CloseJsonFile(file);
         return nullptr;
     }
     int fileSize = static_cast<int>(statbuf.st_size);
     if (fileSize > MAX_JSON_FILE_SIZE || fileSize < MIN_JSON_FILE_SIZE) {
         WIFI_LOGE("%{public}s %{public}s fileSize illegal:%{public}d", __FUNCTION__, realFilePath, fileSize);
-        fclose(file);
+        CloseJsonFile(file);
         return nullptr;
     }
     char *jsonStr = reinterpret_cast<char *>(malloc(sizeof(char) * fileSize + 1));
     if (jsonStr == nullptr) {
         WIFI_LOGE("%{public}s malloc fail, size:%{public}d", __FUNCTION__, fileSize);
-        fclose(file);
+        CloseJsonFile(file);
         return nullptr;
     }
     memset_s(jsonStr, fileSize + 1, 0, fileSize + 1);
     if (fread(jsonStr, sizeof(char), fileSize, file) == 0) {
         WIFI_LOGE("%{public}s read %{public}s failed", __FUNCTION__, realFilePath);
-        fclose(file);
+        CloseJsonFile(file);
         free(jsonStr);
         return nullptr;
     }
-    fclose(file);
+    CloseJsonFile(file);
     cJSON *root = cJSON_Parse(jsonStr);
     if (root == nullptr) {
         WIFI_LOGE("%{public}s parse %{public}s failed", __FUNCTION__, realFilePath);
@@ -430,7 +437,7 @@ bool AppParser::ParseMonitorAppConfig(cJSON *root)
     ParseStringArray(root, JSON_KEY_MULTILINK_BLACK_LIST, tmp.m_multilinkAppVec);
     ParseStringArray(root, JSON_KEY_CHARIOT_APP, tmp.m_chariotAppVec);
     ParseStringArray(root, JSON_KEY_HIGAME_EXCLUDE_LIST, tmp.m_hiGameExcludeAppVec);
-    WIFI_LOGI("%{public}s out, lowLatency:%{public}zu whiteList:%{public}zu blackList:%{public}zu multilink:%{public}zu"
+    WIFI_LOGI("%{public}s out, lowLatency:%{public}zu whiteList:%{public}zu blockList:%{public}zu multilink:%{public}zu"
         " chariot:%{public}zu hiGameExclude:%{public}zu gameInfo:%{public}zu",
         __FUNCTION__, tmp.m_lowLatencyAppVec.size(), tmp.m_whiteAppVec.size(),
         tmp.m_blackAppVec.size(), tmp.m_multilinkAppVec.size(), tmp.m_chariotAppVec.size(),
