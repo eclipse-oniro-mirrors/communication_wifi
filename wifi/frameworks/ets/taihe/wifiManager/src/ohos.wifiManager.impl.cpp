@@ -407,6 +407,9 @@ void ConnectToCandidateConfigWithUserActionProcess(ConnectSettings &settings)
     }
     ret = g_wifiDevicePtr->ConnectToCandidateConfig(settings);
     if (ret != WIFI_OPT_SUCCESS) {
+        if (ret == WIFI_OPT_INVALID_PARAM) {
+            ret = WIFI_OPT_INVALID_PARAM_NEW;
+        }
         WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, ret, SYSCAP_WIFI_STA);
         return;
     }
