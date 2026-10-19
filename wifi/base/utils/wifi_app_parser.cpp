@@ -351,9 +351,9 @@ void ParseLandscapeSwitchLimitList(const cJSON *root, std::map<std::string, std:
 template<typename T>
 void LogAppList(const char *key, const std::vector<T> &list)
 {
-    WIFI_LOGI("%{public}s %{public}s size:%{public}zu", __FUNCTION__, key, list.size());
+    WIFI_LOGD("%{public}s %{public}s size:%{public}zu", __FUNCTION__, key, list.size());
     for (size_t i = 0; i < list.size(); ++i) {
-        WIFI_LOGI("%{public}s %{public}s [%{public}zu]: %{public}s",
+        WIFI_LOGD("%{public}s %{public}s [%{public}zu]: %{public}s",
             __FUNCTION__, key, i, list[i].packageName.c_str());
     }
 }
@@ -653,7 +653,7 @@ void AppParser::DumpAppParserResult(const std::string &trigger) const
     LogAppList("chariotApp", result_.m_chariotAppVec);
     LogAppList("hiGameExcludeApp", result_.m_hiGameExcludeAppVec);
     for (const auto &game : result_.m_gameInfo) {
-        WIFI_LOGI("%{public}s gameInfo %{public}s rtt:%{public}d rttGap:%{public}d",
+        WIFI_LOGD("%{public}s gameInfo %{public}s rtt:%{public}d rttGap:%{public}d",
             __FUNCTION__, game.first.c_str(), game.second.rtt, game.second.rttGap);
     }
     /* wifi_network_control_apps.json sections */
@@ -662,13 +662,13 @@ void AppParser::DumpAppParserResult(const std::string &trigger) const
     LogAppList("gameBackgroundLimitApp", result_.m_gameBackgroundLimitListAppVec);
     LogAppList("rssGameApp", result_.m_rssGameListAppVec);
     LogAppList("liveStreamApp", result_.m_liveStreamAppVec);
-    WIFI_LOGI("%{public}s delayTime:%{public}s", __FUNCTION__, result_.m_delayTime.c_str());
+    WIFI_LOGD("%{public}s delayTime:%{public}s", __FUNCTION__, result_.m_delayTime.c_str());
     /* wifi_package_filter.json sections */
     for (const auto &tag : mPackageInfoMap_) {
-        WIFI_LOGI("%{public}s packageFilter %{public}s size:%{public}zu",
+        WIFI_LOGD("%{public}s packageFilter %{public}s size:%{public}zu",
             __FUNCTION__, tag.first.c_str(), tag.second.size());
         for (size_t i = 0; i < tag.second.size(); ++i) {
-            WIFI_LOGI("%{public}s packageFilter %{public}s [%{public}zu] name:%{public}s appid:%{public}s",
+            WIFI_LOGD("%{public}s packageFilter %{public}s [%{public}zu] name:%{public}s appid:%{public}s",
                 __FUNCTION__, tag.first.c_str(), i, tag.second[i].name.c_str(), tag.second[i].appid.c_str());
         }
     }
