@@ -82,6 +82,7 @@ ohos_fuzztest("WifiScanServerFuzzTest") {
     defines += [ "DTFUZZ_TEST" ]
   }
   sources = [
+    "$WIFI_ROOT_DIR/base/utils/wifi_app_parser.cpp",
     "$WIFI_ROOT_DIR/test/fuzztest/fuzz_common_func/mock_auth_center.cpp",
     "$WIFI_ROOT_DIR/test/fuzztest/fuzz_common_func/mock_netconn_client.cpp",
     "$WIFI_ROOT_DIR/test/fuzztest/fuzz_common_func/mock_scan_state_machine.cpp",
@@ -113,8 +114,10 @@ ohos_fuzztest("WifiScanServerFuzzTest") {
     "ability_runtime:dataobs_manager",
     "ability_runtime:wantagent_innerkits",
     "access_token:libaccesstoken_sdk",
+    "bounds_checking_function:libsec_shared",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
+    "cJSON:cjson",
     "c_utils:utils",
     "certificate_manager:cert_manager_sdk",
     "common_event_service:cesfwk_innerkits",

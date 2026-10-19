@@ -22,6 +22,7 @@ ohos_fuzztest("WifiScansaFuzzTest") {
   fuzz_config_file = "$WIFI_ROOT_DIR/test/fuzztest/wifi_sta/wifiscansa_fuzzer"
 
   include_dirs = [
+    "$WIFI_ROOT_DIR/base/utils",
     "$WIFI_ROOT_DIR/interfaces/inner_api",
     "$WIFI_ROOT_DIR/frameworks/native/interfaces",
     "$WIFI_ROOT_DIR/services/wifi_standard/wifi_framework/wifi_toolkit/include",
@@ -84,6 +85,7 @@ ohos_fuzztest("WifiScansaFuzzTest") {
     defines += [ "DTFUZZ_TEST" ]
   }
   sources = [
+    "$WIFI_ROOT_DIR/base/utils/wifi_app_parser.cpp",
     "$WIFI_ROOT_DIR/services/wifi_standard/wifi_framework/wifi_manage/wifi_scan/scan_interface.cpp",
     "$WIFI_ROOT_DIR/services/wifi_standard/wifi_framework/wifi_manage/wifi_scan/scan_monitor.cpp",
     "$WIFI_ROOT_DIR/services/wifi_standard/wifi_framework/wifi_manage/wifi_scan/scan_service.cpp",
@@ -119,8 +121,10 @@ ohos_fuzztest("WifiScansaFuzzTest") {
     "ability_runtime:dataobs_manager",
     "ability_runtime:wantagent_innerkits",
     "access_token:libaccesstoken_sdk",
+    "bounds_checking_function:libsec_shared",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
+    "cJSON:cjson",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "data_share:datashare_common",

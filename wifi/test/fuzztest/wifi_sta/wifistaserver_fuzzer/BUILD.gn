@@ -91,6 +91,7 @@ ohos_fuzztest("WifiStaServerFuzzTest") {
   }
 
   sources = [
+    "$WIFI_ROOT_DIR/base/utils/wifi_app_parser.cpp",
     "$WIFI_ROOT_DIR/test/fuzztest/fuzz_common_func/mock_auth_center.cpp",
     "$WIFI_ROOT_DIR/test/fuzztest/fuzz_common_func/mock_netconn_client.cpp",
     "$WIFI_ROOT_DIR/test/fuzztest/fuzz_common_func/mock_sta_state_machine.cpp",
@@ -121,6 +122,7 @@ ohos_fuzztest("WifiStaServerFuzzTest") {
     "ability_runtime:wantagent_innerkits",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "cJSON:cjson",
     "data_share:datashare_consumer",
