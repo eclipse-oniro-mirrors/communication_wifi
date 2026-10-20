@@ -26,8 +26,7 @@ import { connection } from '@kit.NetworkKit';
 import {
   getUrl, bindToNetById, extractDomain, exitApp, shouldShowBrowseItem, UserAgentSet,
   validateURL, getIsInOOBE, getHmosUAComplexRegex, StringNumberPair, getRetryList, getDefaultUrl, modifyCode,
-  convertToPermissions, reqPermissionsFromUser, modifyUserAgent, UserAgentCompatibleInfo, preventEnterKeyScript,
-  modifyInputTypeCode
+  convertToPermissions, reqPermissionsFromUser, modifyUserAgent, UserAgentCompatibleInfo, preventEnterKeyScript
 } from '../common/utils';
 import {
   updateFinalUrl, updateOnHttpErrorReceive, updateOnErrorReceive, updateOnSslErrorEvent, safeAnonymize,
@@ -579,15 +578,6 @@ struct Index {
         .onPageEnd((event) => {
           this.loadProgress = 100;
           this.renderExitRetryCount = 0;
-          if (this.isWearable) {
-            try {
-              this.webviewController.runJavaScript(modifyInputTypeCode);
-              hilog.info(DOMAIN, TAG, '%{public}s', 'runJavaScript modifyInputTypeCode enter.');
-            } catch (error) {
-              hilog.error(DOMAIN, TAG, '%{public}s',
-                `onPageEnd wearable runJavaScript fail: Code:${error.code}, message:${error.message}`);
-            }
-          }
           if (event) {
             this.webUrl = event.url;
             hilog.info(DOMAIN, TAG, '%{public}s', 'Url:' + safeAnonymize(this.webUrl));

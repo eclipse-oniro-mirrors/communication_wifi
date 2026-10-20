@@ -231,19 +231,6 @@ export function modifyUserAgent(originalUA: string, appendInfo: string): string 
 
 export const modifyCode = `Object.defineProperty(navigator, 'platform', { get: () => 'Linux aarch64' });`;
 
-export const modifyInputTypeCode = `
-(function() {
-  var inputs = document.querySelectorAll('input');
-  for (var i = 0; i < inputs.length; i++) {
-    var input = inputs[i];
-    // 仅处理 type 为 text 或未指定 type 的输入框
-    if (!input.hasAttribute('type') || input.getAttribute('type') === '' || input.getAttribute('type') === 'text') {
-      input.setAttribute('type', 'number');
-    }
-  }
-})();
-`;
-
 export const preventEnterKeyScript = `
 (function() {
   function handleEnter(e) {
