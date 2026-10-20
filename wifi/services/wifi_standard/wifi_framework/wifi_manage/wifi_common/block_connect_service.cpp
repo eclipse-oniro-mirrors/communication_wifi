@@ -149,6 +149,10 @@ bool BlockConnectService::UpdateAllNetworkSelectStatus(const std::vector<InterSc
         WIFI_LOGE("Failed to get device config");
         return false;
     }
+    /* Also process candidate configs so that their block duration can expire during scan. */
+    std::vector<WifiDeviceConfig> candidateConfigs;
+    WifiSettings::GetInstance().GetAllCandidateConfigWithoutUid(candidateConfigs, false);
+    results.insert(results.end(), candidateConfigs.begin(), candidateConfigs.end());
     for (auto &config : results) {
         if (config.networkSelectionStatus.seenInLastQualifiedNetworkSelection) {
             config.networkSelectionStatus.seenInLastQualifiedNetworkSelection = false;
