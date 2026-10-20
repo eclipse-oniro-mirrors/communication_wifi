@@ -164,6 +164,7 @@ local_base_external_deps = [
   "ability_runtime:connection_obs_manager",
   "ability_runtime:wantagent_innerkits",
   "access_token:libaccesstoken_sdk",
+  "bounds_checking_function:libsec_shared",
   "bundle_framework:appexecfwk_base",
   "bundle_framework:appexecfwk_core",
   "cJSON:cjson",

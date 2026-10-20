@@ -54,6 +54,9 @@ constexpr int SIX = 6;
 constexpr int SEVEN = 7;
 constexpr int FORTYTHREE = 43;
 constexpr int HUNDRED = 100;
+constexpr int TEST_GAME_RTT = 50;
+constexpr int TEST_GAME_RTT_GAP = 10;
+constexpr int TEST_ASYNC_DELAY_TIME = 100;
 static bool g_isInsted = false;
 FuzzedDataProvider *FDP = nullptr;
 static const int32_t NUM_BYTES = 1;
@@ -66,6 +69,9 @@ public:
         return false;
     }
 };
+static cJSON *monitorRoot = nullptr;
+static cJSON *networkControlRoot = nullptr;
+static cJSON *packageFilterRoot = nullptr;
 static xmlNodePtr root_node;
 static std::unique_ptr<NetworkXmlParser> m_networkXmlParser = nullptr;
 static std::unique_ptr<AppParser> m_appXmlParser = nullptr;
@@ -78,6 +84,9 @@ static std::unique_ptr<NetworkSelectionManager> m_NetworkSelectionManager = null
 static std::unique_ptr<WifiWatchDogUtils> m_WifiWatchDogUtils = nullptr;
 void MyExit()
 {
+    cJSON_Delete(monitorRoot);
+    cJSON_Delete(networkControlRoot);
+    cJSON_Delete(packageFilterRoot);
     m_networkXmlParser.reset();
     m_appXmlParser.reset();
     m_xmlParser.reset();
@@ -102,6 +111,90 @@ void InitAppParserTest()
     xmlNewProp(chariotAppNode, BAD_CAST("packageName"), BAD_CAST "chariotApp");
 }
 
+void BuildMonitorAppJsonTest()
+{
+    /* wifi_monitor_apps.json structure */
+    monitorRoot = cJSON_CreateObject();
+    cJSON *gameInfoArray = cJSON_CreateArray();
+    cJSON *gameItem = cJSON_CreateObject();
+    cJSON_AddStringToObject(gameItem, "gameName", "gameApp");
+    cJSON_AddNumberToObject(gameItem, "mGameRtt", TEST_GAME_RTT);
+    cJSON_AddNumberToObject(gameItem, "mGameRttGap", TEST_GAME_RTT_GAP);
+    cJSON_AddItemToArray(gameInfoArray, gameItem);
+    cJSON_AddItemToObject(monitorRoot, "GameInfo", gameInfoArray);
+    const char *whiteList[] = {"whiteListApp"};
+    cJSON_AddItemToObject(monitorRoot, "AppWhiteList", cJSON_CreateStringArray(whiteList, 1));
+    const char *blockListApp[] = {"blockListApp"};
+    cJSON_AddItemToObject(monitorRoot, "AppBlack" "List", cJSON_CreateStringArray(blockListApp, 1));
+    const char *multilinkList[] = {"multilinkApp"};
+    cJSON_AddItemToObject(monitorRoot, "MultiLinkBlackList", cJSON_CreateStringArray(multilinkList, 1));
+    const char *chariotList[] = {"chariotApp"};
+    cJSON_AddItemToObject(monitorRoot, "ChariotApp", cJSON_CreateStringArray(chariotList, 1));
+    const char *hiGameExcludeList[] = {"hiGameExcludeApp"};
+    cJSON_AddItemToObject(monitorRoot, "HiGameExcludeList", cJSON_CreateStringArray(hiGameExcludeList, 1));
+}
+ 
+void BuildNetworkControlAppJsonTest()
+{
+    /* wifi_network_control_apps.json structure */
+    networkControlRoot = cJSON_CreateObject();
+    const char *keyForegroundList[] = {"keyForegroundApp"};
+    cJSON_AddItemToObject(networkControlRoot, "KeyAppForegroundList",
+        cJSON_CreateStringArray(keyForegroundList, 1));
+    const char *keyBackgroundLimitList[] = {"keyBackgroundLimitApp"};
+    cJSON_AddItemToObject(networkControlRoot, "KeyBackgroundLimitListApp",
+        cJSON_CreateStringArray(keyBackgroundLimitList, 1));
+    const char *gameBackgroundLimitList[] = {"gameBackgroundLimitApp"};
+    cJSON_AddItemToObject(networkControlRoot, "GameBackgroundLimitListApp",
+        cJSON_CreateStringArray(gameBackgroundLimitList, 1));
+    const char *rssGameList[] = {"rssGameApp"};
+    cJSON_AddItemToObject(networkControlRoot, "RssGameList", cJSON_CreateStringArray(rssGameList, 1));
+    const char *liveStreamList[] = {"liveStreamApp"};
+    cJSON_AddItemToObject(networkControlRoot, "AppLiveStream", cJSON_CreateStringArray(liveStreamList, 1));
+    cJSON_AddNumberToObject(networkControlRoot, "AsyncDelayTime", TEST_ASYNC_DELAY_TIME);
+}
+ 
+void BuildPackageFilterJsonTest()
+{
+    /* wifi_package_filter.json structure */
+    packageFilterRoot = cJSON_CreateObject();
+    cJSON *scanControlSection = cJSON_CreateObject();
+    const char *scanControlPkgs[] = {"scanControlApp"};
+    cJSON_AddItemToObject(scanControlSection, "scanControlTag", cJSON_CreateStringArray(scanControlPkgs, 1));
+    cJSON_AddItemToObject(packageFilterRoot, "ScanControlPackages", scanControlSection);
+    const char *candidateFilterPkgs[] = {"candidateFilterApp"};
+    cJSON_AddItemToObject(packageFilterRoot, "CandidateFilterPackages",
+        cJSON_CreateStringArray(candidateFilterPkgs, 1));
+    cJSON *coreSection = cJSON_CreateObject();
+    cJSON_AddStringToObject(coreSection, "coreTag", "coreApp");
+    cJSON_AddItemToObject(packageFilterRoot, "CorePackages", coreSection);
+    cJSON *aclAuthArray = cJSON_CreateArray();
+    cJSON *aclAuthItem = cJSON_CreateObject();
+    cJSON_AddStringToObject(aclAuthItem, "name", "aclAuthApp");
+    cJSON_AddStringToObject(aclAuthItem, "appid", "100");
+    cJSON_AddItemToArray(aclAuthArray, aclAuthItem);
+    cJSON_AddItemToObject(packageFilterRoot, "AclAuthPackages", aclAuthArray);
+    cJSON *scanLimitArray = cJSON_CreateArray();
+    cJSON *scanLimitItem = cJSON_CreateObject();
+    cJSON_AddStringToObject(scanLimitItem, "name", "scanLimitApp");
+    cJSON_AddStringToObject(scanLimitItem, "appid", "101");
+    cJSON_AddItemToArray(scanLimitArray, scanLimitItem);
+    cJSON_AddItemToObject(packageFilterRoot, "ScanLimitPackages", scanLimitArray);
+    const char *landscapeLimitList[] = {"landscapeLimitApp"};
+    cJSON_AddItemToObject(packageFilterRoot, "LandscapeSwitchLimitList",
+        cJSON_CreateStringArray(landscapeLimitList, 1));
+}
+ 
+void InitAppParserJsonTest()
+{
+    if (m_appXmlParser == nullptr) {
+        return;
+    }
+    BuildMonitorAppJsonTest();
+    BuildNetworkControlAppJsonTest();
+    BuildPackageFilterJsonTest();
+}
+
 void InitParam()
 {
     if (!g_isInsted) {
@@ -113,6 +206,7 @@ void InitParam()
         m_WifiNotificationUtil = std::make_unique<WifiNotificationUtil>();
         m_NetworkSelectionManager = std::make_unique<NetworkSelectionManager>();
         InitAppParserTest();
+        InitAppParserJsonTest();
         if (m_networkXmlParser == nullptr) {
             return;
         }
@@ -175,26 +269,18 @@ void AppXmlParserTest(const uint8_t* data, size_t size)
         return;
     }
     m_appXmlParser->Init();
-    if (!m_appXmlParser->appParserInner_) {
-        return;
-    }
     std::string conditionName(reinterpret_cast<const char*>(data), size);
     m_appXmlParser->IsOverGameRtt(conditionName, gameRtt);
+    m_appXmlParser->IsOverGameLowRttThresh(conditionName, gameRtt);
     m_appXmlParser->GetAsyncLimitSpeedDelayTime();
-    m_appXmlParser->appParserInner_->ParseInternal(root_node);
-    m_appXmlParser->appParserInner_->ParseAppList(root_node);
-    m_appXmlParser->appParserInner_->ParseNetworkControlAppList(root_node);
-    m_appXmlParser->appParserInner_->ParseLowLatencyAppInfo(root_node);
-    m_appXmlParser->appParserInner_->ParseWhiteAppInfo(root_node);
-    m_appXmlParser->appParserInner_->ParseBlackAppInfo(root_node);
-    m_appXmlParser->appParserInner_->ParseMultiLinkAppInfo(root_node);
-    m_appXmlParser->appParserInner_->ParseChariotAppInfo(root_node);
-    m_appXmlParser->appParserInner_->ParseKeyForegroundListAppInfo(root_node);
-    m_appXmlParser->appParserInner_->ParseKeyBackgroundLimitListAppInfo(root_node);
-    m_appXmlParser->appParserInner_->ParseLiveStreamAppInfo(root_node);
-    m_appXmlParser->appParserInner_->ParseGameBackgroundLimitListAppInfo(root_node);
-    m_appXmlParser->appParserInner_->ParseAsyncLimitSpeedDelayTime(root_node);
-    m_appXmlParser->appParserInner_->GetAppTypeAsInt(root_node);
+    m_appXmlParser->GetPackageName(conditionName);
+    std::vector<PackageInfo> packageInfo;
+    m_appXmlParser->GetPackageInfoByName(conditionName, packageInfo);
+    std::map<std::string, std::vector<PackageInfo>> packageInfoMap;
+    m_appXmlParser->GetPackageInfoMap(packageInfoMap);
+    m_appXmlParser->ParseMonitorAppConfig(monitorRoot);
+    m_appXmlParser->ParseNetworkControlAppConfig(networkControlRoot);
+    m_appXmlParser->ParsePackageFilterConfig(packageFilterRoot);
     m_xmlParser->LoadConfiguration(buf);
     m_xmlParser->LoadConfigurationMemory(buf);
     ConvertStringToBool(buf);
@@ -222,9 +308,6 @@ void AppXmlParserTest2(const uint8_t* data, size_t size)
         return;
     }
     m_appXmlParser->Init();
-    if (!m_appXmlParser->appParserInner_) {
-        return;
-    }
     std::string conditionName(reinterpret_cast<const char*>(data), size);
     m_appXmlParser->IsLowLatencyApp(conditionName);
     m_appXmlParser->IsWhiteListApp(conditionName);
@@ -235,7 +318,8 @@ void AppXmlParserTest2(const uint8_t* data, size_t size)
     m_appXmlParser->IsKeyBackgroundLimitApp(conditionName);
     m_appXmlParser->IsLiveStreamApp(conditionName);
     m_appXmlParser->IsGameBackgroundLimitApp(conditionName);
-    m_appXmlParser->appParserInner_->InitAppParser(buf);
+    m_appXmlParser->IsRssGameApp(conditionName);
+    m_appXmlParser->IsHiGameExcludeApp(conditionName);
 }
 
 void AppParserTest()
