@@ -95,6 +95,8 @@ public:
     virtual int SetDeviceAfterConnect(int networkId, int rssi) = 0;
     virtual int GetCandidateConfig(const int uid, const int &networkId, WifiDeviceConfig &config) = 0;
     virtual int GetAllCandidateConfig(const int uid, std::vector<WifiDeviceConfig> &configs) = 0;
+    virtual int GetAllCandidateConfigWithoutUid(std::vector<WifiDeviceConfig> &configs,
+        bool includeSharedConfig = false) = 0;
     virtual int GetValidChannels(ChannelsTable &channelsInfo) = 0;
     virtual int GetWifiState(int instId = 0) = 0;
     virtual int SetDeviceConnFailedCount(const std::string &index, const int &indexType, int count) = 0;
@@ -290,6 +292,8 @@ public:
     MOCK_METHOD2(SetDeviceAfterConnect, int(int networkId, int rssi));
     MOCK_METHOD3(GetCandidateConfig, int(const int uid, const int &networkId, WifiDeviceConfig &config));
     MOCK_METHOD2(GetAllCandidateConfig, int(const int uid, std::vector<WifiDeviceConfig> &configs));
+    MOCK_METHOD2(GetAllCandidateConfigWithoutUid, int(std::vector<WifiDeviceConfig> &configs,
+        bool includeSharedConfig));
     MOCK_METHOD1(GetValidChannels, int(ChannelsTable &channelsInfo));
     MOCK_METHOD1(GetWifiState, int(int));
     MOCK_METHOD3(SetDeviceConnFailedCount, int(const std::string &index, const int &indexType, int count));

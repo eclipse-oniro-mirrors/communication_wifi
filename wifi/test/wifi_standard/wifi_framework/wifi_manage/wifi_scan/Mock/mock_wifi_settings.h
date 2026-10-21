@@ -42,6 +42,8 @@ public:
     virtual int SyncDeviceConfig() = 0;
     virtual int RemoveDevice(int networkId, bool removeEapCert = true) = 0;
     virtual int GetAllCandidateConfig(const int uid, std::vector<WifiDeviceConfig> &configs) = 0;
+    virtual int GetAllCandidateConfigWithoutUid(std::vector<WifiDeviceConfig> &configs,
+        bool includeSharedConfig = false) = 0;
     virtual int SetAcceptUnvalidated(int networkId) = 0;
     virtual int SetWifiFlagOnAirplaneMode(bool ifOpen, int instId = 0) = 0;
     virtual bool GetScanAlwaysState(int instId) = 0;
@@ -70,6 +72,8 @@ public:
     MOCK_METHOD0(SyncDeviceConfig, int());
     MOCK_METHOD2(RemoveDevice, int(int networkId, bool removeEapCert));
     MOCK_METHOD2(GetAllCandidateConfig, int(const int uid, std::vector<WifiDeviceConfig> &configs));
+    MOCK_METHOD2(GetAllCandidateConfigWithoutUid, int(std::vector<WifiDeviceConfig> &configs,
+        bool includeSharedConfig));
     MOCK_METHOD1(SetAcceptUnvalidated, int(int networkId));
     MOCK_METHOD2(SetWifiFlagOnAirplaneMode, int(bool ifOpen, int instId));
     MOCK_METHOD1(GetScanAlwaysState, bool(int instId));
