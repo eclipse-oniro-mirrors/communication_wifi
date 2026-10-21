@@ -1153,7 +1153,7 @@ ErrCode WifiDeviceServiceImpl::DisconnectFromCandidateConfig(int networkId, int6
     if (CheckCallingUid(uid) != WIFI_OPT_SUCCESS) {
         if (!IsWifiBrokerProcess(uid)) {
             WIFI_LOGE("DisconnectFromCandidateConfig IsWifiBrokerProcess failed!");
-            return WIFI_OPT_INVALID_PARAM;
+            return WIFI_OPT_FAILED;
         }
     }
     IStaService *pService = WifiServiceManager::GetInstance().GetStaServiceInst(m_instId);
