@@ -232,6 +232,8 @@ public:
 
     int GetAllCandidateConfig(const int uid, std::vector<WifiDeviceConfig> &configs);
 
+    int GetAllCandidateConfigWithoutUid(std::vector<WifiDeviceConfig> &configs, bool includeSharedConfig = false);
+
     int IncreaseDeviceConnFailedCount(const std::string &index, const int &indexType, int count);
 
     int SetDeviceConnFailedCount(const std::string &index, const int &indexType, int count);
@@ -471,7 +473,6 @@ private:
     bool EncryptionWapiConfig(const WifiEncryptionInfo &wifiEncryptionInfo, WifiDeviceConfig &config) const;
 #endif
     void SyncAfterDecryped(WifiDeviceConfig &config);
-    int GetAllCandidateConfigWithoutUid(std::vector<WifiDeviceConfig> &configs, bool includeSharedConfig = false);
 public:
 #ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
     std::vector<WifiRestrictedInfo> wifiRestrictedList_;

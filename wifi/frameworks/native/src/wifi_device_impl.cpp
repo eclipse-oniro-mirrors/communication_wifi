@@ -282,6 +282,13 @@ ErrCode WifiDeviceImpl::ConnectToCandidateConfig(ConnectSettings &connectSetting
     return client_->ConnectToCandidateConfig(connectSettings);
 }
 
+ErrCode WifiDeviceImpl::DisconnectFromCandidateConfig(int networkId, int64_t blockDuration)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    RETURN_IF_FAIL(GetWifiDeviceProxy());
+    return client_->DisconnectFromCandidateConfig(networkId, blockDuration);
+}
+
 ErrCode WifiDeviceImpl::ConnectToDevice(const WifiDeviceConfig &config)
 {
     std::lock_guard<std::mutex> lock(mutex_);

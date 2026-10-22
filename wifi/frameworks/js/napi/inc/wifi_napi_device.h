@@ -41,6 +41,7 @@ napi_value AddUntrustedConfig(napi_env env, napi_callback_info info);
 napi_value RemoveUntrustedConfig(napi_env env, napi_callback_info info);
 napi_value AddCandidateConfig(napi_env env, napi_callback_info info);
 napi_value RemoveCandidateConfig(napi_env env, napi_callback_info info);
+napi_value DisconnectFromCandidateConfig(napi_env env, napi_callback_info info);
 napi_value ConnectToCandidateConfig(napi_env env, napi_callback_info info);
 napi_value ConnectToCandidateConfigWithUserAction(napi_env env, napi_callback_info info);
 napi_value GetCandidateConfigs(napi_env env, napi_callback_info info);

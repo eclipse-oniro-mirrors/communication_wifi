@@ -963,6 +963,43 @@ NO_SANITIZE("cfi") napi_value RemoveCandidateConfig(napi_env env, napi_callback_
     return DoAsyncWork(env, asyncContext, argc, argv, nonCallbackArgNum);
 }
 
+NO_SANITIZE("cfi") napi_value DisconnectFromCandidateConfig(napi_env env, napi_callback_info info)
+{
+    TRACE_FUNC_CALL;
+    size_t argc = 2;
+    napi_value argv[2];
+    napi_value thisVar = nullptr;
+    void *data = nullptr;
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, &thisVar, &data));
+    if (argc < 2) {
+        WIFI_NAPI_RETURN_NUM_CODE(env, false, WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_STA);
+    }
+    if (wifiDevicePtr == nullptr) {
+        WIFI_NAPI_RETURN_NUM_CODE(env, false, WIFI_OPT_FAILED, SYSCAP_WIFI_STA);
+    }
+
+    napi_valuetype valueType;
+    napi_typeof(env, argv[0], &valueType);
+    if (valueType != napi_number) {
+        WIFI_NAPI_RETURN_NUM_CODE(env, false, WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_STA);
+    }
+    int32_t networkId = -1;
+    napi_get_value_int32(env, argv[0], &networkId);
+
+    napi_typeof(env, argv[1], &valueType);
+    if (valueType != napi_number) {
+        WIFI_NAPI_RETURN_NUM_CODE(env, false, WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_STA);
+    }
+    int64_t blockDuration = -1;
+    napi_get_value_int64(env, argv[1], &blockDuration);
+
+    ErrCode ret = wifiDevicePtr->DisconnectFromCandidateConfig(networkId, blockDuration);
+#ifdef WIFI_FEATURE_SUPPORT_API_METRICS
+    HISTOGRAM_BOOLEAN("connectivityKit.disconnectFromCandidateConfig.CALL", ret == WIFI_OPT_SUCCESS);
+#endif
+    WIFI_NAPI_RETURN_NUM_CODE(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_STA);
+}
+
 static napi_value GetJsObjToConnectSettings(napi_env env, napi_value object, ConnectSettings &connectSettings)
 {
     napi_valuetype valueType;

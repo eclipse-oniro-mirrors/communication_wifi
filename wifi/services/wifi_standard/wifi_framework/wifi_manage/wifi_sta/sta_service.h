@@ -148,6 +148,17 @@ public:
      */
     virtual ErrCode RemoveAllCandidateConfig(const int uid) const;
     /**
+     * @Description Disconnect a candidate network identified by networkId for a period of time.
+     *
+     * @param uid - call app uid
+     * @param networkId - Identifies the candidate network to be disconnected.
+     * @param blockDuration - Duration for which the network is blocked from re-associated, in seconds.
+     *     If the value is -1, the candidate network is permanently blocked from re-associated.
+     * @return ErrCode - operation result
+     */
+    virtual ErrCode DisconnectFromCandidateConfig(const int uid, const int networkId,
+        const int64_t blockDuration) const;
+    /**
      * @Description  Update a network to config
      *
      * @param config -The Network info(in)

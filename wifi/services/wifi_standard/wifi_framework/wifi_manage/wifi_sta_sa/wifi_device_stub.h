@@ -58,6 +58,7 @@ private:
     void OnAllowAutoConnect(uint32_t code, MessageParcel &data, MessageParcel &reply);
     void OnConnectTo(uint32_t code, MessageParcel &data, MessageParcel &reply);
     void OnConnectToCandidateConfig(uint32_t code, MessageParcel &data, MessageParcel &reply);
+    void OnDisconnectFromCandidateConfig(uint32_t code, MessageParcel &data, MessageParcel &reply);
     void OnConnect2To(uint32_t code, MessageParcel &data, MessageParcel &reply);
     void OnStartRoamToNetwork(uint32_t code, MessageParcel &data, MessageParcel &reply);
     void OnStartConnectToUserSelectNetwork(uint32_t code, MessageParcel &data, MessageParcel &reply);

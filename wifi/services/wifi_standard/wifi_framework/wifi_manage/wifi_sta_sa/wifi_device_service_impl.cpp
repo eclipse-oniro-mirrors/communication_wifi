@@ -1134,6 +1134,36 @@ ErrCode WifiDeviceServiceImpl::ConnectToCandidateConfig(ConnectSettings &connect
     return pService->ConnectToCandidateConfig(connectSettings);
 }
 
+ErrCode WifiDeviceServiceImpl::DisconnectFromCandidateConfig(int networkId, int64_t blockDuration)
+{
+#ifndef OHOS_ARCH_LITE
+    WIFI_LOGI("DisconnectFromCandidateConfig, pid:%{public}d, uid:%{public}d, BundleName:%{private}s, "
+        "networkId:%{public}d, blockDuration:%{public}" PRId64 ".",
+        GetCallingPid(), GetCallingUid(), GetBundleName().c_str(), networkId, blockDuration);
+#endif
+    ErrCode ret = CheckRemoveCandidateConfig();
+    if (ret != WIFI_OPT_SUCCESS) {
+        return ret;
+    }
+    if (networkId == INVALID_NETWORK_ID) {
+        WIFI_LOGE("DisconnectFromCandidateConfig: invalid networkId!");
+        return WIFI_OPT_INVALID_PARAM;
+    }
+    int uid = 0;
+    if (CheckCallingUid(uid) != WIFI_OPT_SUCCESS) {
+        if (!IsWifiBrokerProcess(uid)) {
+            WIFI_LOGE("DisconnectFromCandidateConfig IsWifiBrokerProcess failed!");
+            return WIFI_OPT_FAILED;
+        }
+    }
+    IStaService *pService = WifiServiceManager::GetInstance().GetStaServiceInst(m_instId);
+    if (pService == nullptr) {
+        WIFI_LOGE("pService is nullptr!");
+        return WIFI_OPT_STA_NOT_OPENED;
+    }
+    return pService->DisconnectFromCandidateConfig(uid, networkId, blockDuration);
+}
+
 ErrCode WifiDeviceServiceImpl::ConnectToDevice(const WifiDeviceConfig &config)
 {
     WIFI_LOGI("%{public}s: device address %{private}s, addressType:%{public}d",

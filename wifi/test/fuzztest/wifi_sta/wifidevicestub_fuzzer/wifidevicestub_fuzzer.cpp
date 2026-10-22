@@ -354,6 +354,20 @@ void OnConnectToCandidateConfigFuzzTest()
     OnRemoteRequest(static_cast<uint32_t>(DevInterfaceCode::WIFI_SVR_CMD_CONNECT_TO_CANDIDATE_CONFIG), datas);
 }
 
+void OnDisconnectFromCandidateConfigFuzzTest()
+{
+    MessageParcel datas;
+    if (!datas.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN)) {
+        LOGE("WriteInterfaceToken failed!");
+        return;
+    }
+    int32_t networkId = FDP->ConsumeIntegral<int32_t>();
+    int64_t blockDuration = FDP->ConsumeIntegral<int64_t>();
+    datas.WriteInt32(networkId);
+    datas.WriteInt64(blockDuration);
+    OnRemoteRequest(static_cast<uint32_t>(DevInterfaceCode::WIFI_SVR_CMD_DISCONNECT_FROM_CANDIDATE_CONFIG), datas);
+}
+
 void OnReConnectFuzzTest()
 {
     MessageParcel datas;
@@ -1121,6 +1135,13 @@ void RemoveCandidateConfigTest()
     pWifiDeviceServiceImpl->RemoveCandidateConfig(networkId);
 }
 
+void DisconnectFromCandidateConfigTest()
+{
+    int networkId = FDP->ConsumeIntegral<int>();
+    int64_t blockDuration = FDP->ConsumeIntegral<int64_t>();
+    pWifiDeviceServiceImpl->DisconnectFromCandidateConfig(networkId, blockDuration);
+}
+
 void AddDeviceConfigTest()
 {
     WifiDeviceConfig config;
@@ -1508,6 +1529,7 @@ void WifiDeviceFuzzTest()
     OHOS::Wifi::OnAllowAutoConnectFuzzTest();
     OHOS::Wifi::OnConnectToFuzzTest();
     OHOS::Wifi::OnConnectToCandidateConfigFuzzTest();
+    OHOS::Wifi::OnDisconnectFromCandidateConfigFuzzTest();
     OHOS::Wifi::OnConnect2ToFuzzTest();
     OHOS::Wifi::OnReConnectFuzzTest();
     OHOS::Wifi::OnReAssociateFuzzTest();
@@ -1559,6 +1581,7 @@ void WifiDeviceFuzzTestPart2()
     OHOS::Wifi::SetWifiConnectedModeTest();
     OHOS::Wifi::RemoveCandidateConfigFuzzTest();
     OHOS::Wifi::RemoveCandidateConfigTest();
+    OHOS::Wifi::DisconnectFromCandidateConfigTest();
     OHOS::Wifi::AddDeviceConfigTest();
     OHOS::Wifi::ConnectToNetworkTest();
     OHOS::Wifi::ConnectToDeviceTest();

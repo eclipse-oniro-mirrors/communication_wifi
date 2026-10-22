@@ -108,6 +108,8 @@ public:
     void StaServiceRemoveCandidateConfigTestSucc();
     void StaServiceRemoveCandidateConfigTestFail();
     void StaServiceRemoveAllCandidateConfigTestSucc();
+    void StaServiceDisconnectFromCandidateConfigTestSucc();
+    void StaServiceDisconnectFromCandidateConfigTestFail();
     void StaServiceConnectToCandidateConfigTestSucc0();
     void StaServiceConnectToCandidateConfigTestSucc1();
     void StaServiceConnectToCandidateConfigTestFail();
@@ -634,6 +636,27 @@ void StaServiceTest::StaServiceRemoveAllCandidateConfigTestSucc()
     int uid = UID;
     EXPECT_CALL(WifiSettings::GetInstance(), GetAllCandidateConfig(_, _)).Times(AtLeast(1));
     EXPECT_TRUE(pStaService->RemoveAllCandidateConfig(uid) == WIFI_OPT_SUCCESS);
+}
+
+void StaServiceTest::StaServiceDisconnectFromCandidateConfigTestSucc()
+{
+    int uid = UID;
+    int networkId = NETWORK_ID;
+    int64_t blockDuration = -1;
+    EXPECT_CALL(WifiSettings::GetInstance(), GetCandidateConfig(_, _, _)).WillRepeatedly(Return(0));
+    EXPECT_CALL(WifiConfigCenter::GetInstance(), GetLinkedInfo(_, _)).Times(AtLeast(1));
+    EXPECT_CALL(BlockConnectService::GetInstance(), UpdateNetworkSelectStatus(_, _, _))
+        .WillRepeatedly(Return(true));
+    EXPECT_TRUE(pStaService->DisconnectFromCandidateConfig(uid, networkId, blockDuration) == WIFI_OPT_SUCCESS);
+}
+
+void StaServiceTest::StaServiceDisconnectFromCandidateConfigTestFail()
+{
+    int uid = UID;
+    int networkId = NETWORK_ID;
+    int64_t blockDuration = -1;
+    EXPECT_CALL(WifiSettings::GetInstance(), GetCandidateConfig(_, _, _)).WillRepeatedly(Return(-1));
+    EXPECT_TRUE(pStaService->DisconnectFromCandidateConfig(uid, networkId, blockDuration) == WIFI_OPT_FAILED);
 }
 
 void StaServiceTest::StaServiceConnectToCandidateConfigTestSucc0()
@@ -1169,6 +1192,16 @@ HWTEST_F(StaServiceTest, StaServiceRemoveCandidateConfigTestFail, TestSize.Level
 HWTEST_F(StaServiceTest, StaServiceRemoveAllCandidateConfigTestSucc, TestSize.Level0)
 {
     StaServiceRemoveAllCandidateConfigTestSucc();
+}
+
+HWTEST_F(StaServiceTest, StaServiceDisconnectFromCandidateConfigTestSucc, TestSize.Level0)
+{
+    StaServiceDisconnectFromCandidateConfigTestSucc();
+}
+
+HWTEST_F(StaServiceTest, StaServiceDisconnectFromCandidateConfigTestFail, TestSize.Level0)
+{
+    StaServiceDisconnectFromCandidateConfigTestFail();
 }
 
 HWTEST_F(StaServiceTest, StaServiceConnectToCandidateConfigTestSucc0, TestSize.Level0)

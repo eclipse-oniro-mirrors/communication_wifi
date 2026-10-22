@@ -139,6 +139,23 @@ HWTEST_F(WifiInnerDeviceTest, DisableDeviceConfigTest, TestSize.Level1)
     EXPECT_GE(result, WIFI_OPT_SUCCESS);
 }
 
+HWTEST_F(WifiInnerDeviceTest, DisconnectFromCandidateConfigTest, TestSize.Level1)
+{
+    WIFI_LOGE("DisconnectFromCandidateConfigTest enter!");
+    EXPECT_TRUE(devicePtr != nullptr);
+    int64_t blockDuration = -1;
+    ErrCode result = devicePtr->DisconnectFromCandidateConfig(NETWORKID, blockDuration);
+    WIFI_LOGE("DisconnectFromCandidateConfigTest result(0x%{public}x), blockDuration=%" PRId64,
+        result, blockDuration);
+    EXPECT_GE(result, WIFI_OPT_SUCCESS);
+
+    blockDuration = BLOCK_DURATION_5_MIN;
+    result = devicePtr->DisconnectFromCandidateConfig(NETWORKID, blockDuration);
+    WIFI_LOGE("DisconnectFromCandidateConfigTest result(0x%{public}x), blockDuration=%" PRId64,
+        result, blockDuration);
+    EXPECT_GE(result, WIFI_OPT_SUCCESS);
+}
+
 HWTEST_F(WifiInnerDeviceTest, IsConnectedTest, TestSize.Level1)
 {
     WIFI_LOGE("IsConnectedTest enter!");

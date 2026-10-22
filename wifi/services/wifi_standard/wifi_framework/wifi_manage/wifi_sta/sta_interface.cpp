@@ -214,6 +214,18 @@ ErrCode StaInterface::RemoveAllCandidateConfig(const int uid)
     return WIFI_OPT_SUCCESS;
 }
 
+ErrCode StaInterface::DisconnectFromCandidateConfig(const int uid, const int networkId, const int64_t blockDuration)
+{
+    LOGI("Enter DisconnectFromCandidateConfig.\n");
+    std::lock_guard<std::mutex> lock(mutex);
+    CHECK_NULL_AND_RETURN(pStaService, WIFI_OPT_FAILED);
+    if (pStaService->DisconnectFromCandidateConfig(uid, networkId, blockDuration) != WIFI_OPT_SUCCESS) {
+        LOGE("DisconnectFromCandidateConfig failed.\n");
+        return WIFI_OPT_FAILED;
+    }
+    return WIFI_OPT_SUCCESS;
+}
+
 int StaInterface::AddDeviceConfig(const WifiDeviceConfig &config)
 {
     LOGI("Enter AddDeviceConfig.\n");

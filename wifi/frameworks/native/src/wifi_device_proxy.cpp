@@ -987,6 +987,37 @@ ErrCode WifiDeviceProxy::ConnectToCandidateConfig(ConnectSettings &connectSettin
     return ErrCode(reply.ReadInt32());
 }
 
+ErrCode WifiDeviceProxy::DisconnectFromCandidateConfig(int networkId, int64_t blockDuration)
+{
+    if (mRemoteDied) {
+        WIFI_LOGE("failed to DisconnectFromCandidateConfig,remote service is died!");
+        return WIFI_OPT_FAILED;
+    }
+    MessageOption option;
+    MessageParcel data;
+    MessageParcel reply;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        WIFI_LOGE("Write interface token error: DisconnectFromCandidateConfig");
+        return WIFI_OPT_FAILED;
+    }
+    data.WriteInt32(0);
+    data.WriteInt32(networkId);
+    data.WriteInt64(blockDuration);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(DevInterfaceCode::WIFI_SVR_CMD_DISCONNECT_FROM_CANDIDATE_CONFIG),
+        data, reply, option);
+    if (error != ERR_NONE) {
+        WIFI_LOGE("DisconnectFromCandidateConfig Attr(%{public}d) failed,error code is %{public}d",
+            static_cast<int32_t>(DevInterfaceCode::WIFI_SVR_CMD_DISCONNECT_FROM_CANDIDATE_CONFIG), error);
+        return WIFI_OPT_FAILED;
+    }
+    int exception = reply.ReadInt32();
+    if (exception) {
+        return WIFI_OPT_FAILED;
+    }
+    return ErrCode(reply.ReadInt32());
+}
+
 ErrCode WifiDeviceProxy::ConnectToDevice(const WifiDeviceConfig &config)
 {
     if (mRemoteDied) {
