@@ -1034,7 +1034,6 @@ void WifiDeviceStub::WriteWifiLinkedInfo(MessageParcel &reply, const WifiLinkedI
 #endif
     reply.WriteBool(wifiInfo.wifiTxRxValid);
     reply.WriteInt32(wifiInfo.nssState);
-
 }
 
 void WifiDeviceStub::OnGetLinkedInfo(uint32_t code, MessageParcel &data, MessageParcel &reply)
