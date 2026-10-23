@@ -793,7 +793,6 @@ void WifiServiceScheduler::HandleMimoSisoSwitchEvent(const std::vector<uint8_t>&
     }
     int nssState = static_cast<int>(ReadUint32LE(recvMsg, MIMO_SISO_PAYLOAD_NSS_STATE_OFFSET));
     uint32_t smpsMode = ReadUint32LE(recvMsg, MIMO_SISO_PAYLOAD_SMPS_MODE_OFFSET);
-    WIFI_LOGI("HandleMimoSisoSwitchEvent, nssState:%{public}d, smpsMode:%{public}u", nssState, smpsMode);
  
     /* Wifi side dedup: report only when the state really changed, by comparing with the
        config center snapshot before the update. linkedInfo.nssState == INVALID_NSS_STATE
@@ -801,7 +800,7 @@ void WifiServiceScheduler::HandleMimoSisoSwitchEvent(const std::vector<uint8_t>&
     WifiLinkedInfo linkedInfo;
     WifiConfigCenter::GetInstance().GetLinkedInfo(linkedInfo);
     if (linkedInfo.nssState == nssState) {
-        WIFI_LOGI("HandleMimoSisoSwitchEvent, nss state not changed, skip report");
+        WIFI_LOGD("HandleMimoSisoSwitchEvent, nss state not changed, skip report");
         return;
     }
  
