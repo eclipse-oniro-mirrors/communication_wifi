@@ -486,6 +486,13 @@ public:
      * @param chargeStatus
      */
      virtual void HandleBatteryStatusChanged(int chargeStatus);
+
+     /**
+     * @Description Handle the mimo/siso switch netlink event and update linkedInfo.nssState via the state machine.
+     *
+     * @param nssState - current spatial stream state, 0 = SISO, >=1 = MIMO
+     */
+    void ProcessMimoSisoSwitchEvent(int nssState);
 private:
     void NotifyDeviceConfigChange(ConfigChange value, WifiDeviceConfig config, bool isRemoveAll) const;
     void NotifyCandidateApprovalStatus(CandidateApprovalStatus status) const;

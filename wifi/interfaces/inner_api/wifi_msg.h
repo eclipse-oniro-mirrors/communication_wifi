@@ -338,6 +338,7 @@ struct WifiLinkedInfo {
     DisconnState disconnTriggerMode;  /* Disconnection Trigger Module */
     WifiRiskType riskType;
     bool wifiTxRxValid;
+    int nssState; /* Current spatial stream state: -1 = not learned for this link, 0 = SISO, >=1 = MIMO; updated by the mimo/siso switch netlink event */
     WifiLinkedInfo()
     {
         networkId = INVALID_NETWORK_ID;
@@ -379,6 +380,7 @@ struct WifiLinkedInfo {
         disconnTriggerMode = DisconnState::DEFAULTSTAT;
         riskType = WifiRiskType::INVALID;
         wifiTxRxValid = true;
+        nssState = -1;
     }
 };
 

@@ -354,8 +354,21 @@ void StaStateMachine::InitWifiLinkedInfo()
     linkedInfo.riskType = WifiRiskType::INVALID;
 #endif
     linkedInfo.wifiTxRxValid = true;
+    linkedInfo.nssState = -1; // -1 = state not learned yet for this link, so the first MIMO/SISO event always passes
     std::vector<WifiLinkedInfo> emptyMloLinkInfo;
     WifiConfigCenter::GetInstance().SaveMloLinkedInfo(emptyMloLinkInfo, m_instId);
+}
+
+void StaStateMachine::HandleMimoSisoSwitchEvent(InternalMessagePtr msg)
+{
+    if (msg == nullptr) {
+        WIFI_LOGE("HandleMimoSisoSwitchEvent, msg is nullptr.");
+        return;
+    }
+    int nssState = msg->GetParam1();
+    linkedInfo.nssState = nssState;
+    WifiConfigCenter::GetInstance().SaveLinkedInfo(linkedInfo, m_instId);
+    WIFI_LOGI("MIMO/SISO switch event, update linkedInfo nssState:%{public}d", nssState);
 }
 
 
@@ -969,6 +982,11 @@ int StaStateMachine::LinkState::InitStaSMHandleMap()
     };
     staSmHandleFuncMap[CMD_NETWORK_CONNECT_TIMEOUT] = [this](InternalMessagePtr msg) {
         return this->DealConnectTimeOutCmd(msg);
+    };
+    /* MIMO/SISO switch event: the whole LinkState association subtree (linking/linked/getip/roaming/reconnect)
+       can handle it; when a sub state switch misses, the event bubbles up along the inheritance chain to this table */
+    staSmHandleFuncMap[WIFI_SVR_CMD_STA_MIMO_SISO_SWITCH_EVENT] = [this](InternalMessagePtr msg) {
+        return this->pStaStateMachine->HandleMimoSisoSwitchEvent(msg);
     };
     return WIFI_OPT_SUCCESS;
 }

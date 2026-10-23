@@ -210,6 +210,16 @@ ErrCode StaService::DisableStaService() const
     return WIFI_OPT_SUCCESS;
 }
 
+void StaService::ProcessMimoSisoSwitchEvent(int nssState)
+{
+    WIFI_LOGI("Enter ProcessMimoSisoSwitchEvent, nssState:%{public}d", nssState);
+    if (pStaStateMachine == nullptr) {
+        WIFI_LOGE("ProcessMimoSisoSwitchEvent, pStaStateMachine is null.");
+        return;
+    }
+    pStaStateMachine->SendMessage(WIFI_SVR_CMD_STA_MIMO_SISO_SWITCH_EVENT, nssState);
+}
+
 ErrCode StaService::AddCandidateConfig(const int uid, const WifiDeviceConfig &config, int& netWorkId) const
 {
     LOGI("Enter AddCandidateConfig.\n");

@@ -657,6 +657,13 @@ private:
     void InitWifiLinkedInfo();
 
     /**
+     * @Description  Update linkedInfo.nssState when a MIMO/SISO switch netlink event arrives.
+     *
+     * @param msg - internal message, param1 carries the current nssState (-1 = not learned, 0 = SISO, >=1 = MIMO)
+     */
+    void HandleMimoSisoSwitchEvent(InternalMessagePtr msg);
+
+    /**
      * @Description  Convert the deviceConfig structure and set it to idl structure
      *
      * @param config -The Network info(in)

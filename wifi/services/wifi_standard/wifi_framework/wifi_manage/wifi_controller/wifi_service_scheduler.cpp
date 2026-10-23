@@ -14,6 +14,7 @@
  */
 
 #include "wifi_service_scheduler.h"
+#include <climits>
 #include "wifi_controller_define.h"
 #include "wifi_manager.h"
 #include "wifi_config_center.h"
@@ -734,22 +735,86 @@ void WifiServiceScheduler::OnRssiReportCallback(int index, int antRssi)
     WifiCommonEventHelper::PublishWiTasRssiValueChangedEvent(index, data);
 }
 
+constexpr int VDR_MIMO_SISO_SWITCH_EVENT = 105;
+/* Sentinel value indicating that no valid MIMO/SISO state has been learned yet. */
+constexpr int INVALID_NSS_STATE = -1;
+/* MIMO/SISO switch payload: nssState (uint32) followed by smpsMode (uint32), both little-endian. */
+constexpr size_t MIMO_SISO_SWITCH_PAYLOAD_LEN = sizeof(uint32_t) * 2;
+constexpr size_t MIMO_SISO_PAYLOAD_NSS_STATE_OFFSET = 0;
+constexpr size_t MIMO_SISO_PAYLOAD_SMPS_MODE_OFFSET = sizeof(uint32_t);
+ 
+/**
+ * @brief Read a little-endian uint32 value from the byte vector.
+ * @param data  source byte vector
+ * @param offset  read position, 4 readable bytes must be guaranteed by the caller
+ * @return parsed uint32 value
+ */
+static uint32_t ReadUint32LE(const std::vector<uint8_t>& data, size_t offset)
+{
+    uint32_t value = 0;
+    for (size_t i = 0; i < sizeof(uint32_t); ++i) {
+        value |= static_cast<uint32_t>(data[offset + i]) << (i * CHAR_BIT);
+    }
+    return value;
+}
+
 void WifiServiceScheduler::OnNetlinkReportCallback(int type, const std::vector<uint8_t>& recvMsg)
 {
     WIFI_LOGD("OnNetlinkReportCallback, type:%{public}d", type);
+    /* MIMO/SISO switch events are fully consumed by the wifi side and never forwarded to enhance. */
+    if (type == VDR_MIMO_SISO_SWITCH_EVENT) {
+        HandleMimoSisoSwitchEvent(recvMsg);
+        return;
+    }
+    IStaService *pStaService = WifiServiceManager::GetInstance().GetStaServiceInst(0);
+    if (pStaService == nullptr) {
+        WIFI_LOGE("Instance get Sta service is null!");
+    } else {
+        pStaService->ProcessNetlinkReportEvent(type, INVALID_NSS_STATE);
+    }
+    /* Other netlink types: keep forwarding the raw bytes to the enhance service as before. */
     IEnhanceService *pEnhanceService = WifiServiceManager::GetInstance().GetEnhanceServiceInst();
     if (pEnhanceService == nullptr) {
         WIFI_LOGE("get pEnhance service failed!");
         return;
     }
     pEnhanceService->ProcessWifiNetlinkReportEvent(type, recvMsg);
-
-    IStaService *pStaService = WifiServiceManager::GetInstance().GetStaServiceInst(0);
-    if (pStaService == nullptr) {
-        WIFI_LOGE("Instance get Sta service is null!");
+}
+ 
+/**
+ * @brief Dedicated processing path for MIMO/SISO switch netlink events.
+ */
+void WifiServiceScheduler::HandleMimoSisoSwitchEvent(const std::vector<uint8_t>& recvMsg)
+{
+    /* Payload: nssState (uint32) + smpsMode (uint32), both little-endian. Truncated payloads are dropped. */
+    if (recvMsg.size() < MIMO_SISO_SWITCH_PAYLOAD_LEN) {
+        WIFI_LOGW("HandleMimoSisoSwitchEvent, invalid payload size:%{public}zu", recvMsg.size());
         return;
     }
-    pStaService->ProcessVoWifiNetlinkReportEvent(type);
+    int nssState = static_cast<int>(ReadUint32LE(recvMsg, MIMO_SISO_PAYLOAD_NSS_STATE_OFFSET));
+    uint32_t smpsMode = ReadUint32LE(recvMsg, MIMO_SISO_PAYLOAD_SMPS_MODE_OFFSET);
+    WIFI_LOGI("HandleMimoSisoSwitchEvent, nssState:%{public}d, smpsMode:%{public}u", nssState, smpsMode);
+ 
+    /* Wifi side dedup: report only when the state really changed, by comparing with the
+       config center snapshot before the update. linkedInfo.nssState == INVALID_NSS_STATE
+       means no state has been learned yet for this connection, so the first event always passes. */
+    WifiLinkedInfo linkedInfo;
+    WifiConfigCenter::GetInstance().GetLinkedInfo(linkedInfo);
+    if (linkedInfo.nssState == nssState) {
+        WIFI_LOGI("HandleMimoSisoSwitchEvent, nss state not changed, skip report");
+        return;
+    }
+ 
+    /* Sta path first: chr pulls the state value from linkedInfo when handling the event,
+       so linkedInfo must be updated before the chr event is sent. */
+    IStaService *pStaService = WifiServiceManager::GetInstance().GetStaServiceInst(0);
+    if (pStaService == nullptr) {
+        WIFI_LOGE("HandleMimoSisoSwitchEvent, get Sta service is null!");
+        return;
+    }
+    pStaService->ProcessNetlinkReportEvent(VDR_MIMO_SISO_SWITCH_EVENT, nssState);
+    /* Chr event is sent only after the sta path has updated linkedInfo. */
+    EnhanceWriteMimoSisoSwitchEvent(nssState, static_cast<int32_t>(smpsMode));
 }
 #endif
 

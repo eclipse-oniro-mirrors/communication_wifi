@@ -104,6 +104,8 @@ void EnhanceWriteIodHiSysEvent(const IodStatisticInfo &iodStatisticInfo);
 
 void EnhanceWriteSpeedTestHiSysEvent(const WifiSpeedTestStatisticInfo &speedTestinfo);
 
+void EnhanceWriteMimoSisoSwitchEvent(int32_t nssState, int32_t smpsMode);
+
 std::string MapToJson(const std::map<int, std::string> &data);
 }  // namespace Wifi
 }  // namespace OHOS
