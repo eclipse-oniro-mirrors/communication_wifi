@@ -3527,7 +3527,7 @@ HWTEST_F(StaStateMachineTest, TransHalDeviceConfigTestWlan1ScanFreq, TestSize.Le
     config.frequency = 5180;
     pStaStateMachine->m_instId = INSTID_WLAN1;
     pStaStateMachine->TransHalDeviceConfig(halDeviceConfig, config);
-    EXPECT_EQ(halDeviceConfig.scanFreq, config.frequency):
+    EXPECT_EQ(halDeviceConfig.scanFreq, config.frequency);
 }
 
 #ifndef OHOS_ARCH_LITE
