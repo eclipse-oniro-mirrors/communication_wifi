@@ -74,6 +74,7 @@ static WpaSsidField g_wpaSsidFields[] = {
     {DEVICE_CONFIG_WAPI_PSK_TYPE, "psk_key_type", QUOTATION_MARKS_FLAG_NO},
     {DEVICE_CONFIG_WAPI_USER_CERT, "wapi_user_sel_cert", QUOTATION_MARKS_FLAG_YES},
     {DEVICE_CONFIG_WAPI_CA_CERT, "wapi_ca_cert", QUOTATION_MARKS_FLAG_YES},
+    {DEVICE_CONFIG_SCAN_FREQ, "scan_freq", QUOTATION_MARKS_FLAG_NO},
 };
 
 static int GetInstId(const char *ifaceName)

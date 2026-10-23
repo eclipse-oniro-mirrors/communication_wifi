@@ -3519,6 +3519,17 @@ HWTEST_F(StaStateMachineTest, DealMloStateChangeTest, TestSize.Level1)
     pStaStateMachine->pLinkState->DealMloStateChange(msg);
     EXPECT_FALSE(g_errLog.find("service is null") != std::string::npos);
 }
+
+HWTEST_F(StaStateMachineTest, TransHalDeviceConfigTestWlan1ScanFreq, TestSize.Level1)
+{
+    WifiDeviceConfig config;
+    WifiHalDeviceConfig halDeviceConfig;
+    config.frequency = 5180;
+    pStaStateMachine->m_instId = INSTID_WLAN1;
+    pStaStateMachine->TransHalDeviceConfig(halDeviceConfig, config);
+    EXPECT_EQ(halDeviceConfig.scanFreq, config.frequency):
+}
+
 #ifndef OHOS_ARCH_LITE
 HWTEST_F(StaStateMachineTest, ShowPortalNitificationHiLinkNetworkTest, TestSize.Level1)
 {

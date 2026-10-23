@@ -4733,6 +4733,10 @@ void StaStateMachine::TransHalDeviceConfig(WifiHalDeviceConfig &halDeviceConfig,
     FillSuiteB192Cfg(halDeviceConfig);
     halDeviceConfig.wepKeyIdx = config.wepTxKeyIndex;
     FillWapiCfg(config, halDeviceConfig);
+    if (m_instId == INSTID_WLAN1 && config.frequency > 0) {
+        halDeviceConfig.scanFreq = config.frequency;
+        WIFI_LOGI("%{public}s set scanFreq:%{public}d for wlan1", __func__, halDeviceConfig.scanFreq);
+    }
 }
 
 void StaStateMachine::AppendFastTransitionKeyMgmt(
