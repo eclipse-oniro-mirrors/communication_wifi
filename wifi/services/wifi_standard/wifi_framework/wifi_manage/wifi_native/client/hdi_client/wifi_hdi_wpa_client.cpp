@@ -253,6 +253,15 @@ void WifiHdiWpaClient::SetDeviceSecurityConfig(const WifiHalDeviceConfig &config
     }
 }
 
+void WifiHdiWpaClient::PushEapPhase2Method(const WifiHalDeviceConfig &config, SetNetworkConfig *conf, int &num)
+{
+    if (config.eapConfig.phase2Method != static_cast<int>(Phase2Method::NONE)) {
+        std::string strPhase2Method = WifiEapConfig::Phase2MethodToStr(config.eapConfig.eap,
+            config.eapConfig.phase2Method);
+        num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_EAP_PHASE2METHOD, strPhase2Method);
+    }
+}
+
 void WifiHdiWpaClient::SetDeviceEapConfig(const WifiHalDeviceConfig &config, SetNetworkConfig *conf, int &num)
 {
     EapMethod eapMethod = WifiEapConfig::Str2EapMethod(config.eapConfig.eap);
@@ -264,11 +273,7 @@ void WifiHdiWpaClient::SetDeviceEapConfig(const WifiHalDeviceConfig &config, Set
             num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_IDENTITY, config.eapConfig.identity);
             num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_PASSWORD, config.eapConfig.password);
             num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_EAP_CA_CERT, config.eapConfig.caCertPath);
-            if (config.eapConfig.phase2Method != static_cast<int>(Phase2Method::NONE)) {
-                std::string strPhase2Method = WifiEapConfig::Phase2MethodToStr(config.eapConfig.eap,
-                    config.eapConfig.phase2Method);
-                num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_EAP_PHASE2METHOD, strPhase2Method);
-            }
+            PushEapPhase2Method(config, conf, num);
             break;
         case EapMethod::EAP_TLS:
             num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_EAP, config.eapConfig.eap);
@@ -283,11 +288,7 @@ void WifiHdiWpaClient::SetDeviceEapConfig(const WifiHalDeviceConfig &config, Set
             num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_IDENTITY, config.eapConfig.identity);
             num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_EAP_CA_CERT, config.eapConfig.caCertPath);
             num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_PASSWORD, config.eapConfig.password);
-            if (config.eapConfig.phase2Method != static_cast<int>(Phase2Method::NONE)) {
-                std::string strPhase2Method = WifiEapConfig::Phase2MethodToStr(config.eapConfig.eap,
-                    config.eapConfig.phase2Method);
-                num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_EAP_PHASE2METHOD, strPhase2Method);
-            }
+            PushEapPhase2Method(config, conf, num);
             break;
         case EapMethod::EAP_PWD:
             num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_EAP, config.eapConfig.eap);
