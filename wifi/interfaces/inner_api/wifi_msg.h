@@ -1295,6 +1295,7 @@ typedef enum {
 enum class WifiEnhanceConfigType {
     FAST_RECONNECT,
     ROAM_STATE,
+    CAMPUS_WIFI_STATE,
 };
 
 struct WifiFastReconnectConfig {

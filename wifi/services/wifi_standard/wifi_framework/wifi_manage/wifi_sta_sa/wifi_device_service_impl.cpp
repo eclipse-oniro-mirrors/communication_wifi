@@ -3048,6 +3048,19 @@ ErrCode WifiDeviceServiceImpl::GetSpecialWifiType(int &specialWifiType)
     if (linkedInfo.ssid == "CEAIR-WIFI") {
         specialWifiType = static_cast<int>(SpecialWifiType::AIRPLANE_WIFI_CEAIR);
     }
+#ifndef OHOS_ARCH_LITE
+    IEnhanceService *pEnhanceService = WifiServiceManager::GetInstance().GetEnhanceServiceInst();
+    if (pEnhanceService == nullptr) {
+        WIFI_LOGE("GetSpecialWifiType:pEnhanceService is nullptr!");
+        return WIFI_OPT_FAILED;
+    }
+    bool isCampusWifi = std::get<bool>(
+        pEnhanceService->GetWifiEnhanceConfig(WifiEnhanceConfigType::CAMPUS_WIFI_STATE));
+    if (isCampusWifi) {
+        WIFI_LOGI("GetSpecialWifiType:current wifi is campus wifi");
+        specialWifiType = static_cast<int>(SpecialWifiType::CAMPUS_WIFI);
+    }
+#endif
     WIFI_LOGI("GetSpecialWifiType:ssid=%{public}s, specialWifiType=%{public}d",
         SsidAnonymize(linkedInfo.ssid).c_str(), specialWifiType);
     return WIFI_OPT_SUCCESS;

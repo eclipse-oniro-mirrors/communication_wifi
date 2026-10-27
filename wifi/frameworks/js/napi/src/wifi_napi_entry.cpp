@@ -317,6 +317,8 @@ static napi_value SpecialWifiTypeInit(napi_env env)
         static_cast<int>(SpecialWifiTypeJs::DEFAULT), "DEFAULT");
     SetNamedPropertyByInteger(env, specialWifiType,
         static_cast<int>(SpecialWifiTypeJs::AIRPLANE_WIFI_CEAIR), "AIRPLANE_WIFI_CEAIR");
+    SetNamedPropertyByInteger(env, specialWifiType,
+        static_cast<int>(SpecialWifiTypeJs::CAMPUS_WIFI), "CAMPUS_WIFI");
     return specialWifiType;
 }
 #endif

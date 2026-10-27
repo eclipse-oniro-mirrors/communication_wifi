@@ -339,6 +339,7 @@ enum class WifiCapabilityJs {
 enum class SpecialWifiTypeJs {
     DEFAULT = 0,
     AIRPLANE_WIFI_CEAIR = 1001,
+    CAMPUS_WIFI = 1002,
 };
 
 }  // namespace Wifi

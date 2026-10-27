@@ -285,5 +285,56 @@ HWTEST_F(WifiInnerDeviceTest, GetSpecialWifiTypeTest, TestSize.Level1)
     EXPECT_TRUE(result == WIFI_OPT_SUCCESS || result == WIFI_OPT_FAILED ||
         result == WIFI_OPT_NON_SYSTEMAPP || result == WIFI_OPT_PERMISSION_DENIED);
 }
+
+/**
+ * @tc.name  : GetSpecialWifiType_CampusStateBranchTest
+ * @tc.desc  : GetSpecialWifiType 内部会经 IEnhanceService::GetWifiEnhanceConfig(CAMPUS_WIFI_STATE)
+ *             查询校园 WiFi 状态。本用例验证该分支不会导致接口异常（结果为成功/失败/权限拒绝均合法，
+ *             关键是返回值与出参在 enhance service 不可用时仍稳定不崩溃）
+ */
+HWTEST_F(WifiInnerDeviceTest, GetSpecialWifiType_CampusStateBranchTest, TestSize.Level1)
+{
+    WIFI_LOGE("GetSpecialWifiType_CampusStateBranchTest Enter!");
+    EXPECT_TRUE(devicePtr != nullptr);
+    int specialWifiType = -1;
+    ErrCode result = devicePtr->GetSpecialWifiType(specialWifiType);
+    WIFI_LOGE("GetSpecialWifiType_CampusStateBranchTest result(0x%{public}x), specialWifiType=%{public}d",
+        result, specialWifiType);
+    // 接口在校园状态查询分支下不崩溃：返回值在预期集合内
+    EXPECT_TRUE(result == WIFI_OPT_SUCCESS || result == WIFI_OPT_FAILED ||
+        result == WIFI_OPT_NON_SYSTEMAPP || result == WIFI_OPT_PERMISSION_DENIED);
+    // 成功时出参必须是合法的 SpecialWifiType 枚举值 （DEFAULT=0,AIRPLANE_WIFI_CEAIR=1001,CAMPUS_WIFI=1002）
+    if (result == WIFI_OPT_SUCCESS) {
+        EXPECT_TRUE(specialWifiType == 0 || specialWifiType == 1001 || specialWifiType == 1002);
+    }
+}
+
+/**
+ * @tc.name  : GetSpecialWifiType_MultipleCallsConsistentTest
+ * @tc.desc  : 连续多次调用 GetSpecialWifiType，每次结果应稳定一致，
+ *             校园状态分支的多次查询不应造成状态漂移或崩溃
+ */
+HWTEST_F(WifiInnerDeviceTest, GetSpecialWifiType_MultipleCallsConsistentTest, TestSize.Level1)
+{
+    WIFI_LOGE("GetSpecialWifiType_MultipleCallsConsistentTest Enter!");
+    EXPECT_TRUE(devicePtr != nullptr);
+    ErrCode firstResult = WIFI_OPT_FAILED;
+    int firstType = -1;
+    for (int i = 0; i < 3; ++i) {
+        int specialWifiType = -1;
+        ErrCode result = devicePtr->GetSpecialWifiType(specialWifiType);
+        WIFI_LOGE("GetSpecialWifiType_MultipleCallsConsistentTest round=%{public}d, "
+            "result(0x%{public}x), specialWifiType=%{public}d", i, result, specialWifiType);
+        EXPECT_TRUE(result == WIFI_OPT_SUCCESS || result == WIFI_OPT_FAILED ||
+            result == WIFI_OPT_NON_SYSTEMAPP || result == WIFI_OPT_PERMISSION_DENIED);
+        if (i == 0) {
+            firstResult = result;
+            firstType = specialWifiType;
+        } else if (result == firstResult && result == WIFI_OPT_SUCCESS) {
+            // 相同返回结果且成功时，specialWifiType 应一致
+            EXPECT_EQ(specialWifiType, firstType);
+        }
+    }
+}
 } // namespace Wifi
 } // namespace OHOS
