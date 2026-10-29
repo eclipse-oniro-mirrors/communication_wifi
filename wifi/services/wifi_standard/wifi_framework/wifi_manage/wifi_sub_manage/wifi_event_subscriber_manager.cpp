@@ -1241,8 +1241,14 @@ void PowermgrEventSubscriber::OnReceiveEvent(const OHOS::EventFwk::CommonEventDa
         WIFI_LOGI("Receive power manager state Event: %{public}d", eventData.GetCode());
         if (eventData.GetCode() == STATE_ENTER_FORCESLEEP ||
             eventData.GetCode() == STATE_ENTER_SCREENOFF_HALF_HOUR_FILTER) {
-            WIFI_LOGI("Need close Ap service by force sleep");
-            WifiManager::GetInstance().GetWifiTogglerManager()->SoftapToggled(0, 0);
+            auto &togglerManager = WifiManager::GetInstance().GetWifiTogglerManager();
+            if (togglerManager == nullptr) {
+                WIFI_LOGE("Turn off softAp fail, toggler id null");
+            } else if (togglerManager->SoftapToggled(0, 0) != WIFI_OPT_SUCCESS) {
+                WIFI_LOGE("Turn off softAp fail, toggle fail");
+            } else {
+                WIFI_LOGI("Turn off softAp success");
+            }
         }
         HpfFilterData filterData;
         filterData.eventCode = eventData.GetCode();

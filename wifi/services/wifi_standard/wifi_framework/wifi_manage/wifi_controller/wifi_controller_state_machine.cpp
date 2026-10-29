@@ -910,6 +910,8 @@ void WifiControllerMachine::EnableState::HandleSoftapClose(int id)
     if (pWifiControllerMachine->softApManagers.IdExist(id)) {
         pWifiControllerMachine->softApManagers.StopManager(id);
         pWifiControllerMachine->StartTimer(CMD_AP_STOP_TIME, SOFT_AP_TIME_OUT);
+    } else {
+        WIFI_LOGE("%{public}s, no softAp manager for id %{public}d", __func__, id);
     }
     // Recover WiFi if needed
     if (pWifiControllerMachine->wifiStateBeforeHotspot_ && pWifiControllerMachine->IsEnableScanOnlyOnHotspot()) {
