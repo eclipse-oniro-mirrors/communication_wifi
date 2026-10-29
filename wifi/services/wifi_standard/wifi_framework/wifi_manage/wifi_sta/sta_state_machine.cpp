@@ -4733,7 +4733,7 @@ void StaStateMachine::TransHalDeviceConfig(WifiHalDeviceConfig &halDeviceConfig,
     FillSuiteB192Cfg(halDeviceConfig);
     halDeviceConfig.wepKeyIdx = config.wepTxKeyIndex;
     FillWapiCfg(config, halDeviceConfig);
-    // only wifi7 zero-latency roam need specific channel scan for wlan1 
+    // only wifi7 zero-latency roam need specific channel scan for wlan1
     if (m_instId == INSTID_WLAN1 && config.frequency > 0) {
         halDeviceConfig.scanFreq = config.frequency;
         WIFI_LOGI("%{public}s set scanFreq:%{public}d for wlan1", __func__, halDeviceConfig.scanFreq);
