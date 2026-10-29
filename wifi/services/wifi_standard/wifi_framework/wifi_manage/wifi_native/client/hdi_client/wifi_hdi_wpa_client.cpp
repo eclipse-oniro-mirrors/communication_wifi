@@ -326,6 +326,9 @@ WifiErrorNo WifiHdiWpaClient::SetDeviceConfig(int networkId, const WifiHalDevice
     if (config.scanSsid == 1) {
         num += PushDeviceConfigInt(conf + num, DEVICE_CONFIG_SCAN_SSID, config.scanSsid);
     }
+    if (config.scanFreq > 0) {
+        num += PushDeviceConfigInt(conf + num, DEVICE_CONFIG_SCAN_FREQ, config.scanFreq);
+    }
     if (config.wepKeyIdx >= 0) {
         num += PushDeviceConfigInt(conf + num, DEVICE_CONFIG_WEP_KEY_IDX, config.wepKeyIdx);
     }

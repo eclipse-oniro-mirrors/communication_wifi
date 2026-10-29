@@ -246,6 +246,10 @@ HWTEST_F(WifiHdiWpaClientTest, SetDeviceConfigTest1, TestSize.Level1)
     result = wifiHdiWpaClient->SetDeviceConfig(networkId, config, ifaceName.c_str());
     EXPECT_EQ(result, WIFI_HAL_OPT_OK);
 
+    config.scanFreq = 2412;
+    result = wifiHdiWpaClient->SetDeviceConfig(networkId, config, ifaceName.c_str());
+    EXPECT_EQ(result, WIFI_HAL_OPT_OK);
+
     config.scanSsid = 2;
     config.wepKeyIdx = 1;
     result = wifiHdiWpaClient->SetDeviceConfig(networkId, config, ifaceName.c_str());
