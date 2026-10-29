@@ -236,34 +236,45 @@ void WifiHdiWpaClient::SetWapiConfig(const WifiHalDeviceConfig &config, SetNetwo
     }
 }
 
-void WifiHdiWpaClient::SetDeviceSecurityConfig(const WifiHalDeviceConfig &config, SetNetworkConfig *conf, int &num)
+WifiErrorNo WifiHdiWpaClient::SetDeviceConfig(int networkId, const WifiHalDeviceConfig &config, const char *ifaceName)
 {
-    if (config.keyMgmt.find(KEY_MGMT_WAPI) != std::string::npos) {
-        SetWapiConfig(config, conf, num);
-        return;
+    if (CheckValidDeviceConfig(config) != WIFI_HAL_OPT_OK) {
+        LOGE("SetDeviceConfig, CheckValidDeviceConfig return error!");
+        return WIFI_HAL_OPT_FAILED;
     }
-    num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_PSK, config.psk);
-    if (config.keyMgmt.find(KEY_MGMT_SAE) != std::string::npos) {
-        num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_SAE_PASSWD, config.psk);
+    SetNetworkConfig conf[DEVICE_CONFIG_END_POS];
+    if (memset_s(conf, sizeof(conf), 0, sizeof(conf)) != EOK) {
+        LOGE("SetDeviceConfig, memset_s return error!");
+        return WIFI_HAL_OPT_FAILED;
     }
-    if (config.keyMgmt == KEY_MGMT_NONE || config.keyMgmt == KEY_MGMT_WEP) {
-        num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_KEYMGMT, KEY_MGMT_NONE);
-    } else {
-        num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_KEYMGMT, config.keyMgmt);
+    int num = 0;
+    num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_SSID, config.ssid);
+    if (CheckValidDeviceConfig(config) != WIFI_HAL_OPT_OK) {
+        LOGE("SetDeviceConfig, CheckValidDeviceConfig return error!");
+        return WIFI_HAL_OPT_FAILED;
     }
-}
-
-void WifiHdiWpaClient::PushEapPhase2Method(const WifiHalDeviceConfig &config, SetNetworkConfig *conf, int &num)
-{
-    if (config.eapConfig.phase2Method != static_cast<int>(Phase2Method::NONE)) {
-        std::string strPhase2Method = WifiEapConfig::Phase2MethodToStr(config.eapConfig.eap,
-            config.eapConfig.phase2Method);
-        num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_EAP_PHASE2METHOD, strPhase2Method);
+    SetNetworkConfig conf[DEVICE_CONFIG_END_POS];
+    if (memset_s(conf, sizeof(conf), 0, sizeof(conf)) != EOK) {
+        LOGE("SetDeviceConfig, memset_s return error!");
+        return WIFI_HAL_OPT_FAILED;
     }
-}
-
-void WifiHdiWpaClient::SetDeviceEapConfig(const WifiHalDeviceConfig &config, SetNetworkConfig *conf, int &num)
-{
+    int num = 0;
+    num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_SSID, config.ssid);
+    do {
+        if (config.keyMgmt.find(KEY_MGMT_WAPI) != std::string::npos) {
+            SetWapiConfig(config, conf, num);
+            break;
+        }
+        num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_PSK, config.psk);
+        if (config.keyMgmt.find(KEY_MGMT_SAE) != std::string::npos) {
+            num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_SAE_PASSWD, config.psk);
+        }
+        if (config.keyMgmt == KEY_MGMT_NONE || config.keyMgmt == KEY_MGMT_WEP) {
+            num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_KEYMGMT, KEY_MGMT_NONE);
+        } else {
+            num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_KEYMGMT, config.keyMgmt);
+        }
+    } while (0);
     EapMethod eapMethod = WifiEapConfig::Str2EapMethod(config.eapConfig.eap);
     LOGI("%{public}s, eap:%{public}s, eapMethod:%{public}d, identity:%{private}s, num:%{public}d",
         __func__, config.eapConfig.eap.c_str(), eapMethod, config.eapConfig.identity.c_str(), num);
@@ -305,10 +316,7 @@ void WifiHdiWpaClient::SetDeviceEapConfig(const WifiHalDeviceConfig &config, Set
             LOGE("%{public}s, invalid eapMethod:%{public}d", __func__, eapMethod);
             break;
     }
-}
 
-void WifiHdiWpaClient::SetDeviceExtraConfig(const WifiHalDeviceConfig &config, SetNetworkConfig *conf, int &num)
-{
     num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_BSSID, config.bssid);
     int i = 0;
     num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_WEP_KEY_0, config.wepKeys[i++]);
@@ -355,24 +363,6 @@ void WifiHdiWpaClient::SetDeviceExtraConfig(const WifiHalDeviceConfig &config, S
         num += PushDeviceConfigParseMask(conf + num, DEVICE_CONFIG_GROUP_MGMT_CIPHERS, config.allowedGroupMgmtCiphers,
                                          groupMgmtCipherStr, sizeof(groupMgmtCipherStr)/sizeof(groupMgmtCipherStr[0]));
     }
-}
-
-WifiErrorNo WifiHdiWpaClient::SetDeviceConfig(int networkId, const WifiHalDeviceConfig &config, const char *ifaceName)
-{
-    if (CheckValidDeviceConfig(config) != WIFI_HAL_OPT_OK) {
-        LOGE("SetDeviceConfig, CheckValidDeviceConfig return error!");
-        return WIFI_HAL_OPT_FAILED;
-    }
-    SetNetworkConfig conf[DEVICE_CONFIG_END_POS];
-    if (memset_s(conf, sizeof(conf), 0, sizeof(conf)) != EOK) {
-        LOGE("SetDeviceConfig, memset_s return error!");
-        return WIFI_HAL_OPT_FAILED;
-    }
-    int num = 0;
-    num += PushDeviceConfigString(conf + num, DEVICE_CONFIG_SSID, config.ssid);
-    SetDeviceSecurityConfig(config, conf, num);
-    SetDeviceEapConfig(config, conf, num);
-    SetDeviceExtraConfig(config, conf, num);
     if (num == 0) {
         return WIFI_HAL_OPT_OK;
     }

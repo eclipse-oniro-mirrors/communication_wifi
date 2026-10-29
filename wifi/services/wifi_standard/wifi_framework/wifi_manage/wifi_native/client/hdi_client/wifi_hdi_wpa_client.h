@@ -879,10 +879,6 @@ public:
 
     WifiErrorNo P2pSetTempConfig(int networkId, const HalP2pGroupConfig &config) const;
 private:
-    void SetDeviceSecurityConfig(const WifiHalDeviceConfig &config, SetNetworkConfig *conf, int &num);
-    void SetDeviceEapConfig(const WifiHalDeviceConfig &config, SetNetworkConfig *conf, int &num);
-    void SetDeviceExtraConfig(const WifiHalDeviceConfig &config, SetNetworkConfig *conf, int &num);
-    void PushEapPhase2Method(const WifiHalDeviceConfig &config, SetNetworkConfig *conf, int &num);
     int PushDeviceConfigString(SetNetworkConfig *pConfig, DeviceConfigType type,
         const std::string &msg, bool checkEmpty = true) const;
     int PushDeviceConfigInt(SetNetworkConfig *pConfig, DeviceConfigType type, int i) const;
