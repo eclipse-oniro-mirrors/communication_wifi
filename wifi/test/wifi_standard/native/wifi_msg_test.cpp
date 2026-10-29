@@ -65,5 +65,32 @@ HWTEST_F(WifiMsgTest, Phase2MethodFromStrTest, TestSize.Level1)
     str = "autheap=PAP";
     EXPECT_TRUE(WifiEapConfig::Phase2MethodFromStr(str) == Phase2Method::PAP);
 }
+
+/* ========== WifiEnhanceConfigType：增强配置类型枚举 ========== */
+
+/**
+ * @tc.name  : WifiEnhanceConfigType_ShouldContainAllExpectedValues
+ * @tc.desc  : WifiEnhanceConfigType 枚举包含全部预期枚举值（含新增 CAMPUS_WIFI_STATE），
+ *             编译期可见性校验，确保跨仓桥接 GetWifiEnhanceConfig 取值正确
+ */
+HWTEST_F(WifiMsgTest, WifiEnhanceConfigType_ShouldContainAllExpectedValues, TestSize.Level1)
+{
+    EXPECT_NE(static_cast<int>(WifiEnhanceConfigType::FAST_RECONNECT),
+        static_cast<int>(WifiEnhanceConfigType::ROAM_STATE));
+    EXPECT_NE(static_cast<int>(WifiEnhanceConfigType::ROAM_STATE),
+        static_cast<int>(WifiEnhanceConfigType::CAMPUS_WIFI_STATE));
+}
+
+/**
+ * @tc.name  : WifiEnhanceConfigType_CampusWifiState_ShouldBeDistinct
+ * @tc.desc  : 新增的 CAMPUS_WIFI_STATE 枚举值与其他枚举值均不同，
+ *             保证 GetWifiEnhanceConfig 分支选择唯一
+ */
+HWTEST_F(WifiMsgTest, WifiEnhanceConfigType_CampusWifiState_ShouldBeDistinct, TestSize.Level1)
+{
+    int campusValue = static_cast<int>(WifiEnhanceConfigType::CAMPUS_WIFI_STATE);
+    EXPECT_NE(campusValue, static_cast<int>(WifiEnhanceConfigType::FAST_RECONNECT));
+    EXPECT_NE(campusValue, static_cast<int>(WifiEnhanceConfigType::ROAM_STATE));
+}
 } // namespace Wifi
 } // namespace OHOS
