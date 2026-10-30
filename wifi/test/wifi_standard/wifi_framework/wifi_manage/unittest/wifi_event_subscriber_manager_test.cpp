@@ -14,6 +14,8 @@
  */
 #include "wifi_event_subscriber_manager_test.h"
 #include "wifi_logger.h"
+#include "wifi_manager.h"
+#include "mock_wifi_config_center.h"
 
 using namespace testing::ext;
 DEFINE_WIFILOG_LABEL("WifiEventSubscriberManagerTest");
@@ -63,7 +65,7 @@ HWTEST_F(WifiEventSubscriberManagerTest, OnSystemAbilityChanged_OtherSa, TestSiz
 #ifdef HAS_POWERMGR_PART
 namespace {
 constexpr int POWER_EVENT_CODE_ENTER_FORCESLEEP = 48;
-cinstexpr int POWER_EVENT_CODE_SCREENOFF_HALF_HOUR_FILTER = 224;
+constexpr int POWER_EVENT_CODE_SCREENOFF_HALF_HOUR_FILTER = 224;
 constexpr int POWER_EVENT_CODE_UNKNOWN = 0;
 
 EventFwk::CommonEventData BuildPowermgrEvent(const std::string &action, int code)
@@ -72,13 +74,13 @@ EventFwk::CommonEventData BuildPowermgrEvent(const std::string &action, int code
     want.SetAction(action);
     EventFwk::CommonEventData eventData;
     eventData.SetWant(want);
-    eventData.SendCode(code);
+    eventData.SetCode(code);
     return eventData;
 }
 
 void InstallTogglerForTest()
 {
-    WifiManager::GetInstance().GetWifiTogglerManager() = std::make_unique<GetWifiTogglerManager>();
+    WifiManager::GetInstance().GetWifiTogglerManager() = std::make_unique<WifiTogglerManager>();
 }
 
 void UninstallTogglerForTest()
@@ -93,7 +95,7 @@ HWTEST_F(WifiEventSubscriberManagerTest, PowermgrEvent_OnReceiveEvent_ForceSleep
     InstallTogglerForTest();
     EXPECT_CALL(WifiConfigCenter::GetInstance(), SetSoftapToggledState(false)).Times(1);
     PowermgrEventSubscriber subscribe(BuildSubscribeInfo(COMMON_EVENT_POWER_MANAGER_STATE_CHANGED));
-    EXPECT_NO_FATAL_FAILURE(Subscribe.OnReceiveEvent(
+    EXPECT_NO_FATAL_FAILURE(subscribe.OnReceiveEvent(
         BuildPowermgrEvent(COMMON_EVENT_POWER_MANAGER_STATE_CHANGED, POWER_EVENT_CODE_ENTER_FORCESLEEP)));
     UninstallTogglerForTest();
 }
@@ -104,7 +106,7 @@ HWTEST_F(WifiEventSubscriberManagerTest, PowermgrEvent_OnReceiveEvent_ScreenoffH
     InstallTogglerForTest();
     EXPECT_CALL(WifiConfigCenter::GetInstance(), SetSoftapToggledState(false)).Times(1);
     PowermgrEventSubscriber subscribe(BuildSubscribeInfo(COMMON_EVENT_POWER_MANAGER_STATE_CHANGED));
-    EXPECT_NO_FATAL_FAILURE(Subscribe.OnReceiveEvent(
+    EXPECT_NO_FATAL_FAILURE(subscribe.OnReceiveEvent(
         BuildPowermgrEvent(COMMON_EVENT_POWER_MANAGER_STATE_CHANGED, POWER_EVENT_CODE_SCREENOFF_HALF_HOUR_FILTER)));
     UninstallTogglerForTest();
 }
@@ -115,7 +117,7 @@ HWTEST_F(WifiEventSubscriberManagerTest, PowermgrEvent_OnReceiveEvent_NonTargetC
     InstallTogglerForTest();
     EXPECT_CALL(WifiConfigCenter::GetInstance(), SetSoftapToggledState(false)).Times(0);
     PowermgrEventSubscriber subscribe(BuildSubscribeInfo(COMMON_EVENT_POWER_MANAGER_STATE_CHANGED));
-    EXPECT_NO_FATAL_FAILURE(Subscribe.OnReceiveEvent(
+    EXPECT_NO_FATAL_FAILURE(subscribe.OnReceiveEvent(
         BuildPowermgrEvent(COMMON_EVENT_POWER_MANAGER_STATE_CHANGED, POWER_EVENT_CODE_UNKNOWN)));
     UninstallTogglerForTest();
 }
@@ -126,7 +128,7 @@ HWTEST_F(WifiEventSubscriberManagerTest, PowermgrEvent_OnReceiveEvent_UnknownAct
     InstallTogglerForTest();
     EXPECT_CALL(WifiConfigCenter::GetInstance(), SetSoftapToggledState(false)).Times(0);
     PowermgrEventSubscriber subscribe(BuildSubscribeInfo("test.unknown.action"));
-    EXPECT_NO_FATAL_FAILURE(Subscribe.OnReceiveEvent(
+    EXPECT_NO_FATAL_FAILURE(subscribe.OnReceiveEvent(
         BuildPowermgrEvent("test.unknown.action", POWER_EVENT_CODE_UNKNOWN)));
     UninstallTogglerForTest();
 }
