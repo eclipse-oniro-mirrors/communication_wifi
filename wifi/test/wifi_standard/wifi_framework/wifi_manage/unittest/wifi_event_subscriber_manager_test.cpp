@@ -61,7 +61,7 @@ HWTEST_F(WifiEventSubscriberManagerTest, OnSystemAbilityChanged_OtherSa, TestSiz
 }
 
 #ifdef HAS_POWERMGR_PART
-namespace{
+namespace {
 constexpr int POWER_EVENT_CODE_ENTER_FORCESLEEP = 48;
 cinstexpr int POWER_EVENT_CODE_SCREENOFF_HALF_HOUR_FILTER = 224;
 constexpr int POWER_EVENT_CODE_UNKNOWN = 0;
@@ -131,8 +131,8 @@ HWTEST_F(WifiEventSubscriberManagerTest, PowermgrEvent_OnReceiveEvent_UnknownAct
     UninstallTogglerForTest();
 }
 
-HWTEST_F(WifiEventSubscriberManagerTest, 
-    DISABLED_PowermgrEvent_OnReceiveEvent_EmptyToggler_ShouldNotCrash, TestSize,Level1)
+HWTEST_F(WifiEventSubscriberManagerTest,
+    DISABLED_PowermgrEvent_OnReceiveEvent_EmptyToggler_ShouldNotCrash, TestSize.Level1)
 {
     WIFI_LOGE("PowermgrEvent_OnReceiveEvent_EmptyToggler_ShouldNotCrash enter!");
     WifiManager::GetInstance().GetWifiTogglerManager().reset();
