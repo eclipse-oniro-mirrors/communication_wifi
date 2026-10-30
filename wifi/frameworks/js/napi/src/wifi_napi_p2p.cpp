@@ -624,6 +624,11 @@ static bool JsObjToServiceRequest(const napi_env& env, napi_value object, WifiP2
     }
     std::vector<uint8_t> queryBytes = JsObjectToU8Vector(env, object, "query");
     std::vector<unsigned char> query(queryBytes.begin(), queryBytes.end());
+    constexpr size_t MAX_QUERY_SIZE = 256;
+    if (query.size() > MAX_QUERY_SIZE) {
+        WIFI_LOGE("Service request query length error: %{public}zu", query.size());
+        return false;
+    }
     request.SetQuery(query);
     return true;
 }
@@ -691,7 +696,7 @@ NO_SANITIZE("cfi") napi_value RemoveP2pServiceRequest(napi_env env, napi_callbac
     WIFI_NAPI_RETURN_NUM_CODE(env, ret == WIFI_OPT_SUCCESS, ret, SYSCAP_WIFI_P2P);
 }
 
-NO_SANITIZE("cfi") napi_value ClearP2pServiceRequests(napi_env env, napi_callback_info info)
+NO_SANITIZE("cfi") napi_value RemoveAllP2pServiceRequests(napi_env env, napi_callback_info info)
 {
     TRACE_FUNC_CALL;
     WIFI_NAPI_ASSERT_NUM_CODE(env, wifiP2pPtr != nullptr, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);

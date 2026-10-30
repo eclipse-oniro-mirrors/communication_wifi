@@ -563,7 +563,7 @@ function RemoveLocalP2pService(srvInfo: WifiP2pServiceInfo): void;
 function AddDnsSdServiceRequest(@optional serviceType: Optional<String>,  @optional instanceName: Optional<String>): void;
 function AddUpnpServiceRequest(@optional searchTarget: Optional<String>): void;
 function RemoveP2pServiceRequest(request: WifiP2pServiceRequest): void;
-function ClearP2pServiceRequests(): void;
+function RemoveAllP2pServiceRequests(): void;
 function DiscoverServices(): void;
 
 @gen_promise("getLocalP2pServices")

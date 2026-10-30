@@ -1239,13 +1239,19 @@ void RemoveP2pServiceRequest(::ohos::wifiManager::WifiP2pServiceRequest const& r
         WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
         return;
     }
-    ErrCode ret = g_wifiP2pPtr->RemoveP2pServiceRequest(ConvertWifiP2pServiceRequest(request));
+    WifiP2pServiceRequest serviceRequest = ConvertWifiP2pServiceRequest(request);
+    constexpr size_t MAX_QUERY_SIZE = 256;
+    if (serviceRequest.GetQuery().size() > MAX_QUERY_SIZE) {
+        WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+        return;
+    }
+    ErrCode ret = g_wifiP2pPtr->RemoveP2pServiceRequest(serviceRequest);
     if (ret != WIFI_OPT_SUCCESS) {
         WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, ret, SYSCAP_WIFI_P2P);
     }
 }
 
-void ClearP2pServiceRequests()
+void RemoveAllP2pServiceRequests()
 {
     if (g_wifiP2pPtr == nullptr) {
         WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
@@ -2093,7 +2099,7 @@ TH_EXPORT_CPP_API_RemoveLocalP2pService(RemoveLocalP2pService);
 TH_EXPORT_CPP_API_AddDnsSdServiceRequest(AddDnsSdServiceRequest);
 TH_EXPORT_CPP_API_AddUpnpServiceRequest(AddUpnpServiceRequest);
 TH_EXPORT_CPP_API_RemoveP2pServiceRequest(RemoveP2pServiceRequest);
-TH_EXPORT_CPP_API_ClearP2pServiceRequests(ClearP2pServiceRequests);
+TH_EXPORT_CPP_API_RemoveAllP2pServiceRequests(RemoveAllP2pServiceRequests);
 TH_EXPORT_CPP_API_DiscoverServices(DiscoverServices);
 TH_EXPORT_CPP_API_GetLocalP2pServicesSync(GetLocalP2pServicesSync);
 TH_EXPORT_CPP_API_GetP2pServiceRequestSync(GetP2pServiceRequestSync);

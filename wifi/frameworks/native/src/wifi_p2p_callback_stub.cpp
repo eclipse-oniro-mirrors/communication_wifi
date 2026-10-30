@@ -435,7 +435,8 @@ bool WifiP2pCallbackStub::ReadP2pServiceDiscoveryInfo(MessageParcel &data, P2pSe
 {
     constexpr int MAX_TXT_SIZE = 256;
     constexpr int MAX_NAME_SIZE = 256;
-    constexpr int MAX_RESP_SIZE = 4096;
+    constexpr int MAX_RESP_SIZE = 1024;
+    constexpr size_t MAX_UPNP_NAME_LEN = 1024;
     info.type = static_cast<P2pServiceDiscoveryResultType>(data.ReadInt32());
     info.dnsSdName = data.ReadString();
     info.dnsSdRegistrationType = data.ReadString();
@@ -458,7 +459,12 @@ bool WifiP2pCallbackStub::ReadP2pServiceDiscoveryInfo(MessageParcel &data, P2pSe
     info.upnpUniqueServiceNames.clear();
     info.upnpUniqueServiceNames.reserve(static_cast<size_t>(nameSize));
     for (int i = 0; i < nameSize; ++i) {
-        info.upnpUniqueServiceNames.push_back(data.ReadString());
+        std::string name = data.ReadString();
+        if (name.size() > MAX_UPNP_NAME_LEN) {
+            WIFI_LOGE("Service discovery upnp name length error: %{public}zu", name.size());
+            return false;
+        }
+        info.upnpUniqueServiceNames.push_back(name);
     }
     info.protocolType = static_cast<P2pServicerProtocolType>(data.ReadInt32());
     int respSize = data.ReadInt32();
