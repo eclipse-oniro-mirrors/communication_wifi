@@ -26,6 +26,15 @@ namespace Wifi {
 
 constexpr int32_t COMMON_EVENT_SERVICE_ID = 3299;
 
+namespace {
+    EventFwk::CommonEventSubscribeInfo BuildSubscribeInfo(const std::string &action)
+    {
+        EventFwk::MatchingSkills matchingSkills;
+        matchingSkills.AddEvent(action);
+        return EventFwk::CommonEventSubscribeInfo(matchingSkills)
+    }
+}
+
 HWTEST_F(WifiEventSubscriberManagerTest, HandleCesServiceChange_Add_True, TestSize.Level1)
 {
     WIFI_LOGE("HandleCesServiceChange_Add_True enter!");
