@@ -87,7 +87,9 @@ constexpr int MAX_CHLOAD = 800;
 constexpr int PRE_ROAM_SCAN_WAIT_TIME_MS = 100;
 constexpr int HIDDEN_SSID_SCAN_WAIT_TIME_MS = 2000;
 #ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
-constexpr int64_t WIFI_INTERCEPTED = 0x03000100;
+/* SecurityGuard 安全事件：WiFi 拦截事件，ID 由安全事件规范分配（0x03xxxxxx 段） */
+constexpr int64_t WIFI_INTERCEPTED_EVENT_ID = 0x03000100;
+constexpr const char *WIFI_INTERCEPTED_EVENT_VERSION = "1.0";
 #endif
 
 #ifdef READ_MAC_FROM_OEM
@@ -6034,11 +6036,13 @@ std::string StaStateMachine::BuildMdmEventContent(const std::string &ssid, const
         WIFI_LOGE("BuildMdmEventContent: create cJSON object failed");
         return "";
     }
+     /* 字段名与单位需与安全事件规范保持一致（见 security_guard 事件定义） */
     cJSON_AddStringToObject(root, "bundlename", bundleName.c_str());
     cJSON_AddNumberToObject(root, "uid", uid);
     cJSON_AddStringToObject(root, "ssid", ssid.c_str());
     cJSON_AddStringToObject(root, "bssid", bssid.c_str());
     cJSON_AddStringToObject(root, "restrictedType", restrictedType.c_str());
+    /* 与之前hisysevent上报的字段保持一致，单位为s */
     int64_t timestamp = static_cast<int64_t>(time(nullptr));
     cJSON_AddNumberToObject(root, "happenTime", timestamp);
     char *jsonStr = cJSON_PrintUnformatted(root);
@@ -6059,14 +6063,13 @@ void StaStateMachine::ReportMdmRestrictedEvent(const std::string &ssid, const st
     int uid = GetCallingUid();
     std::string bundleName = "";
     GetBundleNameByUid(uid, bundleName);
-    constexpr const char* EVENT_VERSION = "1.0";
     std::string content = BuildMdmEventContent(ssid, bssid, restrictedType, uid, bundleName);
     if (content.empty()) {
         return;
     }
     std::shared_ptr<OHOS::Security::SecurityGuard::EventInfo> eventInfo =
         std::make_shared<OHOS::Security::SecurityGuard::EventInfo>(
-        WIFI_INTERCEPTED, EVENT_VERSION, content);
+        WIFI_INTERCEPTED_EVENT_ID, WIFI_INTERCEPTED_EVENT_VERSION, content);
     int32_t ret = OHOS::Security::SecurityGuard::NativeDataCollectKit::ReportSecurityInfoAsync(eventInfo);
     if (ret != OHOS::Security::SecurityGuard::SUCCESS) {
         WIFI_LOGE("ReportMdmRestrictedEvent: ReportSecurityInfoAsync failed, ret=%{public}d", ret);

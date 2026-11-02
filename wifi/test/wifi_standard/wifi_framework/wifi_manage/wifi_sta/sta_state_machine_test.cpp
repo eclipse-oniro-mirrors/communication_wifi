@@ -4071,8 +4071,8 @@ HWTEST_F(StaStateMachineTest, BuildMdmEventContentFieldsTest, TestSize.Level1)
     cJSON *restrictedTypeItem = cJSON_GetObjectItem(root, "restrictedType");
     ASSERT_NE(restrictedTypeItem, nullptr);
     EXPECT_STREQ(restrictedTypeItem->valuestring, restrictedType.c_str());
-    cJSON *hanppentimeItem = cJSON_GetObjectItem(root, "happenTime");
-    ASSERT_NE(happentimeItem, nullptr);
+    cJSON *happenTimeItem = cJSON_GetObjectItem(root, "happenTime");
+    ASSERT_NE(happenTimeItem, nullptr);
     EXPECT_GT(happentimeItem->valuedouble, 0);
     cJSON_Delete(root);
 }
@@ -4089,7 +4089,23 @@ HWTEST_F(StaStateMachineTest, BuildMdmEventContentEmptyFieldsTest, TestSize.Leve
     cJSON *happendTimeItem = cJSON_GetObjectItem(root, "happenTime");
     ASSERT_NE(happenTimeItem, nullptr);
     EXPECT_GT(happenTimeItem->valuedouble, 0);
-    cJON_Delete(root);
+    cJSON_Delete(root);
+}
+
+HWTEST_F(StaStateMachineTest, BuildMdmEventContentUidZeroTest, TestSize.Level1)
+{
+    /* uid 为 0、bundleName 为空时仍应产出结构完整的 JSON，便于上游按 uid 归因 */
+    std::string content = pStaStateMachine->BuildMdmEventContent("ap", "aa:bb:cc:dd:ee:ff", "MDM_RESTRICTED", 0, "");
+    ASSERT_FALSE(content.empty());
+    cJSON *root = cJSON_Parse(content.c_str());
+    ASSERT_NE(root, nullptr);
+    cJSON *uidItem = cJSON_GetObjectItem(root, "uid");
+    ASSERT_NE(uidItem, nullptr);
+    EXPECT_EQ(uidItem->valueint, 0);
+    cJSON *bundleItem = cJSON_GetObjectItem(root, "bundlename");
+    ASSERT_NE(bundleItem, nullptr);
+    EXPECT_STREQ(bundleItem->valuestring, "");
+    cJSON_Delete(root);
 }
 
 HWTEST_F(StaStateMachineTest, ReportMdmRestrictedEventNoCrashTest, TestSize.Level1)
