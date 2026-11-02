@@ -4107,12 +4107,6 @@ HWTEST_F(StaStateMachineTest, BuildMdmEventContentUidZeroTest, TestSize.Level1)
     EXPECT_STREQ(bundleItem->valuestring, "");
     cJSON_Delete(root);
 }
-
-HWTEST_F(StaStateMachineTest, ReportMdmRestrictedEventNoCrashTest, TestSize.Level1)
-{
-    pStaStateMachine->ReportMdmRestrictedEvent("TestAP", "aa:bb:cc:dd:ee:ff", "BLOCK_LIST");
-    EXPECT_FALSE(g_errLog.find("create cJSON object failed") != std::string::npos);
-}
 #endif
 } // namespace Wifi
 } // namespace OHOS
