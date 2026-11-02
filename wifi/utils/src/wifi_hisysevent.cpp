@@ -1033,30 +1033,6 @@ void WriteSpeedTestHiSysEvent(const WifiSpeedTestStatisticInfo &speedTestStatist
     cJSON_Delete(root);
 }
 
-void WriteMdmHiSysEvent(const MdmRestrictedInfo &mdmRestrictedInfo)
-{
-    cJSON *root = cJSON_CreateObject();
-    if (root == nullptr) {
-        WIFI_LOGE("Failed to create cJSON object");
-        return;
-    }
-    
-    cJSON_AddStringToObject(root, "BUNDLE_NAME", mdmRestrictedInfo.bundleName.c_str());
-    cJSON_AddNumberToObject(root, "UID", mdmRestrictedInfo.uid);
-    cJSON_AddStringToObject(root, "SSID", SsidAnonymize(mdmRestrictedInfo.ssid).c_str());
-    cJSON_AddStringToObject(root, "BSSID", MacAnonymize(mdmRestrictedInfo.bssid).c_str());
-    cJSON_AddStringToObject(root, "RESTRICTED_TYPE", mdmRestrictedInfo.restrictedType.c_str());
-    
-    char *jsonStr = cJSON_PrintUnformatted(root);
-    if (jsonStr == nullptr) {
-        cJSON_Delete(root);
-        return;
-    }
-    WriteEvent("WIFI_CHR_EVENT", "EVENT_NAME", "WIFI_MDM_RESTRICTED", "EVENT_VALUE", std::string(jsonStr));
-    cJSON_free(jsonStr);
-    cJSON_Delete(root);
-}
-
 void WriteWifiConfigStatusHiSysEvent(const std::string &packageName, WifiConfigReportType reportType)
 {
     cJSON *root = cJSON_CreateObject();

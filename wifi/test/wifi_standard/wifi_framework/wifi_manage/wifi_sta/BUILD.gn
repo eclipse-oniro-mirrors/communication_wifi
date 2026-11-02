@@ -267,6 +267,7 @@ ohos_unittest("wifi_sta_unittest") {
 
   if (wifi_feature_mdm_restricted_enable) {
     defines += [ "FEATURE_WIFI_MDM_RESTRICTED_SUPPORT" ]
+    external_deps += [ "security_guard:libsg_collect_sdk" ]
   }
 
   if (wifi_feature_with_local_security_detect) {

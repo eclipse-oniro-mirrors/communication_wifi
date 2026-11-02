@@ -17,6 +17,7 @@
 #include <chrono>
 #include <random>
 #include <algorithm>
+#include <memory>
 #include "sta_state_machine.h"
 #include "if_config.h"
 #include "ip_tools.h"
@@ -50,6 +51,12 @@
 #ifdef WIFI_SECURITY_DETECT_ENABLE
 #include "wifi_security_detect.h"
 #endif
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+#include "cJSON.h"
+#include "event_info.h"
+#include "security_guard_error_code.h"
+#include "sg_collect_client.h"
+#endif
 #include "wifi_notification_util.h"
 #include "wifi_net_stats_manager.h"
 #include "wifi_history_record_manager.h"
@@ -79,6 +86,9 @@ constexpr const char* WIFI_IS_CONNECT_FROM_USER = "persist.wifi.is_connect_from_
 constexpr int MAX_CHLOAD = 800;
 constexpr int PRE_ROAM_SCAN_WAIT_TIME_MS = 100;
 constexpr int HIDDEN_SSID_SCAN_WAIT_TIME_MS = 2000;
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+constexpr int64_t WIFI_INTERCEPTED = 0x03000100;
+#endif
 
 #ifdef READ_MAC_FROM_OEM
 /*
@@ -6016,19 +6026,51 @@ bool StaStateMachine::WhetherRestrictedByMdm(const std::string &ssid, const std:
     }
 }
 
+std::string StaStateMachine::BuildMdmEventContent(const std::string &ssid, const std::string &bssid,
+    const std::string &restrictedType, int uid, const std::string &bundleName)
+{
+    cJSON *root = cJSON_CreateObject();
+    if (root == nullptr) {
+        WIFI_LOGE("BuildMdmEventContent: create cJSON object failed");
+        return "";
+    }
+    cJSON_AddStringToObject(root, "bundlename", bundleName.c_str());
+    cJSON_AddNumberToObject(root, "uid", uid);
+    cJSON_AddStringToObject(root, "ssid", ssid.c_str());
+    cJSON_AddStringToObject(root, "bssid", bssid.c_str());
+    cJSON_AddStringToObject(root, "restrictedType", restrictedType.c_str());
+    int64_t timestamp = static_cast<int64_t>(time(nullptr));
+    cJSON_AddNumberToObject(root, "happenTime", timestamp);
+    char *jsonStr = cJSON_PrintUnformatted(root);
+    if (jsonStr == nullptr) {
+        WIFI_LOGE("BuildMdmEventContent: print cJSON failed");
+        cJSON_Delete(root);
+        return "";
+    }
+    std::string content(jsonStr);
+    cJSON_free(jsonStr);
+    cJSON_Delete(root);
+    return content;
+}
+
 void StaStateMachine::ReportMdmRestrictedEvent(const std::string &ssid, const std::string &bssid,
     const std::string &restrictedType)
 {
     int uid = GetCallingUid();
     std::string bundleName = "";
     GetBundleNameByUid(uid, bundleName);
-    MdmRestrictedInfo mdmInfo;
-    mdmInfo.ssid = ssid;
-    mdmInfo.bssid = bssid;
-    mdmInfo.restrictedType = restrictedType;
-    mdmInfo.uid = uid;
-    mdmInfo.bundleName = bundleName;
-    WriteMdmHiSysEvent(mdmInfo);
+    constexpr const char* EVENT_VERSION = "1.0";
+    std::string content = BuildMdmEventContent(ssid, bssid, restrictedType, uid, bundleName);
+    if (content.empty()) {
+        return;
+    }
+    std::shared_ptr<OHOS::Security::SecurityGuard::EventInfo> eventInfo =
+        std::make_shared<OHOS::Security::SecurityGuard::EventInfo>(
+        WIFI_INTERCEPTED, EVENT_VERSION, content);
+    int32_t ret = OHOS::Security::SecurityGuard::NativeDataCollectKit::ReportSecurityInfoAsync(eventInfo);
+    if (ret != OHOS::Security::SecurityGuard::SUCCESS) {
+        WIFI_LOGE("ReportMdmRestrictedEvent: ReportSecurityInfoAsync failed, ret=%{public}d", ret);
+    }
 }
 #endif
 

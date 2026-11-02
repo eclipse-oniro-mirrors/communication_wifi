@@ -109,13 +109,6 @@ HWTEST_F(WifiHisyseventTest, WriteIodHiSysEventTest, TestSize.Level1)
     EXPECT_FALSE(g_errLog.find("service is null") != std::string::npos);
 }
 
-HWTEST_F(WifiHisyseventTest, WriteMdmHiSysEventTest, TestSize.Level1)
-{
-    MdmRestrictedInfo mdmInfo;
-    WriteMdmHiSysEvent(mdmInfo);
-    EXPECT_FALSE(g_errLog.find("service is null") != std::string::npos);
-}
-
 HWTEST_F(WifiHisyseventTest, WriteWifiConfigStatusHiSysEventTest, TestSize.Level1)
 {
     WriteWifiConfigStatusHiSysEvent("test_package", WifiConfigReportType::ADD);

@@ -14,6 +14,7 @@
  */
 
 #include <gtest/gtest.h>
+#include "cJSON.h"
 #include "internal_message.h"
 #include "mock_dhcp_service.h"
 #include "mock_if_config.h"
@@ -4040,6 +4041,61 @@ HWTEST_F(InsecureNetworkInterceptionTest, StartConnectToNetwork_Wpa2, TestSize.L
     EXPECT_CALL(WifiStaHalInterface::GetInstance(), Connect(_, _)).WillRepeatedly(Return(WIFI_HAL_OPT_OK));
     EXPECT_EQ(WIFI_OPT_SUCCESS,
         pStaStateMachine->StartConnectToNetwork(1, WPA2_BSSID, NETWORK_SELECTED_BY_USER));
+}
+#endif
+
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+HWTEST_F(StaStateMachineTest, BuildMdmEventContentFieldsTest, TestSize.Level1)
+{
+    const std::string ssid = "TestAp";
+    const std::string bssid = "aa:bb:cc:dd:ee:ff";
+    const std::string restrictedType = "BLOCK_LIST";
+    const int uid = 10001;
+    const std::string bundleName = "com.test.mdm";
+    std::string content = pStaStateMachine->BuildMdmEventContent(ssid, bssid, restrictedType, uid, bundleName);
+    EXPECT_FALSE(content.empty());
+    cJSON *root = cJSON_Parse(content.c_str());
+    ASSERT_NE(root, nullptr);
+    cJSON *bundleNameItem = cJSON_GetObjectItem(root, "bundlename");
+    ASSERT_NE(bundleNameItem, nullptr);
+    EXPECT_STREQ(bundleNameItem->valuestring, bundleName.c_str());
+    cJSON *uidItem = cJSON_GetObjectItem(root, "uid");
+    ASSERT_NE(uidItem, nullptr);
+    EXPECT_EQ(uidItem->valueint, uid);
+    cJSON *ssidItem = cJSON_GetObjectItem(root, "ssid");
+    ASSERT_NE(ssidItem, nullptr);
+    EXPECT_STREQ(ssidItem->valuestring, ssid.c_str());
+    cJSON *bssidItem = cJSON_GetObjectItem(root, "bssid");
+    ASSERT_NE(bssidItem, nullptr);
+    EXPECT_STREQ(bssidItem->valuestring, bssid.c_str());
+    cJSON *restrictedTypeItem = cJSON_GetObjectItem(root, "restrictedType");
+    ASSERT_NE(restrictedTypeItem, nullptr);
+    EXPECT_STREQ(restrictedTypeItem->valuestring, restrictedType.c_str());
+    cJSON *hanppentimeItem = cJSON_GetObjectItem(root, "happenTime");
+    ASSERT_NE(happentimeItem, nullptr);
+    EXPECT_GT(happentimeItem->valuedouble, 0);
+    cJSON_Delete(root);
+}
+
+HWTEST_F(StaStateMachineTest, BuildMdmEventContentEmptyFieldsTest, TestSize.Level1)
+{
+    std::string content = pStaStateMachine->BuildMdmEventContent("", "", "",  0, "");
+    EXPECT_FALSE(content.empty());
+    cJSON *root = cJSON_Parse(content.c_str());
+    ASSERT_NE(root, nullptr);
+    cJSON *ssidItem = cJSON_GetObjectItem(root, "ssid");
+    ASSERT_NE(ssidItem, nullptr);
+    EXPECT_STREQ(ssidItem->valuestring, "");
+    cJSON *happendTimeItem = cJSON_GetObjectItem(root, "happenTime");
+    ASSERT_NE(happenTimeItem, nullptr);
+    EXPECT_GT(happenTimeItem->valuedouble, 0);
+    cJON_Delete(root);
+}
+
+HWTEST_F(StaStateMachineTest, ReportMdmRestrictedEventNoCrashTest, TestSize.Level1)
+{
+    pStaStateMachine->ReportMdmRestrictedEvent("TestAP", "aa:bb:cc:dd:ee:ff", "BLOCK_LIST");
+    EXPECT_FALSE(g_errLog.find("create cJSON object failed") != std::string::npos);
 }
 #endif
 } // namespace Wifi
