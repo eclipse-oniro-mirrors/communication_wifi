@@ -44,6 +44,7 @@ export function updateOnNewWant() {
   errorCode_ = 0;
   sslErrorCode_ = -1;
   isUpload_ = false;
+  isPortalSuccess_ = 0;
 }
  
 export function updateBindNetTime(duration: number) {
@@ -117,7 +118,7 @@ function portalHiSysEvent() {
   });
 }
 
-export function updateOnBackground() {
+export function updateCHR() {
   if (!isUpload_) {
     portalHiSysEvent();
     isUpload_ = true;

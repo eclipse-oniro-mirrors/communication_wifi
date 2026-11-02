@@ -30,7 +30,7 @@ import {
 } from '../common/utils';
 import {
   updateFinalUrl, updateOnHttpErrorReceive, updateOnErrorReceive, updateOnSslErrorEvent, safeAnonymize,
-  updatePortalSuccess
+  updatePortalSuccess, updateCHR
 } from '../common/chr';
 
 const DOMAIN = 0x01560;
@@ -472,9 +472,9 @@ struct Index {
           }
         })
         .onOverrideUrlLoading((request) => {
-          this.webUrl = request.getRequestUrl();
-          if (validateURL(this.webUrl) && !this.webUrl.startsWith('http') && !this.webUrl.startsWith('https')) {
-            (this.getUIContext().getHostContext() as common.UIAbilityContext).openLink(this.webUrl)
+          const webUrl = request.getRequestUrl();
+          if (validateURL(webUrl) && !webUrl.startsWith('http') && !webUrl.startsWith('https')) {
+            (this.getUIContext().getHostContext() as common.UIAbilityContext).openLink(webUrl)
               .then(() => {
                 hilog.info(DOMAIN, TAG, 'open link success.');
               }).catch((err: BusinessError) => {
@@ -482,6 +482,7 @@ struct Index {
               })
             return true;
           }
+          this.webUrl = webUrl;
           return false;
         })
         .onLoadIntercept((event) => {
@@ -1054,20 +1055,29 @@ struct Index {
           hilog.error(DOMAIN, TAG, '%{public}s', 'on new want bindToNetById failed.');
         });
     });
-    this.netConnect.on('netAvailable', (data: connection.NetHandle) => {
-      const ERR_NETWORK_CHANGED:number = -21;
-      const SUCCEEDED:number = 1;
-      updatePortalSuccess(SUCCEEDED);
-      setTimeout(() => {
-        if (this.webviewError === ERR_NETWORK_CHANGED) {
-          hilog.info(DOMAIN, TAG, '%{public}s', 'web err refresh');
-          try {
-            this.webviewController.refresh();
-          } catch (error) {
-            hilog.error(DOMAIN, TAG, '%{public}s', `Failed refresh. Code:${error.code}, message:${error.message}`);
+    this.netConnect.on('netCapabilitiesChange', (data: connection.NetCapabilityInfo) => {
+      hilog.info(DOMAIN, TAG, '%{public}s', 'netCapabilitiesChange' + JSON.stringify(data));
+      const bearerTypes = data.netCap?.bearerTypes || [];
+      const networkCap = data.netCap?.networkCap || [];
+      if (bearerTypes.includes(connection.NetBearType.BEARER_WIFI) &&
+          networkCap.includes(connection.NetCap.NET_CAPABILITY_VALIDATED) &&
+          !networkCap.includes(connection.NetCap.NET_CAPABILITY_PORTAL)) {
+        hilog.info(DOMAIN, TAG, '%{public}s', 'Network capabilities change, bearerTypes is WiFi, portal auth success');
+        const ERR_NETWORK_CHANGED:number = -21;
+        const SUCCEEDED:number = 1;
+        updatePortalSuccess(SUCCEEDED);
+        setTimeout(() => {
+          updateCHR();
+          if (this.webviewError === ERR_NETWORK_CHANGED) {
+            hilog.info(DOMAIN, TAG, '%{public}s', 'web err refresh');
+            try {
+              this.webviewController.refresh();
+            } catch (error) {
+              hilog.error(DOMAIN, TAG, '%{public}s', `Failed refresh. Code:${error.code}, message:${error.message}`);
+            }
           }
-        }
-      }, 300);
+        }, 300);
+      }
     });
     this.netConnect.register((err: BusinessError) => {
       hilog.error(DOMAIN, TAG, '%{public}s', 'Failed to register netconnect.' + JSON.stringify(err));
