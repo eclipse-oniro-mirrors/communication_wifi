@@ -31,7 +31,7 @@ namespace {
     {
         EventFwk::MatchingSkills matchingSkills;
         matchingSkills.AddEvent(action);
-        return EventFwk::CommonEventSubscribeInfo(matchingSkills)
+        return EventFwk::CommonEventSubscribeInfo(matchingSkills);
     }
 }
 
