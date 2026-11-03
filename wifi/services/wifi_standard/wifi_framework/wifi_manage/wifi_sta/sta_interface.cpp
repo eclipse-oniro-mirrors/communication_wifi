@@ -17,14 +17,12 @@
 #include "sta_service.h"
 #include "wifi_logger.h"
 #include "wifi_common_event_helper.h"
+#include "wifi_vendor_event_define.h"
 
 DEFINE_WIFILOG_LABEL("StaInterface");
 
 namespace OHOS {
 namespace Wifi {
-
-const uint32_t VDR_VOWIFI_SYNC_REPORT = 302;
-const uint32_t VDR_MIMO_SISO_SWITCH_EVENT = 105;
 
 StaInterface::StaInterface(int instId) : pStaService(nullptr), m_instId(instId), isEnabled_(false)
 {

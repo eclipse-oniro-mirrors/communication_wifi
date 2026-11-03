@@ -32,6 +32,7 @@
 #include "wifi_hisysevent.h"
 #include "wifi_config_center.h"
 #include "wifi_chr_adapter.h"
+#include "wifi_vendor_event_define.h"
 #include "wifi_pro_chr.h"
 #include "block_connect_service.h"
 #include "wifi_randommac_helper.h"
@@ -354,7 +355,7 @@ void StaStateMachine::InitWifiLinkedInfo()
     linkedInfo.riskType = WifiRiskType::INVALID;
 #endif
     linkedInfo.wifiTxRxValid = true;
-    linkedInfo.nssState = -1; // -1 = state not learned yet for this link, so the first MIMO/SISO event always passes
+    linkedInfo.nssState = INVALID_NSS_STATE;
     std::vector<WifiLinkedInfo> emptyMloLinkInfo;
     WifiConfigCenter::GetInstance().SaveMloLinkedInfo(emptyMloLinkInfo, m_instId);
 }

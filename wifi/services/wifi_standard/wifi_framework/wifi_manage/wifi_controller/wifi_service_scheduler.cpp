@@ -22,6 +22,7 @@
 #include "wifi_sta_hal_interface.h"
 #include "wifi_common_event_helper.h"
 #include "wifi_chr_adapter.h"
+#include "wifi_vendor_event_define.h"
 #ifdef FEATURE_AP_SUPPORT
 #include "i_ap_service.h"
 #endif
@@ -735,26 +736,21 @@ void WifiServiceScheduler::OnRssiReportCallback(int index, int antRssi)
     WifiCommonEventHelper::PublishWiTasRssiValueChangedEvent(index, data);
 }
 
-constexpr int VDR_MIMO_SISO_SWITCH_EVENT = 105;
-/* Sentinel value indicating that no valid MIMO/SISO state has been learned yet. */
-constexpr int INVALID_NSS_STATE = -1;
-/* MIMO/SISO switch payload: nssState (uint32) followed by smpsMode (uint32), both little-endian. */
 constexpr size_t MIMO_SISO_SWITCH_PAYLOAD_LEN = sizeof(uint32_t) * 2;
 constexpr size_t MIMO_SISO_PAYLOAD_NSS_STATE_OFFSET = 0;
 constexpr size_t MIMO_SISO_PAYLOAD_SMPS_MODE_OFFSET = sizeof(uint32_t);
 
 void WifiServiceScheduler::OnNetlinkReportCallback(int type, const std::vector<uint8_t>& recvMsg)
 {
-    WIFI_LOGD("OnNetlinkReportCallback, type:%{public}d", type);
     if (type == VDR_MIMO_SISO_SWITCH_EVENT) {
         HandleMimoSisoSwitchEvent(recvMsg);
+        IStaService *pStaService = WifiServiceManager::GetInstance().GetStaServiceInst(0);
+        if (pStaService == nullptr) {
+            WIFI_LOGE("Instance get Sta service is null!");
+        } else {
+            pStaService->ProcessNetlinkReportEvent(type, INVALID_NSS_STATE);
+        }
         return;
-    }
-    IStaService *pStaService = WifiServiceManager::GetInstance().GetStaServiceInst(0);
-    if (pStaService == nullptr) {
-        WIFI_LOGE("Instance get Sta service is null!");
-    } else {
-        pStaService->ProcessNetlinkReportEvent(type, INVALID_NSS_STATE);
     }
     IEnhanceService *pEnhanceService = WifiServiceManager::GetInstance().GetEnhanceServiceInst();
     if (pEnhanceService == nullptr) {

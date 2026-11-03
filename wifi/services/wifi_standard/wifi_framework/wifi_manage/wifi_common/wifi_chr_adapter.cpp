@@ -109,7 +109,6 @@ void EnhanceWriteMimoSisoSwitchEvent(int32_t nssState, int32_t smpsMode)
     }
     cJSON_AddNumberToObject(root, "NSS_NUM", nssState);
     cJSON_AddNumberToObject(root, "SMPS_MODE", smpsMode);
- 
     char *jsonStr = cJSON_PrintUnformatted(root);
     if (jsonStr == nullptr) {
         cJSON_Delete(root);
