@@ -346,7 +346,7 @@ void StaStateMachine::InitWifiLinkedInfo()
     linkedInfo.lastRxPackets = 0;
     linkedInfo.lastTxPackets = 0;
     linkedInfo.isAncoConnected = 0;
-    linkedInfo.supportedWifiCategory = WifiCategory::DEFAULT;
+    linkedInfo.supportedWifiCategory = WifiCategory::DEFAULT;EnhanceWriteMimoSisoSwitchEvent
     linkedInfo.isMloConnected = false;
     linkedInfo.isWurEnable = false;
     linkedInfo.isHiLinkNetwork = 0;
