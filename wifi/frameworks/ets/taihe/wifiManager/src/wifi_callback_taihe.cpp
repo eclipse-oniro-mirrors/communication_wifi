@@ -362,7 +362,9 @@ void WifiIdlP2pEventCallback::OnP2pChrErrCodeReport(const int errCode)
 static void NotifyP2pServiceDiscovery(const ::ohos::wifiManager::P2pServiceDiscoveryInfo &result)
 {
     for (auto callback : g_wifiP2pServiceDiscoveryVec) {
-        (*callback)(result);
+        if (callback.has_value()) {
+            (*callback)(result);
+        }
     }
 }
 

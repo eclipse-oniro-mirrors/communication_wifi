@@ -87,9 +87,6 @@ enum class P2pActionCallback : unsigned char {
     RemoveGroupClient,
     DiscoverPeers,
     UNKNOWN,
-    AddServiceRequest,
-    RemoveServiceRequest,
-    ClearServiceRequests,
 };
 
 enum class P2pState {

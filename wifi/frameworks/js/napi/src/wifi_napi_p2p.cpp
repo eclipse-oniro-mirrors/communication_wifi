@@ -595,14 +595,22 @@ static void ServiceRequestToJs(const napi_env& env, const WifiP2pServiceRequest&
     const std::vector<unsigned char>& query = request.GetQuery();
     void *bufferData = nullptr;
     napi_value arrayBuffer = nullptr;
-    napi_create_arraybuffer(env, query.size(), &bufferData, &arrayBuffer);
+    napi_status status = napi_create_arraybuffer(env, query.size(), &bufferData, &arrayBuffer);
+    if (status != napi_ok || arrayBuffer == nullptr) {
+        WIFI_LOGE("ServiceRequestToJs napi_create_arraybuffer failed: %{public}d", status);
+        return;
+    }
     if (bufferData != nullptr && !query.empty()) {
         if (memcpy_s(bufferData, query.size(), query.data(), query.size()) != EOK) {
             WIFI_LOGE("ServiceRequestToJs memcpy_s failed");
         }
     }
     napi_value queryArray = nullptr;
-    napi_create_typedarray(env, napi_uint8_array, query.size(), arrayBuffer, 0, &queryArray);
+    status = napi_create_typedarray(env, napi_uint8_array, query.size(), arrayBuffer, 0, &queryArray);
+    if (status != napi_ok || queryArray == nullptr) {
+        WIFI_LOGE("ServiceRequestToJs napi_create_typedarray failed: %{public}d", status);
+        return;
+    }
     napi_set_named_property(env, result, "query", queryArray);
 }
 

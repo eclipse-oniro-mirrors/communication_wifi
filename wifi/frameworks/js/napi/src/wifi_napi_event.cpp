@@ -248,7 +248,11 @@ static void FillGenericServiceResult(const napi_env& env, const P2pServiceDiscov
     SetValueInt32(env, "protocolType", static_cast<int>(info.protocolType), result);
     void *bufferData = nullptr;
     napi_value arrayBuffer = nullptr;
-    napi_create_arraybuffer(env, info.responseData.size(), &bufferData, &arrayBuffer);
+    napi_status status = napi_create_arraybuffer(env, info.responseData.size(), &bufferData, &arrayBuffer);
+    if (status != napi_ok || arrayBuffer == nullptr) {
+        WIFI_LOGE("CreateResult P2pServiceDiscovery napi_create_arraybuffer failed: %{public}d", status);
+        return;
+    }
     if (bufferData != nullptr && !info.responseData.empty()) {
         if (memcpy_s(bufferData, info.responseData.size(), info.responseData.data(),
             info.responseData.size()) != EOK) {
@@ -256,7 +260,11 @@ static void FillGenericServiceResult(const napi_env& env, const P2pServiceDiscov
         }
     }
     napi_value dataArray = nullptr;
-    napi_create_typedarray(env, napi_uint8_array, info.responseData.size(), arrayBuffer, 0, &dataArray);
+    status = napi_create_typedarray(env, napi_uint8_array, info.responseData.size(), arrayBuffer, 0, &dataArray);
+    if (status != napi_ok || dataArray == nullptr) {
+        WIFI_LOGE("CreateResult P2pServiceDiscovery napi_create_typedarray failed: %{public}d", status);
+        return;
+    }
     napi_set_named_property(env, result, "responseData", dataArray);
 }
 
@@ -276,9 +284,8 @@ napi_value NapiEvent::CreateResult(const napi_env& env, const P2pServiceDiscover
             FillUpnpServiceResult(env, event.info, result);
             break;
         case P2pServiceDiscoveryResultType::GENERIC_SERVICE:
-            FillGenericServiceResult(env, event.info, result);
-            break;
         default:
+            FillGenericServiceResult(env, event.info, result);
             break;
     }
     napi_set_named_property(env, result, "device", CreateResult(env, event.device));

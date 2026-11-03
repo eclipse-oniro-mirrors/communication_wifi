@@ -58,7 +58,8 @@ bool WifiP2pServiceManager::RemovePendingServiceRequest(const WifiP2pServiceRequ
     for (auto iter = list.begin(); iter != list.end(); ++iter) {
         if (iter->GetProtocolType() == req.GetProtocolType() &&
             iter->GetQuery() == req.GetQuery()) {
-            return pendingServiceRequests.RemoveServiceRequest(*iter);
+            WifiP2pServiceRequest request = *iter;
+            return pendingServiceRequests.RemoveServiceRequest(request);
         }
     }
     WIFI_LOGD("Cannot find WifiP2pServiceRequest when RemovePendingServiceRequest.");
@@ -179,7 +180,15 @@ bool WifiP2pServiceManager::AddDeviceService(const WifiP2pServiceResponse &rsp, 
     service.SetServicerProtocolType(rsp.GetProtocolType());
     service.SetDeviceAddress(dev.GetDeviceAddress());
     std::vector<std::string> queryList;
-    queryList.push_back(WifiP2pServiceInfo::Bin2HexStr(rsp.GetData()));
+    std::string query;
+    for (auto itRsp = rsp.GetData().begin(); itRsp != rsp.GetData().end(); ++itRsp) {
+        if (*itRsp == 0) {
+            query += ' ';
+            continue;
+        }
+        query += *itRsp;
+    }
+    queryList.push_back(query);
     service.SetQueryList(queryList);
 
     std::unique_lock<std::mutex> lock(serviceMutex);
@@ -438,7 +447,14 @@ bool WifiP2pServiceManager::UpdateServiceName(const std::string &devAddr, const 
         return false;
     }
 
-    std::string tlvString = WifiP2pServiceInfo::Bin2HexStr(svrInfo.GetData());
+    std::string tlvString;
+    for (auto itRsp = svrInfo.GetData().begin(); itRsp != svrInfo.GetData().end(); ++itRsp) {
+        if (*itRsp == 0) {
+            tlvString += ' ';
+            continue;
+        }
+        tlvString += *itRsp;
+    }
     std::vector<WifiP2pServiceInfo> &svrInfos = iter->second;
     for (auto iterSvrInfo = svrInfos.begin(); iterSvrInfo != svrInfos.end(); ++iterSvrInfo) {
         if (iterSvrInfo->GetQueryList().empty()) {
