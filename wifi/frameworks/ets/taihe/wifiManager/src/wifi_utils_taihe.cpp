@@ -660,6 +660,21 @@ int GetSecurityTypeFromKeyMgmt(KeyMgmt keyMgmt)
     };
 }
 
+bool ValidateProtocolType(int protocolType)
+{
+    switch (static_cast<P2pServicerProtocolType>(protocolType)) {
+        case P2pServicerProtocolType::SERVICE_TYPE_ALL:
+        case P2pServicerProtocolType::SERVICE_TYPE_BONJOUR:
+        case P2pServicerProtocolType::SERVICE_TYPE_UP_NP:
+        case P2pServicerProtocolType::SERVICE_TYPE_WS_DISCOVERY:
+        case P2pServicerProtocolType::SERVICE_TYPE_VENDOR_SPECIFIC:
+            return true;
+        default:
+            WIFI_LOGE("ValidateProtocolType, protocolType %{public}d is invalid.", protocolType);
+            return false;
+    }
+}
+
 WifiP2pServiceRequest ConvertWifiP2pServiceRequest(const ::ohos::wifiManager::WifiP2pServiceRequest& request)
 {
     WifiP2pServiceRequest req;

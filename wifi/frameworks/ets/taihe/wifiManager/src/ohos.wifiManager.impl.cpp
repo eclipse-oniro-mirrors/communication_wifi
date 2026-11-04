@@ -1197,6 +1197,10 @@ void RemoveLocalP2pService(::ohos::wifiManager::WifiP2pServiceInfo const& srvInf
         WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
         return;
     }
+    if (!ValidateProtocolType(static_cast<int>(srvInfo.protocolType))) {
+        WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+        return;
+    }
     WifiP2pServiceInfo info = ConvertWifiP2pServiceInfo(srvInfo);
     ErrCode ret = g_wifiP2pPtr->DeleteLocalP2pService(info);
     if (ret != WIFI_OPT_SUCCESS) {
@@ -1237,6 +1241,10 @@ void RemoveP2pServiceRequest(::ohos::wifiManager::WifiP2pServiceRequest const& r
 {
     if (g_wifiP2pPtr == nullptr) {
         WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, WIFI_OPT_FAILED, SYSCAP_WIFI_P2P);
+        return;
+    }
+    if (!ValidateProtocolType(static_cast<int>(request.protocolType))) {
+        WifiIdlErrorCode::TaiheSetBusinessError(__FUNCTION__, WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
         return;
     }
     WifiP2pServiceRequest serviceRequest = ConvertWifiP2pServiceRequest(request);

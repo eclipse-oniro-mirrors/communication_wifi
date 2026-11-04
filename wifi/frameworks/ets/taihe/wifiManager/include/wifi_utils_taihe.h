@@ -95,6 +95,7 @@ HotspotConfig ConvertHotspotConfig(const ::ohos::wifiManager::HotspotConfig &con
 ::ohos::wifiManager::WifiP2pGroupInfo MakeWifiP2pGroupInfo(const WifiP2pGroupInfo& groupInfo);
 ::ohos::wifiManager::WifiP2pServiceInfo MakeWifiP2pServiceInfo(const WifiP2pServiceInfo& srvInfo);
 WifiP2pServiceInfo ConvertWifiP2pServiceInfo(const ::ohos::wifiManager::WifiP2pServiceInfo& srvInfo);
+bool ValidateProtocolType(int protocolType);
 }  // namespace Wifi
 }  // namespace OHOS
 

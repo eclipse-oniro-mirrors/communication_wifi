@@ -86,7 +86,10 @@ enum class P2pActionCallback : unsigned char {
     Hid2dConnect,
     RemoveGroupClient,
     DiscoverPeers,
-    UNKNOWN,
+    AddServiceRequest,
+    RemoveServiceRequest,
+    ClearServiceRequests,
+    UNKNOWN
 };
 
 enum class P2pState {

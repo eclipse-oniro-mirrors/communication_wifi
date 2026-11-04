@@ -497,6 +497,21 @@ static void ServiceInfoToJs(const napi_env& env, const WifiP2pServiceInfo& info,
     napi_set_named_property(env, result, "queryList", queryArray);
 }
 
+static bool ValidateProtocolType(int protocolType)
+{
+    switch (static_cast<P2pServicerProtocolType>(protocolType)) {
+        case P2pServicerProtocolType::SERVICE_TYPE_ALL:
+        case P2pServicerProtocolType::SERVICE_TYPE_BONJOUR:
+        case P2pServicerProtocolType::SERVICE_TYPE_UP_NP:
+        case P2pServicerProtocolType::SERVICE_TYPE_WS_DISCOVERY:
+        case P2pServicerProtocolType::SERVICE_TYPE_VENDOR_SPECIFIC:
+            return true;
+        default:
+            WIFI_LOGE("ValidateProtocolType, protocolType %{public}d is invalid.", protocolType);
+            return false;
+    }
+}
+
 static bool JsObjToServiceInfo(const napi_env& env, napi_value object, WifiP2pServiceInfo& info)
 {
     napi_valuetype valueType = napi_undefined;
@@ -508,6 +523,9 @@ static bool JsObjToServiceInfo(const napi_env& env, napi_value object, WifiP2pSe
     int protocolType = 0;
     JsObjectToString(env, object, "serviceName", NAPI_MAX_STR_LENT, serviceName);
     JsObjectToInt(env, object, "protocolType", protocolType);
+    if (!ValidateProtocolType(protocolType)) {
+        return false;
+    }
     napi_value queryListVal = nullptr;
     bool hasProperty = false;
     napi_has_named_property(env, object, "queryList", &hasProperty);
@@ -623,6 +641,9 @@ static bool JsObjToServiceRequest(const napi_env& env, napi_value object, WifiP2
     }
     int protocolType = 0;
     JsObjectToInt(env, object, "protocolType", protocolType);
+    if (!ValidateProtocolType(protocolType)) {
+        return false;
+    }
     request.SetProtocolType(static_cast<P2pServicerProtocolType>(protocolType));
 
     bool hasProperty = false;

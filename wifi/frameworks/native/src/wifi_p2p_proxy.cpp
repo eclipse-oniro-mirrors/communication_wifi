@@ -796,14 +796,13 @@ void WifiP2pProxy::ReadWifiP2pServiceRequestOnly(MessageParcel &reply, WifiP2pSe
     request.SetProtocolType(static_cast<P2pServicerProtocolType>(reply.ReadInt32()));
     request.SetTransactionId(reply.ReadInt32());
     int size = reply.ReadInt32();
-    if (size < 0 || size > MAX_QUERY_SIZE) {
-        return;
-    }
     std::vector<unsigned char> query;
     for (int i = 0; i < size; i++) {
         query.push_back(static_cast<unsigned char>(reply.ReadInt8()));
     }
-    request.SetQuery(query);
+    if (size < MAX_QUERY_SIZE) {
+        request.SetQuery(query);
+    }
 }
 
 void WifiP2pProxy::WriteWifiP2pDeviceData(MessageParcel &data, const WifiP2pDevice &device) const
