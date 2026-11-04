@@ -59,12 +59,6 @@ constexpr int32_t CMD_SET_P2P_HIGH_PERF = 103;
 constexpr int32_t CMD_GET_SIGNAL = 104;
 constexpr size_t SIGNAL_POLL_RESULT_FIXED_SIZE = 76;
 
-#ifdef WLAN_PLUGGABLE_SUPPORTED
-const char* WLAN_PLUGGABLE_STATE = "persist.wlan.pluggable.state";
-const char* WLAN_PLUGGABLE_STATE_EXTRACT = "0";
-const char* WLAN_PLUGGABLE_STATE_EMPLACE = "1";
-#endif
-
 HalDeviceManager::HalDeviceManager()
 {
     LOGI("HalDeviceManager::HalDeviceManager");
