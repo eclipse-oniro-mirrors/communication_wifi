@@ -90,6 +90,7 @@ constexpr int HIDDEN_SSID_SCAN_WAIT_TIME_MS = 2000;
 /* SecurityGuard 安全事件：WiFi 拦截事件，ID 由安全事件规范分配（0x03xxxxxx 段） */
 constexpr int64_t WIFI_INTERCEPTED_EVENT_ID = 0x03000100;
 constexpr const char *WIFI_INTERCEPTED_EVENT_VERSION = "1.0";
+constexpr int MDM_REPORT_DEDUP_WINDOW_S = 30;
 #endif
 
 #ifdef READ_MAC_FROM_OEM
@@ -6063,7 +6064,6 @@ void StaStateMachine::ReportMdmRestrictedEvent(const std::string &ssid, const st
 {
     int uid = GetCallingUid();
     /* 去重：弱信号反复重连或被策略持续拦截时，同一组合在窗口期内只上报一次，避免刷屏 */
-    constexpr int MDM_REPORT_DEDUP_WINDOW_S = 30;
     std::string dedupKey = bssid + "|" + restrictedType + "|" + std::to_string(uid);
     time_t now = time(nullptr);
     if (dedupKey == lastMdmReportKey_ && now >= lastMdmReportTime_ &&
