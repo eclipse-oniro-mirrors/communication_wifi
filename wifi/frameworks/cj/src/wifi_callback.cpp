@@ -394,24 +394,24 @@ int32_t CjEventRegister::Register(const std::string& type, void (*callback)())
     if (type == EVENT_STA_POWER_STATE_CHANGE || type == EVENT_STA_CONN_STATE_CHANGE ||
         type == EVENT_STA_RSSI_STATE_CHANGE) {
         cjWifiDeviceCallback->SetCallback(type, reinterpret_cast<void (*)(int32_t)>(callback));
-        CjEventRegister::GetInstance().RegisterDeviceEvents(event);
+        return static_cast<int32_t>(CjEventRegister::GetInstance().RegisterDeviceEvents(event));
     }
 
     if (type == EVENT_STA_SCAN_STATE_CHANGE) {
         cjWifiScanCallback->SetScanStateChange(reinterpret_cast<void (*)(int32_t)>(callback));
-        CjEventRegister::GetInstance().RegisterScanEvents(event);
+        return static_cast<int32_t>(CjEventRegister::GetInstance().RegisterScanEvents(event));
     }
 
     if (type == EVENT_HOTSPOT_STATE_CHANGE) {
         cjWifiHotspotCallback->SetHotspotStateChanged(reinterpret_cast<void (*)(int32_t)>(callback));
-        CjEventRegister::GetInstance().RegisterHotspotEvents(event);
+        return static_cast<int32_t>(CjEventRegister::GetInstance().RegisterHotspotEvents(event));
     }
 
     if (type == EVENT_P2P_STATE_CHANGE || type == EVENT_P2P_PERSISTENT_GROUP_CHANGE ||
         type == EVENT_P2P_DEVICE_STATE_CHANGE || type == EVENT_P2P_PEER_DEVICE_CHANGE ||
         type == EVENT_P2P_CONN_STATE_CHANGE || type == EVENT_P2P_DISCOVERY_CHANGE) {
         cjWifiP2pCallback->SetCallback(type, callback);
-        CjEventRegister::GetInstance().RegisterP2PEvents(event);
+        return static_cast<int32_t>(CjEventRegister::GetInstance().RegisterP2PEvents(event));
     }
     return WIFI_OPT_SUCCESS;
 }

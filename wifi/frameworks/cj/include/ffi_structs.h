@@ -98,6 +98,13 @@ struct CIpv6Info {
     char* secondDNS;
 };
 
+struct CWifiConnectSettings {
+    int32_t networkId;
+    int32_t withUserAction;     /* -1: unset, 0: false, 1: true */
+    int32_t userActionTimeout;  /* -1: unset, otherwise seconds */
+    int32_t addNetworkToSystem; /* -1: unset, 0: false, 1: true */
+};
+
 struct CWifiP2PConfig {
     char* deviceAddress;
     char* passphrase;
