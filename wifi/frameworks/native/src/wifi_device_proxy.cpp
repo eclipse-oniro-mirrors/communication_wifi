@@ -1425,6 +1425,7 @@ void WifiDeviceProxy::ReadLinkedInfo(MessageParcel &reply, WifiLinkedInfo &info)
     info.riskType = static_cast<WifiRiskType>(reply.ReadInt32());
 #endif
     info.wifiTxRxValid = reply.ReadBool();
+    info.nssState = reply.ReadInt32();
 }
 
 void WifiDeviceProxy::ReadWifiSignalPollInfo(MessageParcel &reply, std::vector<WifiSignalPollInfo> &wifiSignalPollInfos)

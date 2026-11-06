@@ -878,5 +878,156 @@ HWTEST_F(StaInterfaceTest, OnBatteryStateChangedFail1, TestSize.Level1)
     int chargeStatus = 0;
     EXPECT_EQ(WIFI_OPT_INVALID_PARAM, pStaInterface->OnBatteryStateChanged(chargeStatus));
 }
+
+HWTEST_F(StaInterfaceTest, UnRegisterStaServiceCallbackSuccess, TestSize.Level1)
+{
+    StaServiceCallback callbacks;
+    callbacks.callbackModuleName = "testModule";
+    pStaInterface->RegisterStaServiceCallback(callbacks);
+    EXPECT_EQ(WIFI_OPT_SUCCESS, pStaInterface->UnRegisterStaServiceCallback(callbacks));
+}
+
+HWTEST_F(StaInterfaceTest, UnRegisterStaServiceCallbackNotRegistered, TestSize.Level1)
+{
+    StaServiceCallback callbacks;
+    callbacks.callbackModuleName = "unregisteredModule";
+    EXPECT_EQ(WIFI_OPT_SUCCESS, pStaInterface->UnRegisterStaServiceCallback(callbacks));
+}
+
+HWTEST_F(StaInterfaceTest, RegisterStaServiceCallbackDuplicate, TestSize.Level1)
+{
+    StaServiceCallback callbacks;
+    callbacks.callbackModuleName = "dupModule";
+    EXPECT_EQ(WIFI_OPT_SUCCESS, pStaInterface->RegisterStaServiceCallback(callbacks));
+    EXPECT_EQ(WIFI_OPT_SUCCESS, pStaInterface->RegisterStaServiceCallback(callbacks));
+}
+
+HWTEST_F(StaInterfaceTest, StartPortalCertificationSuccess, TestSize.Level1)
+{
+    EXPECT_EQ(WIFI_OPT_SUCCESS, pStaInterface->StartPortalCertification());
+}
+
+HWTEST_F(StaInterfaceTest, HandleForegroundAppChangedActionSuccess, TestSize.Level1)
+{
+    AppExecFwk::AppStateData appStateData;
+    EXPECT_EQ(WIFI_OPT_SUCCESS, pStaInterface->HandleForegroundAppChangedAction(appStateData));
+}
+
+HWTEST_F(StaInterfaceTest, SetEnhanceServiceSuccess, TestSize.Level1)
+{
+    EXPECT_EQ(WIFI_OPT_SUCCESS, pStaInterface->SetEnhanceService(nullptr));
+}
+
+HWTEST_F(StaInterfaceTest, SetSelfCureServiceSuccess, TestSize.Level1)
+{
+    EXPECT_EQ(WIFI_OPT_SUCCESS, pStaInterface->SetSelfCureService(nullptr));
+}
+
+HWTEST_F(StaInterfaceTest, DeliverAudioStateSuccess, TestSize.Level1)
+{
+    EXPECT_EQ(WIFI_OPT_SUCCESS, pStaInterface->DeliverAudioState(1));
+}
+
+HWTEST_F(StaInterfaceTest, AllowAutoConnectSuccess, TestSize.Level1)
+{
+    EXPECT_CALL(*pMockStaService, AllowAutoConnect(_, _)).WillRepeatedly(Return(WIFI_OPT_SUCCESS));
+    EXPECT_EQ(WIFI_OPT_SUCCESS, pStaInterface->AllowAutoConnect(0, true));
+}
+
+HWTEST_F(StaInterfaceTest, AllowAutoConnectFail, TestSize.Level1)
+{
+    EXPECT_CALL(*pMockStaService, AllowAutoConnect(_, _)).WillRepeatedly(Return(WIFI_OPT_FAILED));
+    EXPECT_EQ(WIFI_OPT_FAILED, pStaInterface->AllowAutoConnect(0, false));
+}
+
+HWTEST_F(StaInterfaceTest, FetchWifiSignalInfoForVoWiFiSuccess, TestSize.Level1)
+{
+    VoWifiSignalInfo signalInfo;
+    EXPECT_EQ(WIFI_OPT_SUCCESS, pStaInterface->FetchWifiSignalInfoForVoWiFi(signalInfo));
+}
+
+HWTEST_F(StaInterfaceTest, FetchWifiSignalInfoForVoWiFiNullService, TestSize.Level1)
+{
+    StaInterface nullInterface(0);
+    VoWifiSignalInfo signalInfo;
+    EXPECT_EQ(WIFI_OPT_FAILED, nullInterface.FetchWifiSignalInfoForVoWiFi(signalInfo));
+}
+
+HWTEST_F(StaInterfaceTest, IsSupportVoWifiDetectSuccess, TestSize.Level1)
+{
+    bool isSupported = false;
+    EXPECT_EQ(WIFI_OPT_SUCCESS, pStaInterface->IsSupportVoWifiDetect(isSupported));
+}
+
+HWTEST_F(StaInterfaceTest, IsSupportVoWifiDetectNullService, TestSize.Level1)
+{
+    StaInterface nullInterface(0);
+    bool isSupported = false;
+    EXPECT_EQ(WIFI_OPT_FAILED, nullInterface.IsSupportVoWifiDetect(isSupported));
+}
+
+HWTEST_F(StaInterfaceTest, SetVoWifiDetectModeSuccess, TestSize.Level1)
+{
+    WifiDetectConfInfo info;
+    info.wifiDetectMode = 1;
+    info.threshold = -70;
+    info.envalueCount = 3;
+    EXPECT_EQ(WIFI_OPT_SUCCESS, pStaInterface->SetVoWifiDetectMode(info));
+}
+
+HWTEST_F(StaInterfaceTest, SetVoWifiDetectModeSameValue, TestSize.Level1)
+{
+    WifiDetectConfInfo info;
+    info.wifiDetectMode = 1;
+    info.threshold = -70;
+    info.envalueCount = 3;
+    pStaInterface->SetVoWifiDetectMode(info);
+    EXPECT_EQ(WIFI_OPT_SUCCESS, pStaInterface->SetVoWifiDetectMode(info));
+}
+
+HWTEST_F(StaInterfaceTest, GetVoWifiDetectModeSuccess, TestSize.Level1)
+{
+    WifiDetectConfInfo info;
+    info.wifiDetectMode = 2;
+    info.threshold = -60;
+    info.envalueCount = 5;
+    pStaInterface->SetVoWifiDetectMode(info);
+    WifiDetectConfInfo getResult;
+    EXPECT_EQ(WIFI_OPT_SUCCESS, pStaInterface->GetVoWifiDetectMode(getResult));
+    EXPECT_EQ(2, getResult.wifiDetectMode);
+    EXPECT_EQ(-60, getResult.threshold);
+    EXPECT_EQ(5, getResult.envalueCount);
+}
+
+HWTEST_F(StaInterfaceTest, SetVoWifiDetectPeriodSuccess, TestSize.Level1)
+{
+    EXPECT_EQ(WIFI_OPT_SUCCESS, pStaInterface->SetVoWifiDetectPeriod(10));
+}
+
+HWTEST_F(StaInterfaceTest, SetVoWifiDetectPeriodSameValue, TestSize.Level1)
+{
+    pStaInterface->SetVoWifiDetectPeriod(20);
+    EXPECT_EQ(WIFI_OPT_SUCCESS, pStaInterface->SetVoWifiDetectPeriod(20));
+}
+
+HWTEST_F(StaInterfaceTest, GetVoWifiDetectPeriodSuccess, TestSize.Level1)
+{
+    pStaInterface->SetVoWifiDetectPeriod(30);
+    int period = 0;
+    EXPECT_EQ(WIFI_OPT_SUCCESS, pStaInterface->GetVoWifiDetectPeriod(period));
+    EXPECT_EQ(30, period);
+}
+
+HWTEST_F(StaInterfaceTest, ProcessVoWifiNetlinkReportEventTest, TestSize.Level1)
+{
+    pStaInterface->ProcessNetlinkReportEvent(302, -1);
+    EXPECT_FALSE(g_errLog.find("service is null") != std::string::npos);
+}
+
+HWTEST_F(StaInterfaceTest, ProcessVoWifiNetlinkReportEventOtherType, TestSize.Level1)
+{
+    pStaInterface->ProcessNetlinkReportEvent(100, -1);
+    EXPECT_FALSE(g_errLog.find("service is null") != std::string::npos);
+}
 } // namespace Wifi
 } // namespace OHOS

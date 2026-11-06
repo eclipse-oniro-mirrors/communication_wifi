@@ -83,6 +83,7 @@ private:
     void SoftApIfaceDestoryCallback(std::string &destoryIfaceName, int createIfaceType);
     void OnRssiReportCallback(int index, int antRssi);
     void OnNetlinkReportCallback(int type, const std::vector<uint8_t>& recvMsg);
+    void HandleMimoSisoSwitchEvent(const std::vector<uint8_t>& recvMsg);
 #endif
     std::map<int, std::string> staIfaceNameMap;
     std::map<int, std::string> softApIfaceNameMap;

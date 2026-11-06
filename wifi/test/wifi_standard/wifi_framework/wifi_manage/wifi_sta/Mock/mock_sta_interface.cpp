@@ -356,9 +356,9 @@ ErrCode StaInterface::GetVoWifiDetectPeriod(int &period)
     return WIFI_OPT_SUCCESS;
 }
  
-void StaInterface::ProcessVoWifiNetlinkReportEvent(const int type)
+void StaInterface::ProcessNetlinkReportEvent(const int type, const int nssState)
 {
-    WIFI_LOGI("Enter ProcessVoWifiNetlinkReportEvent");
+    WIFI_LOGI("Enter ProcessNetlinkReportEvent");
 }
 
 ErrCode StaInterface::GetSignalPollInfoArray(std::vector<WifiSignalPollInfo> &wifiSignalPollInfos, int length)

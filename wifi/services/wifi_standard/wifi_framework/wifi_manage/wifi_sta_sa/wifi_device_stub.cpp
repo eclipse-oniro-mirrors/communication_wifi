@@ -1032,7 +1032,8 @@ void WifiDeviceStub::WriteWifiLinkedInfo(MessageParcel &reply, const WifiLinkedI
 #ifdef WIFI_LOCAL_SECURITY_DETECT_ENABLE
     reply.WriteInt32(static_cast<int>(wifiInfo.riskType));
 #endif
-reply.WriteBool(wifiInfo.wifiTxRxValid);
+    reply.WriteBool(wifiInfo.wifiTxRxValid);
+    reply.WriteInt32(wifiInfo.nssState);
 }
 
 void WifiDeviceStub::OnGetLinkedInfo(uint32_t code, MessageParcel &data, MessageParcel &reply)

@@ -99,6 +99,25 @@ void EnhanceWriteWifiAbnormalDisconnectHiSysEvent(int errorCode, int locallyGene
     free(jsonStr);
     cJSON_Delete(root);
 }
+
+void EnhanceWriteMimoSisoSwitchEvent(int32_t nssState, int32_t smpsMode)
+{
+    cJSON *root = cJSON_CreateObject();
+    if (root == nullptr) {
+        WIFI_LOGE("Failed to create cJSON object");
+        return;
+    }
+    cJSON_AddNumberToObject(root, "NSS_NUM", nssState);
+    cJSON_AddNumberToObject(root, "SMPS_MODE", smpsMode);
+    char *jsonStr = cJSON_PrintUnformatted(root);
+    if (jsonStr == nullptr) {
+        cJSON_Delete(root);
+        return;
+    }
+    EnhanceWriteEventIpc("WIFI_MIMO_SISO_SWITCH", std::string(jsonStr));
+    free(jsonStr);
+    cJSON_Delete(root);
+}
  
 void EnhanceWriteWifiConnectionInfoHiSysEvent(int networkId)
 {

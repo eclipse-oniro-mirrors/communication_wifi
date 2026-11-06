@@ -17,13 +17,12 @@
 #include "sta_service.h"
 #include "wifi_logger.h"
 #include "wifi_common_event_helper.h"
+#include "wifi_vendor_event_define.h"
 
 DEFINE_WIFILOG_LABEL("StaInterface");
 
 namespace OHOS {
 namespace Wifi {
-
-const uint32_t VDR_VOWIFI_SYNC_REPORT = 302;
 
 StaInterface::StaInterface(int instId) : pStaService(nullptr), m_instId(instId), isEnabled_(false)
 {
@@ -684,7 +683,7 @@ ErrCode StaInterface::GetVoWifiDetectPeriod(int &period)
     return WIFI_OPT_SUCCESS;
 }
  
-void StaInterface::ProcessVoWifiNetlinkReportEvent(const int type)
+void StaInterface::ProcessNetlinkReportEvent(const int type, const int nssState)
 {
     if (type == VDR_VOWIFI_SYNC_REPORT) {
         if (pStaService == nullptr) {
@@ -694,6 +693,17 @@ void StaInterface::ProcessVoWifiNetlinkReportEvent(const int type)
         int index = 0;
         std::string data;
         WifiCommonEventHelper::PublishVoWifiSignalDetectInterruptEvent(index, data);
+    }
+    if (type == VDR_MIMO_SISO_SWITCH_EVENT) {
+        if (nssState < 0) {
+            WIFI_LOGE("ProcessNetlinkReportEvent, invalid nssState, skip update.");
+            return;
+        }
+        if (pStaService == nullptr) {
+            WIFI_LOGE("ProcessNetlinkReportEvent, pStaService is null.");
+            return;
+        }
+        pStaService->ProcessMimoSisoSwitchEvent(nssState);
     }
 }
 

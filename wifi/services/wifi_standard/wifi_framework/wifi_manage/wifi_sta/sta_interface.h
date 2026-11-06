@@ -488,11 +488,13 @@ public:
     ErrCode GetVoWifiDetectPeriod(int &period) override;
  
     /**
-     * @Description Notify vowifi signal detect interrupt message from netlink.
+     * @Description Report a vendor driver netlink event.
      *
      * @param type - wifi netlink message type
+     * @param nssState - spatial stream state parsed from the mimo/siso switch event,
+     *                   -1 means the type carries no valid payload
      */
-    void ProcessVoWifiNetlinkReportEvent(const int type) override;
+    void ProcessNetlinkReportEvent(const int type, const int nssState) override;
 
     /**
      * @Description  get Detect result.

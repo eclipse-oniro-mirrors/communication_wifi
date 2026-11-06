@@ -14,6 +14,7 @@
  */
 
 #include "wifi_service_scheduler.h"
+#include <climits>
 #include "wifi_controller_define.h"
 #include "wifi_manager.h"
 #include "wifi_config_center.h"
@@ -21,6 +22,7 @@
 #include "wifi_sta_hal_interface.h"
 #include "wifi_common_event_helper.h"
 #include "wifi_chr_adapter.h"
+#include "wifi_vendor_event_define.h"
 #ifdef FEATURE_AP_SUPPORT
 #include "i_ap_service.h"
 #endif
@@ -734,22 +736,58 @@ void WifiServiceScheduler::OnRssiReportCallback(int index, int antRssi)
     WifiCommonEventHelper::PublishWiTasRssiValueChangedEvent(index, data);
 }
 
+constexpr size_t MIMO_SISO_SWITCH_PAYLOAD_LEN = sizeof(uint32_t) * 2;
+constexpr size_t MIMO_SISO_PAYLOAD_NSS_STATE_OFFSET = 0;
+constexpr size_t MIMO_SISO_PAYLOAD_SMPS_MODE_OFFSET = sizeof(uint32_t);
+
 void WifiServiceScheduler::OnNetlinkReportCallback(int type, const std::vector<uint8_t>& recvMsg)
 {
-    WIFI_LOGD("OnNetlinkReportCallback, type:%{public}d", type);
+    if (type == VDR_MIMO_SISO_SWITCH_EVENT) {
+        HandleMimoSisoSwitchEvent(recvMsg);
+        IStaService *pStaService = WifiServiceManager::GetInstance().GetStaServiceInst(0);
+        if (pStaService == nullptr) {
+            WIFI_LOGE("Instance get Sta service is null!");
+        } else {
+            pStaService->ProcessNetlinkReportEvent(type, INVALID_NSS_STATE);
+        }
+        return;
+    }
     IEnhanceService *pEnhanceService = WifiServiceManager::GetInstance().GetEnhanceServiceInst();
     if (pEnhanceService == nullptr) {
         WIFI_LOGE("get pEnhance service failed!");
         return;
     }
     pEnhanceService->ProcessWifiNetlinkReportEvent(type, recvMsg);
+}
 
-    IStaService *pStaService = WifiServiceManager::GetInstance().GetStaServiceInst(0);
-    if (pStaService == nullptr) {
-        WIFI_LOGE("Instance get Sta service is null!");
+void WifiServiceScheduler::HandleMimoSisoSwitchEvent(const std::vector<uint8_t>& recvMsg)
+{
+    if (recvMsg.size() < MIMO_SISO_SWITCH_PAYLOAD_LEN) {
+        WIFI_LOGW("HandleMimoSisoSwitchEvent, invalid payload size:%{public}zu", recvMsg.size());
         return;
     }
-    pStaService->ProcessVoWifiNetlinkReportEvent(type);
+    auto readUint32LE = [&recvMsg](size_t offset) {
+        uint32_t value = 0;
+        for (size_t i = 0; i < sizeof(uint32_t); ++i) {
+            value |= static_cast<uint32_t>(recvMsg[offset + i]) << (CHAR_BIT * i);
+        }
+        return value;
+    };
+    int nssState = static_cast<int>(readUint32LE(MIMO_SISO_PAYLOAD_NSS_STATE_OFFSET));
+    uint32_t smpsMode = readUint32LE(MIMO_SISO_PAYLOAD_SMPS_MODE_OFFSET);
+    WifiLinkedInfo linkedInfo;
+    WifiConfigCenter::GetInstance().GetLinkedInfo(linkedInfo);
+    if (linkedInfo.nssState == nssState) {
+        WIFI_LOGD("HandleMimoSisoSwitchEvent, nss state not changed, skip report");
+        return;
+    }
+    IStaService *pStaService = WifiServiceManager::GetInstance().GetStaServiceInst(0);
+    if (pStaService == nullptr) {
+        WIFI_LOGE("HandleMimoSisoSwitchEvent, get Sta service is null!");
+        return;
+    }
+    pStaService->ProcessNetlinkReportEvent(VDR_MIMO_SISO_SWITCH_EVENT, nssState);
+    EnhanceWriteMimoSisoSwitchEvent(nssState, static_cast<int32_t>(smpsMode));
 }
 #endif
 

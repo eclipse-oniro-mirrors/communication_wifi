@@ -32,6 +32,7 @@
 #include "wifi_hisysevent.h"
 #include "wifi_config_center.h"
 #include "wifi_chr_adapter.h"
+#include "wifi_vendor_event_define.h"
 #include "wifi_pro_chr.h"
 #include "block_connect_service.h"
 #include "wifi_randommac_helper.h"
@@ -354,8 +355,20 @@ void StaStateMachine::InitWifiLinkedInfo()
     linkedInfo.riskType = WifiRiskType::INVALID;
 #endif
     linkedInfo.wifiTxRxValid = true;
+    linkedInfo.nssState = INVALID_NSS_STATE;
     std::vector<WifiLinkedInfo> emptyMloLinkInfo;
     WifiConfigCenter::GetInstance().SaveMloLinkedInfo(emptyMloLinkInfo, m_instId);
+}
+
+void StaStateMachine::HandleMimoSisoSwitchEvent(InternalMessagePtr msg)
+{
+    if (msg == nullptr) {
+        WIFI_LOGE("HandleMimoSisoSwitchEvent, msg is nullptr.");
+        return;
+    }
+    int nssState = msg->GetParam1();
+    linkedInfo.nssState = nssState;
+    WifiConfigCenter::GetInstance().SaveLinkedInfo(linkedInfo, m_instId);
 }
 
 
@@ -969,6 +982,9 @@ int StaStateMachine::LinkState::InitStaSMHandleMap()
     };
     staSmHandleFuncMap[CMD_NETWORK_CONNECT_TIMEOUT] = [this](InternalMessagePtr msg) {
         return this->DealConnectTimeOutCmd(msg);
+    };
+    staSmHandleFuncMap[WIFI_SVR_CMD_STA_MIMO_SISO_SWITCH_EVENT] = [this](InternalMessagePtr msg) {
+        return this->pStaStateMachine->HandleMimoSisoSwitchEvent(msg);
     };
     return WIFI_OPT_SUCCESS;
 }
