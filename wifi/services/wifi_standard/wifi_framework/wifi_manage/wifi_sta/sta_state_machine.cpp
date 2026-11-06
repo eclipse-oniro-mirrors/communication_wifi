@@ -17,7 +17,6 @@
 #include <chrono>
 #include <random>
 #include <algorithm>
-#include <memory>
 #include "sta_state_machine.h"
 #include "if_config.h"
 #include "ip_tools.h"
@@ -52,6 +51,7 @@
 #include "wifi_security_detect.h"
 #endif
 #ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+#include <memory>
 #include "cJSON.h"
 #include "event_info.h"
 #include "security_guard_error_code.h"
@@ -6036,15 +6036,16 @@ std::string StaStateMachine::BuildMdmEventContent(const std::string &ssid, const
         WIFI_LOGE("BuildMdmEventContent: create cJSON object failed");
         return "";
     }
-     /* 字段名与单位需与安全事件规范保持一致（见 security_guard 事件定义） */
-    cJSON_AddStringToObject(root, "bundlename", bundleName.c_str());
-    cJSON_AddNumberToObject(root, "uid", uid);
-    cJSON_AddStringToObject(root, "ssid", ssid.c_str());
-    cJSON_AddStringToObject(root, "bssid", bssid.c_str());
-    cJSON_AddStringToObject(root, "restrictedType", restrictedType.c_str());
-    /* 与之前hisysevent上报的字段保持一致，单位为s */
-    int64_t timestamp = static_cast<int64_t>(time(nullptr));
-    cJSON_AddNumberToObject(root, "happenTime", timestamp);
+    /* happenTime 采用秒级时间戳，与security_guard 保持一致 */
+    int64_t happenTime = static_cast<int64_t>(time(nullptr));
+    if (cJSON_AddStringToObject(root, "bundlename", bundleName.c_str()) == nullptr ||
+        cJSON_AddNumberToObject(root, "uid", uid) == nullptr ||
+        cJSON_AddStringToObject(root, "ssid", ssid.c_str()) == nullptr ||
+        cJSON_AddStringToObject(root, "bssid", bssid.c_str()) == nullptr ||
+        cJSON_AddStringToObject(root, "restrictedType", restrictedType.c_str()) == nullptr ||
+        cJSON_AddNumberToObject(root, "happenTime", static_cast<double>(happenTime)) == nullptr) {
+        WIFI_LOGE("BuildMdmEventContent: add cJSON item failed");
+    } 
     char *jsonStr = cJSON_PrintUnformatted(root);
     if (jsonStr == nullptr) {
         WIFI_LOGE("BuildMdmEventContent: print cJSON failed");
@@ -6061,6 +6062,15 @@ void StaStateMachine::ReportMdmRestrictedEvent(const std::string &ssid, const st
     const std::string &restrictedType)
 {
     int uid = GetCallingUid();
+    /* 去重：弱信号反复重连或被策略持续拦截时，同一组合在窗口期内只上报一次，避免刷屏 */
+    constexpr int MDM_REPORT_DEDUP_WINDOW_S = 30;
+    std::string dedupKey = bssid + "|" + restrictedType + "|" + std::to_string(uid);
+    time_t now = time(nullptr);
+    if (dedupKey == lastMdmReportKey_ && now >= lastMdmReportTime_ &&
+        now - lastMdmReportTime_ < MDM_REPORT_DEDUP_WINDOW_S) {
+        WIFI_LOGD("ReportMdmRestrictedEvent: duplicate event suppressed, type={public}s", restrictedType.c_str());
+        return;
+    }
     std::string bundleName = "";
     GetBundleNameByUid(uid, bundleName);
     std::string content = BuildMdmEventContent(ssid, bssid, restrictedType, uid, bundleName);
@@ -6073,7 +6083,10 @@ void StaStateMachine::ReportMdmRestrictedEvent(const std::string &ssid, const st
     int32_t ret = OHOS::Security::SecurityGuard::NativeDataCollectKit::ReportSecurityInfoAsync(eventInfo);
     if (ret != OHOS::Security::SecurityGuard::SUCCESS) {
         WIFI_LOGE("ReportMdmRestrictedEvent: ReportSecurityInfoAsync failed, ret=%{public}d", ret);
+        return;
     }
+    lastMdmReportKey_ = dedupKey;
+    lastMdmReportTime_ = now;
 }
 #endif
 

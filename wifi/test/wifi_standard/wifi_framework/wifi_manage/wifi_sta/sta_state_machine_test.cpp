@@ -4047,7 +4047,7 @@ HWTEST_F(InsecureNetworkInterceptionTest, StartConnectToNetwork_Wpa2, TestSize.L
 #ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
 HWTEST_F(StaStateMachineTest, BuildMdmEventContentFieldsTest, TestSize.Level1)
 {
-    const std::string ssid = "TestAp";
+    const std::string ssid = "TestAP";
     const std::string bssid = "aa:bb:cc:dd:ee:ff";
     const std::string restrictedType = "BLOCK_LIST";
     const int uid = 10001;
@@ -4073,13 +4073,13 @@ HWTEST_F(StaStateMachineTest, BuildMdmEventContentFieldsTest, TestSize.Level1)
     EXPECT_STREQ(restrictedTypeItem->valuestring, restrictedType.c_str());
     cJSON *happenTimeItem = cJSON_GetObjectItem(root, "happenTime");
     ASSERT_NE(happenTimeItem, nullptr);
-    EXPECT_GT(happentimeItem->valuedouble, 0);
+    EXPECT_GT(happenTimeItem->valuedouble, 0);
     cJSON_Delete(root);
 }
 
 HWTEST_F(StaStateMachineTest, BuildMdmEventContentEmptyFieldsTest, TestSize.Level1)
 {
-    std::string content = pStaStateMachine->BuildMdmEventContent("", "", "",  0, "");
+    std::string content = pStaStateMachine->BuildMdmEventContent("", "", "", 0, "");
     EXPECT_FALSE(content.empty());
     cJSON *root = cJSON_Parse(content.c_str());
     ASSERT_NE(root, nullptr);

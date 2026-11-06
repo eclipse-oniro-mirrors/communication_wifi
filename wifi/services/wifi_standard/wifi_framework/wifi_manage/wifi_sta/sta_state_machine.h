@@ -591,8 +591,6 @@ public:
     void DealMdmRestrictedConnect(WifiDeviceConfig &config);
     bool WhetherRestrictedByMdm(const std::string &ssid, const std::string &bssid, bool checkBssid);
     void ReportMdmRestrictedEvent(const std::string &ssid, const std::string &bssid, const std::string &restrictedType);
-    std::string BuildMdmEventContent(const std::string &ssid, const std::string &bssid,
-        const std::string &restrictedType, int uid, const std::string &bundleName);
 #endif
 #ifndef OHOS_ARCH_LITE
     void SetEnhanceService(IEnhanceService* enhanceService);
@@ -609,6 +607,10 @@ public:
     int32_t GetTargetNetworkId();
 /* ------------------ state machine private function ----------------- */
 private:
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+    std::string BuildMdmEventContent(const std::string &ssid, const std::string &bssid,
+        const std::string &restrictedType, int uid, const std::string &bundleName);
+#endif
     /**
      * @Description  Destruct state.
      *
@@ -1222,6 +1224,10 @@ private:
 #endif
 #endif
     bool isNoticeReachRssiThre_ = false;
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+    std::string lastMdmReportKey_ = "";
+    time_t lastMdmReportTime_ = 0;
+#endif
 };
 }  // namespace Wifi
 }  // namespace OHOS
