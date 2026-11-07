@@ -773,7 +773,7 @@ bool DecodeBase64(const std::string &input, std::vector<uint8_t> &output)
 {
 #ifndef OHOS_ARCH_LITE
     WIFI_LOGD("%{public}s input:%{private}s, length:%{public}zu", __func__, input.c_str(), input.length());
-    if (input.length() % BASE64_DEST_UNIT_SIZE != 0) {
+    if (input.length() % BASE64_DEST_UNIT_SIZE != 0 || input.length() < BASE64_DEST_UNIT_SIZE) {
         WIFI_LOGE("%{public}s: wrong data length for base64 encode string", __func__);
         return false;
     }

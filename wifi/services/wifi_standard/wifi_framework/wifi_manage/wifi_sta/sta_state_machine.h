@@ -55,6 +55,7 @@
 #endif
 #endif
 
+
 namespace OHOS {
 namespace Wifi {
 #ifndef OHOS_ARCH_LITE
@@ -1033,6 +1034,14 @@ private:
     std::string GetGsmAuthResponseWithoutLength(EapSimGsmAuthParam param);
 
     /**
+     * @Description parse SIM auth response with length fields
+     *
+     * @param nonce: decoded auth data
+     * @return std::string: kc:sres hex string, empty if invalid
+     */
+    std::string ParseGsmAuthResponse(const std::vector<uint8_t> &nonce);
+
+    /**
      * @Description sim authentication notify events
      *
      * @param msg: authentication data
@@ -1064,7 +1073,29 @@ private:
      *
      * @param nonce: authentication data
      */
-    std::string ParseAndFillUmtsAuthParam(std::vector<uint8_t> &nonce);
+    std::string ParseAndFillUmtsAuthParam(const std::vector<uint8_t> &nonce);
+
+    /**
+     * @Description parse UMTS-AUTH response (res/ck/ik) from nonce
+     *
+     * @param nonce: authentication data
+     */
+    std::string ParseUmtsAuthResponse(const std::vector<uint8_t> &nonce);
+
+    /**
+     * @Description parse ck and ik segments from nonce
+     *
+     * @param nonce: authentication data
+     * @param ckOffset: offset of ck length byte
+     */
+    std::string ParseUmtsCkIk(const std::vector<uint8_t> &nonce, int ckOffset);
+
+    /**
+     * @Description parse UMTS-AUTS data from nonce
+     *
+     * @param nonce: authentication data
+     */
+    std::string ParseUmtsAuts(const std::vector<uint8_t> &nonce);
 
     /**
      * @Description Get aka/aka' card authentication information

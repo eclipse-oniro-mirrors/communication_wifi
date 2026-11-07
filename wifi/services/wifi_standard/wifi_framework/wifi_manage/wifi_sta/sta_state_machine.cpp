@@ -140,25 +140,28 @@ DEFINE_WIFILOG_LABEL("StaStateMachine");
 #define UMTS_AUTS_TYPE_TAG 0xdc
 
 #define UMTS_AUTH_CHALLENGE_RESULT_INDEX 0
-#define UMTS_AUTH_CHALLENGE_DATA_START_IDNEX 1
+#define UMTS_AUTH_CHALLENGE_DATA_START_INDEX 1
 
 #define UMTS_AUTH_CHALLENGE_RAND_LEN 16
 #define UMTS_AUTH_CHALLENGE_AUTN_LEN 16
-#define UMTS_AUTH_CHALLENGE_RES_LEN 8
+// RES is 4~16 bytes per 3GPP TS 33.102 / RFC 4187; MAX_RES_STR_LEN is derived from this.
+#define UMTS_AUTH_CHALLENGE_RES_LEN 16
 #define UMTS_AUTH_CHALLENGE_CK_LEN 16
 #define UMTS_AUTH_CHALLENGE_IK_LEN 16
 #define UMTS_AUTH_CHALLENGE_AUTS_LEN 16
 
 #define UMTS_AUTH_REQUEST_CONTENT_LEN (UMTS_AUTH_CHALLENGE_RAND_LEN + UMTS_AUTH_CHALLENGE_AUTN_LEN + 2)
 
-// res[9] + ck[17] + ik[17] + unknown[9]
-#define UMTS_AUTH_RESPONSE_CONENT_LEN 52
+// tag[1] + resLen[1] + res[16] + ckLen[1] + ck[16] + ikLen[1] + ik[16]
+#define UMTS_AUTH_RESPONSE_CONTENT_LEN 52
+#define MAX_RAW_RESPONSE_STR_LEN (2 * UMTS_AUTH_RESPONSE_CONTENT_LEN)
 
 #define MAX_RES_STR_LEN (2 * UMTS_AUTH_CHALLENGE_RES_LEN)
 #define MAX_CK_STR_LEN (2 * UMTS_AUTH_CHALLENGE_CK_LEN)
 #define MAX_IK_STR_LEN (2 * UMTS_AUTH_CHALLENGE_IK_LEN)
 #define MAX_RAND_STR_LEN (2 * UMTS_AUTH_CHALLENGE_RAND_LEN)
 #define MAX_AUTN_STR_LEN (2 * UMTS_AUTH_CHALLENGE_AUTN_LEN)
+#define MAX_AUTS_STR_LEN (2 * UMTS_AUTH_CHALLENGE_AUTS_LEN)
 
 constexpr int32_t MAX_NO_INTERNET_CNT = 3;
 constexpr uint32_t PKT_DIR_RPT_CNT = 3;
@@ -6184,47 +6187,72 @@ std::string StaStateMachine::GetGsmAuthResponseWithLength(EapSimGsmAuthParam par
             return "";
         }
 
-        // [SRES Length]: the length is 4 bytes
-        uint8_t sresLen = nonce[0];
-        if (sresLen >= nonce.size()) {
-            WIFI_LOGE("%{public}s: invalid length, sresLen: %{public}d, size: %{public}zu",
-                __func__, sresLen, nonce.size());
+        std::string gsmAuth = ParseGsmAuthResponse(nonce);
+        if (gsmAuth.empty()) {
+            WIFI_LOGE("%{public}s: failed to parse gsm auth response", __func__);
             return "";
         }
-
-        // [SRES]
-        int offset = 1; // offset [SRES Length]
-        char sresBuf[MAX_SRES_STR_LEN + 1] = { 0 };
-        Byte2HexString(&nonce[offset], sresLen, sresBuf, sizeof(sresBuf));
-        WIFI_LOGD("%{public}s sresLen: %{public}d, sresBuf: %{private}s", __func__, sresLen, sresBuf);
-
-        // [KC Length]: the length is 8 bytes
-        size_t kcOffset = 1 + sresLen; // offset [SRES Length][SRES]
-        if (kcOffset >= nonce.size()) {
-            WIFI_LOGE("%{public}s: invalid kcOffset: %{public}zu", __func__, kcOffset);
-            return "";
-        }
-        uint8_t kcLen = nonce[kcOffset];
-        if ((kcLen + kcOffset) >= nonce.size()) {
-            WIFI_LOGE("%{public}s: invalid kcLen: %{public}d, kcOffset: %{public}zu", __func__, kcLen, kcOffset);
-            return "";
-        }
-
-        // [Cipher Key Kc]
-        char kcBuf[MAX_KC_STR_LEN + 1] = {0};
-        Byte2HexString(&nonce[kcOffset + 1], kcLen, kcBuf, sizeof(kcBuf));
-        WIFI_LOGD("%{public}s kcLen:%{public}d, kcBuf:%{private}s", __func__, kcLen, kcBuf);
 
         // strcat request message
         if (i == 0) {
-            authRsp += std::string(kcBuf) + ":" + std::string(sresBuf);
+            authRsp += gsmAuth;
         } else {
-            authRsp += ":" + std::string(kcBuf) + ":" + std::string(sresBuf);
+            authRsp += ":" + gsmAuth;
         }
         i++;
     }
     WIFI_LOGD("%{public}s authRsp: %{private}s, len: %{public}zu", __func__, authRsp.c_str(), authRsp.length());
     return authRsp;
+}
+
+std::string StaStateMachine::ParseGsmAuthResponse(const std::vector<uint8_t> &nonce)
+{
+    // data format: [SRES Length][SRES][KC Length][Cipher Key Kc]
+    //   nonce[0]                : [SRES Length], 1 byte
+    //   nonce[1 .. sresLen]     : [SRES], sresLen bytes (normally GSM_AUTH_CHALLENGE_SRES_LEN = 4)
+    //   nonce[1 + sresLen]      : [KC Length], 1 byte
+    //   nonce[2 + sresLen .. ]  : [Cipher Key Kc], kcLen bytes (normally GSM_AUTH_CHALLENGE_KC_LEN = 8)
+    if (nonce.empty()) {
+        WIFI_LOGE("%{public}s: nonce is empty", __func__);
+        return "";
+    }
+    uint8_t sresLen = nonce[0];
+    const size_t sresLenFieldSize = 1; // [SRES Length]
+    const size_t kcLenFieldSize = 1;   // [KC Length]
+    // At least need [SRES Length] + [SRES] + [KC Length] to read the kc length byte.
+    if (sresLen == 0 || sresLen > GSM_AUTH_CHALLENGE_SRES_LEN ||
+        sresLenFieldSize + sresLen + kcLenFieldSize > nonce.size()) {
+        WIFI_LOGE("%{public}s: invalid length, sresLen: %{public}d, size: %{public}zu",
+            __func__, sresLen, nonce.size());
+        return "";
+    }
+
+    // [SRES]
+    size_t offset = sresLenFieldSize; // offset [SRES Length]
+    char sresBuf[MAX_SRES_STR_LEN + 1] = { 0 };
+    Byte2HexString(&nonce[offset], sresLen, sresBuf, sizeof(sresBuf));
+    WIFI_LOGD("%{public}s sresLen: %{public}d, sresBuf: %{private}s", __func__, sresLen, sresBuf);
+
+    // [KC Length]: 1-byte length field; Kc payload is 8 bytes (GSM_AUTH_CHALLENGE_KC_LEN)
+    size_t kcOffset = sresLenFieldSize + sresLen; // offset [SRES Length][SRES]
+    if (kcOffset >= nonce.size()) { // need kc length byte
+        WIFI_LOGE("%{public}s: invalid kcOffset: %{public}zu", __func__, kcOffset);
+        return "";
+    }
+    uint8_t kcLen = nonce[kcOffset];
+    // Need [KC Length] + [Cipher Key Kc] after kcOffset.
+    if (kcLen == 0 || kcLen > GSM_AUTH_CHALLENGE_KC_LEN ||
+        kcOffset + kcLenFieldSize + kcLen > nonce.size()) {
+        WIFI_LOGE("%{public}s: invalid kcLen: %{public}d, kcOffset: %{public}zu", __func__, kcLen, kcOffset);
+        return "";
+    }
+
+    // [Cipher Key Kc]
+    char kcBuf[MAX_KC_STR_LEN + 1] = {0};
+    Byte2HexString(&nonce[kcOffset + kcLenFieldSize], kcLen, kcBuf, sizeof(kcBuf));
+    WIFI_LOGD("%{public}s kcLen:%{public}d, kcBuf:%{private}s", __func__, kcLen, kcBuf);
+
+    return std::string(kcBuf) + ":" + std::string(sresBuf);
 }
 
 /* Calculate SRES and KC as 2G authentication.
@@ -6371,66 +6399,116 @@ std::vector<uint8_t> StaStateMachine::FillUmtsAuthReq(EapSimUmtsAuthParam &param
     return inputChallenge;
 }
 
-std::string StaStateMachine::ParseAndFillUmtsAuthParam(std::vector<uint8_t> &nonce)
+std::string StaStateMachine::ParseAndFillUmtsAuthParam(const std::vector<uint8_t> &nonce)
 {
-    std::string authReq;
+    if (nonce.size() < UMTS_AUTH_CHALLENGE_DATA_START_INDEX + 1) { // at least tag + length field
+        WIFI_LOGE("%{public}s: invalid nonce length, size: %{public}zu", __func__, nonce.size());
+        return "";
+    }
     uint8_t tag = nonce[UMTS_AUTH_CHALLENGE_RESULT_INDEX]; // nonce[0]: the 1st byte is authentication type
     if (tag == UMTS_AUTH_TYPE_TAG) {
-        char nonceBuf[UMTS_AUTH_RESPONSE_CONENT_LEN * 2 + 1] = { 0 }; // length of auth data
-        Byte2HexString(&nonce[0], UMTS_AUTH_RESPONSE_CONENT_LEN, nonceBuf, sizeof(nonceBuf));
-        WIFI_LOGD("Raw Response: %{private}s", nonceBuf);
-
-        authReq = "UMTS-AUTH:";
-
-        // res
-        uint8_t resLen = nonce[UMTS_AUTH_CHALLENGE_DATA_START_IDNEX]; // nonce[1]: the 2nd byte is the length of res
-        int resOffset = UMTS_AUTH_CHALLENGE_DATA_START_IDNEX + 1;
-        std::string res;
-        char resBuf[MAX_RES_STR_LEN + 1] = { 0 };
-        /* nonce[2]~nonce[9]: the 3rd byte ~ 10th byte is res data */
-        Byte2HexString(&nonce[resOffset], resLen, resBuf, sizeof(resBuf));
-        WIFI_LOGD("%{public}s resLen: %{public}d, resBuf: %{private}s", __func__, resLen, resBuf);
-
-        // ck
-        int ckOffset = resOffset + resLen;
-        uint8_t ckLen = nonce[ckOffset]; // nonce[10]: the 11th byte is ck length
-        std::string ck;
-        char ckBuf[MAX_CK_STR_LEN + 1] = { 0 };
-
-        /* nonce[11]~nonce[26]: the 12th byte ~ 27th byte is ck data */
-        Byte2HexString(&nonce[ckOffset + 1], ckLen, ckBuf, sizeof(ckBuf));
-        WIFI_LOGD("ckLen: %{public}d, ckBuf:%{private}s", ckLen, ckBuf);
-
-        // ik
-        int ikOffset = ckOffset + ckLen + 1;
-        uint8_t ikLen = nonce[ikOffset]; // nonce[27]: the 28th byte is the length of ik
-        std::string ik;
-        char ikBuf[MAX_IK_STR_LEN + 1] = { 0 };
-        /* nonce[28]~nonce[43]: the 29th byte ~ 44th byte is ck data */
-        Byte2HexString(&nonce[ikOffset + 1], ikLen, ikBuf, sizeof(ikBuf));
-        WIFI_LOGD("ikLen: %{public}d, ikBuf:%{private}s", ikLen, ikBuf);
-
-        std::string authRsp = std::string(ikBuf) + ":" + std::string(ckBuf) + ":" + std::string(resBuf);
-        authReq += authRsp;
-        WIFI_LOGD("%{public}s ik: %{private}s, ck: %{private}s, res: %{private}s, authRsp: %{private}s",
-            __func__, ikBuf, ckBuf, resBuf, authRsp.c_str());
-    } else {
-        authReq = "UMTS-AUTS:";
-
-        // auts
-        uint8_t autsLen = nonce[UMTS_AUTH_CHALLENGE_DATA_START_IDNEX];
-        WIFI_LOGD("autsLen: %{public}d", autsLen);
-        int offset = UMTS_AUTH_CHALLENGE_DATA_START_IDNEX + 1;
-        std::string auts;
-        char autsBuf[MAX_AUTN_STR_LEN + 1] = { 0 };
-        Byte2HexString(&nonce[offset], autsLen, autsBuf, sizeof(autsBuf));
-        WIFI_LOGD("%{public}s auts: %{private}s", __func__, auts.c_str());
-
-        std::string authRsp = auts;
-        authReq += authRsp;
-        WIFI_LOGD("%{public}s authRsp: %{private}s", __func__, authRsp.c_str());
+        return ParseUmtsAuthResponse(nonce);
     }
-    return authReq;
+    return ParseUmtsAuts(nonce);
+}
+
+std::string StaStateMachine::ParseUmtsAuthResponse(const std::vector<uint8_t> &nonce)
+{
+    if (nonce.size() < UMTS_AUTH_CHALLENGE_DATA_START_INDEX + 1) { // at least tag + length field
+        WIFI_LOGE("%{public}s: invalid nonce length, size: %{public}zu", __func__, nonce.size());
+        return "";
+    }
+    // log raw response, cap to the fixed 52-byte response buffer
+    size_t rawLen = nonce.size() < UMTS_AUTH_RESPONSE_CONTENT_LEN ? nonce.size() : UMTS_AUTH_RESPONSE_CONTENT_LEN;
+    char nonceBuf[MAX_RAW_RESPONSE_STR_LEN + 1] = { 0 };
+    Byte2HexString(&nonce[0], rawLen, nonceBuf, sizeof(nonceBuf));
+    WIFI_LOGD("Raw Response: %{private}s", nonceBuf);
+
+    // res
+    // nonce[DATA_START_INDEX]: the 2nd byte is the length of res
+    uint8_t resLen = nonce[UMTS_AUTH_CHALLENGE_DATA_START_INDEX];
+    int resOffset = UMTS_AUTH_CHALLENGE_DATA_START_INDEX + 1;
+    if (resLen == 0 || resLen > UMTS_AUTH_CHALLENGE_RES_LEN ||
+        resOffset + 1 + resLen > static_cast<int>(nonce.size())) {
+        WIFI_LOGE("%{public}s: invalid resLen: %{public}d, size: %{public}zu", __func__, resLen, nonce.size());
+        return "";
+    }
+    char resBuf[MAX_RES_STR_LEN + 1] = { 0 };
+    /* nonce[2]~nonce[17]: the 3rd byte ~ 18th byte is res data (resLen <= 16) */
+    Byte2HexString(&nonce[resOffset], resLen, resBuf, sizeof(resBuf));
+    WIFI_LOGD("%{public}s resLen: %{public}d, resBuf: %{private}s", __func__, resLen, resBuf);
+
+    // ck + ik
+    int ckOffset = resOffset + resLen;
+    std::string ckIk = ParseUmtsCkIk(nonce, ckOffset);
+    if (ckIk.empty()) {
+        return "";
+    }
+
+    std::string authRsp = ckIk + ":" + std::string(resBuf);
+    WIFI_LOGD("%{public}s res: %{private}s, authRsp: %{private}s", __func__, resBuf, authRsp.c_str());
+    return "UMTS-AUTH:" + authRsp;
+}
+
+std::string StaStateMachine::ParseUmtsCkIk(const std::vector<uint8_t> &nonce, int ckOffset)
+{
+    // ck
+    if (ckOffset >= static_cast<int>(nonce.size())) { // need ck length byte
+        WIFI_LOGE("%{public}s: invalid ckOffset: %{public}d, size: %{public}zu", __func__, ckOffset, nonce.size());
+        return "";
+    }
+    uint8_t ckLen = nonce[ckOffset]; // nonce[10]: the 11th byte is ck length
+    if (ckLen == 0 || ckLen > UMTS_AUTH_CHALLENGE_CK_LEN ||
+        ckOffset + 1 + ckLen > static_cast<int>(nonce.size())) {
+        WIFI_LOGE("%{public}s: invalid ckLen: %{public}d, size: %{public}zu", __func__, ckLen, nonce.size());
+        return "";
+    }
+    char ckBuf[MAX_CK_STR_LEN + 1] = { 0 };
+    /* nonce[11]~nonce[26]: the 12th byte ~ 27th byte is ck data */
+    Byte2HexString(&nonce[ckOffset + 1], ckLen, ckBuf, sizeof(ckBuf));
+    WIFI_LOGD("ckLen: %{public}d, ckBuf:%{private}s", ckLen, ckBuf);
+
+    // ik
+    int ikOffset = ckOffset + ckLen + 1;
+    if (ikOffset >= static_cast<int>(nonce.size())) { // need ik length byte
+        WIFI_LOGE("%{public}s: invalid ikOffset: %{public}d, size: %{public}zu", __func__, ikOffset, nonce.size());
+        return "";
+    }
+    uint8_t ikLen = nonce[ikOffset]; // nonce[27]: the 28th byte is the length of ik
+    if (ikLen == 0 || ikLen > UMTS_AUTH_CHALLENGE_IK_LEN ||
+        ikOffset + 1 + ikLen > static_cast<int>(nonce.size())) {
+        WIFI_LOGE("%{public}s: invalid ikLen: %{public}d, size: %{public}zu", __func__, ikLen, nonce.size());
+        return "";
+    }
+    char ikBuf[MAX_IK_STR_LEN + 1] = { 0 };
+    /* nonce[28]~nonce[43]: the 29th byte ~ 44th byte is ck data */
+    Byte2HexString(&nonce[ikOffset + 1], ikLen, ikBuf, sizeof(ikBuf));
+    WIFI_LOGD("ikLen: %{public}d, ikBuf:%{private}s", ikLen, ikBuf);
+
+    return std::string(ikBuf) + ":" + std::string(ckBuf);
+}
+
+std::string StaStateMachine::ParseUmtsAuts(const std::vector<uint8_t> &nonce)
+{
+    if (nonce.size() < UMTS_AUTH_CHALLENGE_DATA_START_INDEX + 1) { // at least tag + length field
+        WIFI_LOGE("%{public}s: invalid nonce length, size: %{public}zu", __func__, nonce.size());
+        return "";
+    }
+    // auts
+    uint8_t autsLen = nonce[UMTS_AUTH_CHALLENGE_DATA_START_INDEX];
+    int offset = UMTS_AUTH_CHALLENGE_DATA_START_INDEX + 1;
+    // auts is the last segment, no trailing length byte: offset + autsLen <= nonce.size()
+    if (autsLen == 0 || autsLen > UMTS_AUTH_CHALLENGE_AUTS_LEN ||
+        offset + autsLen > static_cast<int>(nonce.size())) {
+        WIFI_LOGE("%{public}s: invalid autsLen: %{public}d, size: %{public}zu", __func__, autsLen, nonce.size());
+        return "";
+    }
+    WIFI_LOGD("autsLen: %{public}d", autsLen);
+    char autsBuf[MAX_AUTS_STR_LEN + 1] = { 0 };
+    Byte2HexString(&nonce[offset], autsLen, autsBuf, sizeof(autsBuf));
+    std::string auts(autsBuf);
+    WIFI_LOGD("%{public}s auts: %{private}s", __func__, auts.c_str());
+    return "UMTS-AUTS:" + auts;
 }
 
 std::string StaStateMachine::GetUmtsAuthResponse(EapSimUmtsAuthParam &param)
@@ -6475,7 +6553,7 @@ void StaStateMachine::DealWpaEapSimAuthEvent(InternalMessagePtr msg)
 
     cmd += authRsp;
     if (WifiStaHalInterface::GetInstance().ShellCmd("wlan0", cmd) != WIFI_HAL_OPT_OK) {
-        WIFI_LOGI("%{public}s: failed to send the message, authReq: %{private}s", __func__, cmd.c_str());
+        WIFI_LOGE("%{public}s: failed to send the message, authReq: %{private}s", __func__, cmd.c_str());
         return;
     }
     WIFI_LOGD("%{public}s: success to send the message, authReq: %{private}s", __func__, cmd.c_str());
@@ -6516,6 +6594,10 @@ void StaStateMachine::DealWpaEapUmtsAuthEvent(InternalMessagePtr msg)
     }
 
     // data format: [0xdb][RES Length][RES][CK Length][CK][IK Length][IK]
+    if (nonce.empty()) {
+        WIFI_LOGE("%{public}s: nonce is empty", __func__);
+        return;
+    }
     uint8_t tag = nonce[UMTS_AUTH_CHALLENGE_RESULT_INDEX];
     if ((tag != UMTS_AUTH_TYPE_TAG) && (tag != UMTS_AUTS_TYPE_TAG)) {
         WIFI_LOGE("%{public}s: unsupport type: 0x%{public}02x", __func__, tag);
@@ -6526,8 +6608,12 @@ void StaStateMachine::DealWpaEapUmtsAuthEvent(InternalMessagePtr msg)
 
     // request authentication to wpa
     std::string reqCmd = ParseAndFillUmtsAuthParam(nonce);
+    if (reqCmd.empty()) {
+        WIFI_LOGE("%{public}s: failed to parse umts auth param", __func__);
+        return;
+    }
     if (WifiStaHalInterface::GetInstance().ShellCmd("wlan0", reqCmd) != WIFI_HAL_OPT_OK) {
-        WIFI_LOGI("%{public}s: failed to send the message, authReq: %{private}s", __func__, reqCmd.c_str());
+        WIFI_LOGE("%{public}s: failed to send the message, authReq: %{private}s", __func__, reqCmd.c_str());
         return;
     }
     WIFI_LOGD("%{public}s: success to send the message, authReq: %{private}s", __func__, reqCmd.c_str());
