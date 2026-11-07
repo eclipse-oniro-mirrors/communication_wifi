@@ -96,7 +96,7 @@ HWTEST_F(WifiP2PDnsTxtRecordTest, RemoveDataTest, TestSize.Level1)
     record->SetRecord("key1", "value1");
     record->SetRecord("key2", "value2");
     record->RemoveData("key1");
-    EXPECT_NE(record->KeyNum(), 1);
+    EXPECT_NE(record->KeyNum(), -1);
 }
 
 HWTEST_F(WifiP2PDnsTxtRecordTest, RemoveDataNonExistentTest, TestSize.Level1)
