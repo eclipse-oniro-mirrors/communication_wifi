@@ -25,6 +25,7 @@ ohos_cli_executable("ohos-wifiManager") {
         "src/main.cpp",
         "src/wifi_manager_cli.cpp",
         "src/wifi_exception_cli.cpp",
+        "src/wifi_hotspot_cli.cpp",
     ]
 
     sanitize = {

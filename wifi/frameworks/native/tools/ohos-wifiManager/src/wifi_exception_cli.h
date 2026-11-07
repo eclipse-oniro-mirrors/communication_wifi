@@ -17,10 +17,12 @@
 
 #ifdef WIFI_EXCEPTION_RECORD_ENABLE
 
+#include "wifi_manager_cli.h"
+
 namespace OHOS {
 namespace WifiCli {
 
-int CmdWifiException(int argc, char** argv);
+CliErrCode CmdWifiException(int argc, char** argv);
 
 } // namespace WifiCli
 } // namespace OHOS
