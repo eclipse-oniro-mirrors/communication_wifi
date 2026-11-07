@@ -116,23 +116,22 @@ static void ApplyPerApLimit(std::vector<OHOS::Wifi::ApGroup>& groups, int perAp)
     }
 }
 
-static int DoClearExceptions()
+static CliErrCode DoClearExceptions()
 {
     using namespace OHOS::Wifi;
     WifiExceptionRecordUtils utils;
     int32_t ret = utils.ClearExceptions();
     if (ret != 0) {
-        OutputErrorJson("CLEAR_ERROR", "Failed to clear exception records", "");
-        return 1;
+        OutputErrorJson({"CLEAR_ERROR", "Failed to clear exception records"});
+        return CliErrCode::FAILED;
     }
     cJSON* data = cJSON_CreateObject();
     cJSON_AddStringToObject(data, "message", "All exception records cleared");
     OutputSuccessJson(data);
-    return 0;
+    return CliErrCode::SUCCESS;
 }
 
-static int DoListExceptions(const std::string& ssid, const std::string& category,
-                            int reasonCode, int perAp)
+static CliErrCode DoListExceptions(const std::string& ssid, const std::string& category, int reasonCode, int perAp)
 {
     using namespace OHOS::Wifi;
     WifiExceptionRecordUtils utils;
@@ -158,7 +157,7 @@ static int DoListExceptions(const std::string& ssid, const std::string& category
     cJSON_AddItemToObject(data, "exceptions", arr);
     cJSON_AddNumberToObject(data, "count", count);
     OutputSuccessJson(data);
-    return 0;
+    return CliErrCode::SUCCESS;
 }
 
 static bool ParseIntArg(const char* str, int& outValue, std::string& errMsg)
@@ -182,7 +181,7 @@ static bool ParseIntArg(const char* str, int& outValue, std::string& errMsg)
     return true;
 }
 
-int CmdWifiException(int argc, char** argv)
+CliErrCode CmdWifiException(int argc, char** argv)
 {
     bool doClear = false;
     std::string filterSsid;
@@ -200,14 +199,14 @@ int CmdWifiException(int argc, char** argv)
         } else if (arg == "--reason" && i + 1 < argc) {
             std::string err;
             if (!ParseIntArg(argv[++i], filterReason, err)) {
-                OutputErrorJson("ERR_PARAM_INVALID", "Invalid --reason value", err);
-                return 1;
+                OutputErrorJson({"ERR_PARAM_INVALID", "Invalid --reason value", err});
+                return CliErrCode::FAILED;
             }
         } else if (arg == "--per-ap" && i + 1 < argc) {
             std::string err;
             if (!ParseIntArg(argv[++i], perAp, err)) {
-                OutputErrorJson("ERR_PARAM_INVALID", "Invalid --per-ap value", err);
-                return 1;
+                OutputErrorJson({"ERR_PARAM_INVALID", "Invalid --per-ap value", err});
+                return CliErrCode::FAILED;
             }
         }
     }

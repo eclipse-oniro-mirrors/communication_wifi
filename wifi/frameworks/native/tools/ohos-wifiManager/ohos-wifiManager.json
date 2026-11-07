@@ -1,7 +1,7 @@
 {
     "name": "ohos-wifiManager",
     "version": "1.0.0",
-    "description": "WiFi STA mode control tool for enabling/disabling STA mode and scanning networks",
+    "description": "WiFi management tool: STA enable/disable, scan, connect, linked info and hotspot (AP) management",
     "executablePath": "/system/bin/cli_tool/executable/ohos-wifiManager",
     "requirePermissions": [],
     "hasSubCommand": true,
@@ -36,7 +36,8 @@
                     }
                 },
                 "errCode": { "type": "string" },
-                "errMsg": { "type": "string" }
+                "errMsg": { "type": "string" },
+                "suggestion": { "type": "string" }
             }
         }
     },
@@ -62,7 +63,8 @@
                     }
                 },
                 "errCode": { "type": "string" },
-                "errMsg": { "type": "string" }
+                "errMsg": { "type": "string" },
+                "suggestion": { "type": "string" }
             }
         }
     },
@@ -88,7 +90,8 @@
                     }
                 },
                 "errCode": { "type": "string" },
-                "errMsg": { "type": "string" }
+                "errMsg": { "type": "string" },
+                "suggestion": { "type": "string" }
             }
         }
     },
@@ -127,7 +130,8 @@
                     }
                 },
                 "errCode": { "type": "string" },
-                "errMsg": { "type": "string" }
+                "errMsg": { "type": "string" },
+                "suggestion": { "type": "string" }
             }
         }
     },
@@ -166,7 +170,8 @@
                     }
                 },
                 "errCode": { "type": "string" },
-                "errMsg": { "type": "string" }
+                "errMsg": { "type": "string" },
+                "suggestion": { "type": "string" }
             }
         }
     },
@@ -197,7 +202,178 @@
                     }
                 },
                 "errCode": { "type": "string" },
-                "errMsg": { "type": "string" }
+                "errMsg": { "type": "string" },
+                "suggestion": { "type": "string" }
+            }
+        }
+    },
+    "hotspot-enable": {
+        "description": "Enable the WiFi hotspot (AP mode)",
+        "requirePermissions": [
+            "ohos.permission.MANAGE_WIFI_HOTSPOT",
+            "ohos.permission.GET_WIFI_INFO"
+        ],
+        "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "required": []
+        },
+        "outputSchema": {
+            "type": "object",
+            "properties": {
+                "type": { "type": "string" },
+                "status": { "type": "string" },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "message": { "type": "string" }
+                    }
+                },
+                "errCode": { "type": "string" },
+                "errMsg": { "type": "string" },
+                "suggestion": { "type": "string" }
+            }
+        }
+    },
+    "hotspot-disable": {
+        "description": "Disable the WiFi hotspot",
+        "requirePermissions": [
+            "ohos.permission.MANAGE_WIFI_HOTSPOT",
+            "ohos.permission.GET_WIFI_INFO"
+        ],
+        "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "required": []
+        },
+        "outputSchema": {
+            "type": "object",
+            "properties": {
+                "type": { "type": "string" },
+                "status": { "type": "string" },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "message": { "type": "string" }
+                    }
+                },
+                "errCode": { "type": "string" },
+                "errMsg": { "type": "string" },
+                "suggestion": { "type": "string" }
+            }
+        }
+    },
+    "hotspot-config-set": {
+        "description": "Set WiFi hotspot SSID, password or band. Provide at least one of ssid, preSharedKey or band. preSharedKey is 8~63 characters; band is one of 2.4G or 5G.",
+        "requirePermissions": [
+            "ohos.permission.SET_WIFI_INFO",
+            "ohos.permission.GET_WIFI_INFO",
+            "ohos.permission.SET_WIFI_CONFIG",
+            "ohos.permission.GET_WIFI_CONFIG"
+        ],
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "ssid": { "type": "string" },
+                "preSharedKey": { "type": "string" },
+                "band": { "type": "string" }
+            },
+            "required": []
+        },
+        "outputSchema": {
+            "type": "object",
+            "properties": {
+                "type": { "type": "string" },
+                "status": { "type": "string" },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "ssid": { "type": "string" },
+                        "band": { "type": "string" },
+                        "message": { "type": "string" }
+                    }
+                },
+                "errCode": { "type": "string" },
+                "errMsg": { "type": "string" },
+                "suggestion": { "type": "string" }
+            }
+        }
+    },
+    "hotspot-config-get": {
+        "description": "Get current WiFi hotspot configuration and running state, including supported bands",
+        "requirePermissions": [
+            "ohos.permission.GET_WIFI_INFO",
+            "ohos.permission.GET_WIFI_CONFIG"
+        ],
+        "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "required": []
+        },
+        "outputSchema": {
+            "type": "object",
+            "properties": {
+                "type": { "type": "string" },
+                "status": { "type": "string" },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "active": { "type": "boolean" },
+                        "state": { "type": "string" },
+                        "ssid": { "type": "string" },
+                        "band": { "type": "string" },
+                        "channel": { "type": "number" },
+                        "maxConn": { "type": "number" },
+                        "ipAddress": { "type": "string" },
+                        "hasPassword": { "type": "boolean" },
+                        "validBands": {
+                            "type": "array",
+                            "items": { "type": "string" }
+                        }
+                    }
+                },
+                "errCode": { "type": "string" },
+                "errMsg": { "type": "string" },
+                "suggestion": { "type": "string" }
+            }
+        }
+    },
+    "hotspot-blocklist-get": {
+        "description": "List devices currently blocklisted from the WiFi hotspot",
+        "requirePermissions": [
+            "ohos.permission.MANAGE_WIFI_HOTSPOT",
+            "ohos.permission.GET_WIFI_INFO"
+        ],
+        "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "required": []
+        },
+        "outputSchema": {
+            "type": "object",
+            "properties": {
+                "type": { "type": "string" },
+                "status": { "type": "string" },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "count": { "type": "number" },
+                        "stations": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "bssid": { "type": "string" },
+                                    "ipAddr": { "type": "string" },
+                                    "deviceName": { "type": "string" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "errCode": { "type": "string" },
+                "errMsg": { "type": "string" },
+                "suggestion": { "type": "string" }
             }
         }
     },
@@ -252,7 +428,8 @@
                     }
                 },
                 "errCode":{"type":"string"},
-                "errMsg":{"type":"string"}
+                "errMsg":{"type":"string"},
+                "suggestion":{"type":"string"}
             }   
         }
     }
