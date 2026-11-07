@@ -202,6 +202,25 @@ HWTEST_F(WifiCommonUtilTest, DecodeBase64FildTest_2, TestSize.Level1)
     EXPECT_FALSE(result);
 }
 
+HWTEST_F(WifiCommonUtilTest, DecodeBase64EmptyInputTest, TestSize.Level1)
+{
+    WIFI_LOGI("DecodeBase64EmptyInputTest enter");
+    std::string str = "";
+    std::vector<uint8_t> vecStr;
+    bool result = DecodeBase64(str, vecStr);
+    EXPECT_FALSE(result);
+}
+
+HWTEST_F(WifiCommonUtilTest, DecodeBase64ShortInputTest, TestSize.Level1)
+{
+    WIFI_LOGI("DecodeBase64ShortInputTest enter");
+    std::string str = "QQ==";
+    std::vector<uint8_t> vecStr;
+    bool result = DecodeBase64(str, vecStr);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(1, static_cast<int>(vecStr.size()));
+}
+
 HWTEST_F(WifiCommonUtilTest, EncodeDecodeBase64Test, TestSize.Level1)
 {
     WIFI_LOGI("EncodeDecodeBase64Test enter");

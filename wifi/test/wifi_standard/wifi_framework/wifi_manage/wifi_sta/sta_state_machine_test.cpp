@@ -53,8 +53,20 @@ static const std::string RANDOMMAC_SSID = "testwifi";
 static const std::string RANDOMMAC_PASSWORD = "testwifi";
 static const std::string RANDOMMAC_BSSID = "01:23:45:67:89:a0";
 constexpr int TEST_FAIL_REASON = 16;
+// The following UMTS auth constants must be kept in sync with the #define in
+// sta_state_machine.cpp (single source of truth is the production code).
 constexpr int UMTS_AUTH_TYPE_TAG = 0xdb;
 constexpr int UMTS_AUTS_TYPE_TAG = 0xdc;
+constexpr int UMTS_AUTH_CHALLENGE_RESULT_INDEX = 0;
+constexpr int UMTS_AUTH_CHALLENGE_DATA_START_INDEX = 1;
+constexpr int UMTS_AUTH_RESPONSE_CONTENT_LEN = 52;
+constexpr int UMTS_AUTH_CHALLENGE_RES_LEN = 16; // RES is 4~16 bytes per 3GPP TS 33.102 / RFC 4187
+constexpr int UMTS_AUTH_CHALLENGE_CK_LEN = 16;
+constexpr int UMTS_AUTH_CHALLENGE_IK_LEN = 16;
+constexpr int UMTS_AUTH_CHALLENGE_AUTS_LEN = 16;
+constexpr int AUTS_PROTOCOL_PAYLOAD_LEN = 14; // AUTS payload per 3GPP TS 33.102 (MAC 4 + SQNxorAK 6 + AMF 2 + pad 2)
+constexpr int GSM_AUTH_CHALLENGE_SRES_LEN = 4;
+constexpr int GSM_AUTH_CHALLENGE_KC_LEN = 8;
 constexpr int WPA3_BLACKMAP_MAX_NUM = 20;
 constexpr int TWO = 2;
 constexpr int INVALID_RSSI1 = -128;
@@ -1763,6 +1775,78 @@ public:
         EXPECT_EQ(pStaStateMachine->GetGsmAuthResponseWithoutLength(param), "");
     }
 
+    void ParseGsmAuthResponseValidTest()
+    {
+        std::vector<uint8_t> nonce;
+        nonce.push_back(GSM_AUTH_CHALLENGE_SRES_LEN);
+        for (int i = 0; i < GSM_AUTH_CHALLENGE_SRES_LEN; i++) {
+            nonce.push_back(i);
+        }
+        nonce.push_back(GSM_AUTH_CHALLENGE_KC_LEN);
+        for (int i = 0; i < GSM_AUTH_CHALLENGE_KC_LEN; i++) {
+            nonce.push_back(i);
+        }
+        std::string result = pStaStateMachine->ParseGsmAuthResponse(nonce);
+        EXPECT_NE(result, "");
+        EXPECT_NE(result.find(":"), std::string::npos);
+    }
+
+    void ParseGsmAuthResponseEmptyNonceTest()
+    {
+        std::vector<uint8_t> nonce;
+        EXPECT_EQ(pStaStateMachine->ParseGsmAuthResponse(nonce), "");
+    }
+
+    void ParseGsmAuthResponseSresLenZeroTest()
+    {
+        std::vector<uint8_t> nonce;
+        nonce.push_back(0); // sresLen is 0
+        for (int i = 0; i < GSM_AUTH_CHALLENGE_SRES_LEN + GSM_AUTH_CHALLENGE_KC_LEN; i++) {
+            nonce.push_back(i);
+        }
+        EXPECT_EQ(pStaStateMachine->ParseGsmAuthResponse(nonce), "");
+    }
+
+    void ParseGsmAuthResponseSresLenExceedProtoLimitTest()
+    {
+        std::vector<uint8_t> nonce;
+        // sresLen exceeds protocol limit but stays within nonce size
+        nonce.push_back(GSM_AUTH_CHALLENGE_SRES_LEN + 1);
+        for (int i = 0; i < GSM_AUTH_CHALLENGE_SRES_LEN + GSM_AUTH_CHALLENGE_KC_LEN + 1; i++) {
+            nonce.push_back(i);
+        }
+        EXPECT_EQ(pStaStateMachine->ParseGsmAuthResponse(nonce), "");
+    }
+
+    void ParseGsmAuthResponseKcLenZeroTest()
+    {
+        std::vector<uint8_t> nonce;
+        nonce.push_back(GSM_AUTH_CHALLENGE_SRES_LEN);
+        for (int i = 0; i < GSM_AUTH_CHALLENGE_SRES_LEN; i++) {
+            nonce.push_back(i);
+        }
+        nonce.push_back(0); // kcLen is 0
+        for (int i = 0; i < GSM_AUTH_CHALLENGE_KC_LEN; i++) {
+            nonce.push_back(i);
+        }
+        EXPECT_EQ(pStaStateMachine->ParseGsmAuthResponse(nonce), "");
+    }
+
+    void ParseGsmAuthResponseKcLenExceedProtoLimitTest()
+    {
+        std::vector<uint8_t> nonce;
+        nonce.push_back(GSM_AUTH_CHALLENGE_SRES_LEN);
+        for (int i = 0; i < GSM_AUTH_CHALLENGE_SRES_LEN; i++) {
+            nonce.push_back(i);
+        }
+        // kcLen exceeds protocol limit but stays within nonce size
+        nonce.push_back(GSM_AUTH_CHALLENGE_KC_LEN + 1);
+        for (int i = 0; i < GSM_AUTH_CHALLENGE_KC_LEN + TWO; i++) {
+            nonce.push_back(i);
+        }
+        EXPECT_EQ(pStaStateMachine->ParseGsmAuthResponse(nonce), "");
+    }
+
     void PreWpaEapUmtsAuthEventTest()
     {
         pStaStateMachine->PreWpaEapUmtsAuthEvent();
@@ -1783,6 +1867,239 @@ public:
         nonce.clear();
         nonce.push_back(UMTS_AUTS_TYPE_TAG);
         pStaStateMachine->ParseAndFillUmtsAuthParam(nonce);
+    }
+
+    void ParseAndFillUmtsAuthParamEmptyNonceTest()
+    {
+        std::vector<uint8_t> nonce;
+        EXPECT_EQ(pStaStateMachine->ParseAndFillUmtsAuthParam(nonce), "");
+    }
+
+    void ParseAndFillUmtsAuthParamTooShortNonceTest()
+    {
+        std::vector<uint8_t> nonce;
+        nonce.push_back(UMTS_AUTH_TYPE_TAG);
+        EXPECT_EQ(pStaStateMachine->ParseAndFillUmtsAuthParam(nonce), "");
+    }
+
+    void ParseAndFillUmtsAuthParamUmtsAuthTooShortTest()
+    {
+        std::vector<uint8_t> nonce;
+        nonce.push_back(UMTS_AUTH_TYPE_TAG);
+        nonce.push_back(UMTS_AUTH_CHALLENGE_RES_LEN);
+        EXPECT_EQ(pStaStateMachine->ParseAndFillUmtsAuthParam(nonce), "");
+    }
+
+    void ParseAndFillUmtsAuthParamUmtsAuthValidTest()
+    {
+        std::vector<uint8_t> nonce;
+        nonce.push_back(UMTS_AUTH_TYPE_TAG);
+        nonce.push_back(UMTS_AUTH_CHALLENGE_RES_LEN);
+        for (int i = 0; i < UMTS_AUTH_CHALLENGE_RES_LEN; i++) {
+            nonce.push_back(i);
+        }
+        nonce.push_back(UMTS_AUTH_CHALLENGE_CK_LEN);
+        for (int i = 0; i < UMTS_AUTH_CHALLENGE_CK_LEN; i++) {
+            nonce.push_back(i);
+        }
+        nonce.push_back(UMTS_AUTH_CHALLENGE_IK_LEN);
+        for (int i = 0; i < UMTS_AUTH_CHALLENGE_IK_LEN; i++) {
+            nonce.push_back(i);
+        }
+        // pad to UMTS_AUTH_RESPONSE_CONTENT_LEN
+        while (static_cast<int>(nonce.size()) < UMTS_AUTH_RESPONSE_CONTENT_LEN) {
+            nonce.push_back(0);
+        }
+        std::string result = pStaStateMachine->ParseAndFillUmtsAuthParam(nonce);
+        EXPECT_NE(result, "");
+        EXPECT_NE(result.find("UMTS-AUTH:"), std::string::npos);
+    }
+
+    void ParseAndFillUmtsAuthParamAutsValidTest()
+    {
+        // AUTS payload is 14 bytes per 3GPP TS 33.102, total 16 bytes with tag + length
+        std::vector<uint8_t> nonce;
+        nonce.push_back(UMTS_AUTS_TYPE_TAG);
+        nonce.push_back(AUTS_PROTOCOL_PAYLOAD_LEN);
+        for (int i = 0; i < AUTS_PROTOCOL_PAYLOAD_LEN; i++) {
+            nonce.push_back(i);
+        }
+        std::string result = pStaStateMachine->ParseAndFillUmtsAuthParam(nonce);
+        EXPECT_EQ(result, "UMTS-AUTS:000102030405060708090a0b0c0d");
+    }
+
+    void ParseAndFillUmtsAuthParamAutsValidLenMaxTest()
+    {
+        // autsLen at protocol limit (16), total 18 bytes with tag + length
+        std::vector<uint8_t> nonce;
+        nonce.push_back(UMTS_AUTS_TYPE_TAG);
+        nonce.push_back(UMTS_AUTH_CHALLENGE_AUTS_LEN);
+        for (int i = 0; i < UMTS_AUTH_CHALLENGE_AUTS_LEN; i++) {
+            nonce.push_back(i);
+        }
+        std::string result = pStaStateMachine->ParseAndFillUmtsAuthParam(nonce);
+        EXPECT_EQ(result, "UMTS-AUTS:000102030405060708090a0b0c0d0e0f");
+    }
+
+    void ParseAndFillUmtsAuthParamAutsLenOobTest()
+    {
+        std::vector<uint8_t> nonce;
+        nonce.push_back(UMTS_AUTS_TYPE_TAG);
+        nonce.push_back(0xFF); // autsLen exceeds nonce size
+        EXPECT_EQ(pStaStateMachine->ParseAndFillUmtsAuthParam(nonce), "");
+    }
+
+    void ParseUmtsAutsTooShortTest()
+    {
+        // direct call bypassing ParseAndFillUmtsAuthParam: no room for tag + length field
+        std::vector<uint8_t> nonce;
+        nonce.push_back(UMTS_AUTS_TYPE_TAG);
+        EXPECT_EQ(pStaStateMachine->ParseUmtsAuts(nonce), "");
+
+        std::vector<uint8_t> emptyNonce;
+        EXPECT_EQ(pStaStateMachine->ParseUmtsAuts(emptyNonce), "");
+    }
+
+    void ParseUmtsAuthResponseTooShortTest()
+    {
+        // direct call bypassing ParseAndFillUmtsAuthParam: no room for tag + length field
+        std::vector<uint8_t> nonce;
+        nonce.push_back(UMTS_AUTH_TYPE_TAG);
+        EXPECT_EQ(pStaStateMachine->ParseUmtsAuthResponse(nonce), "");
+
+        std::vector<uint8_t> emptyNonce;
+        EXPECT_EQ(pStaStateMachine->ParseUmtsAuthResponse(emptyNonce), "");
+    }
+
+    void ParseAndFillUmtsAuthParamResLenOobTest()
+    {
+        std::vector<uint8_t> nonce;
+        nonce.push_back(UMTS_AUTH_TYPE_TAG);
+        nonce.push_back(0xFF); // resLen exceeds nonce size
+        while (static_cast<int>(nonce.size()) < UMTS_AUTH_RESPONSE_CONTENT_LEN) {
+            nonce.push_back(0);
+        }
+        EXPECT_EQ(pStaStateMachine->ParseAndFillUmtsAuthParam(nonce), "");
+    }
+
+    void ParseAndFillUmtsAuthParamCkLenOobTest()
+    {
+        std::vector<uint8_t> nonce;
+        nonce.push_back(UMTS_AUTH_TYPE_TAG);
+        nonce.push_back(UMTS_AUTH_CHALLENGE_RES_LEN);
+        for (int i = 0; i < UMTS_AUTH_CHALLENGE_RES_LEN; i++) {
+            nonce.push_back(i);
+        }
+        nonce.push_back(0xFF); // ckLen exceeds nonce size
+        nonce.push_back(0xFF);
+        while (static_cast<int>(nonce.size()) < UMTS_AUTH_RESPONSE_CONTENT_LEN) {
+            nonce.push_back(0);
+        }
+        EXPECT_EQ(pStaStateMachine->ParseAndFillUmtsAuthParam(nonce), "");
+    }
+
+    void ParseAndFillUmtsAuthParamIkLenOobTest()
+    {
+        std::vector<uint8_t> nonce;
+        nonce.push_back(UMTS_AUTH_TYPE_TAG);
+        nonce.push_back(UMTS_AUTH_CHALLENGE_RES_LEN);
+        for (int i = 0; i < UMTS_AUTH_CHALLENGE_RES_LEN; i++) {
+            nonce.push_back(i);
+        }
+        nonce.push_back(UMTS_AUTH_CHALLENGE_CK_LEN);
+        for (int i = 0; i < UMTS_AUTH_CHALLENGE_CK_LEN; i++) {
+            nonce.push_back(i);
+        }
+        nonce.push_back(0xFF); // ikLen exceeds nonce size
+        nonce.push_back(0xFF);
+        while (static_cast<int>(nonce.size()) < UMTS_AUTH_RESPONSE_CONTENT_LEN) {
+            nonce.push_back(0);
+        }
+        EXPECT_EQ(pStaStateMachine->ParseAndFillUmtsAuthParam(nonce), "");
+    }
+
+    void ParseAndFillUmtsAuthParamResLenMaxTest()
+    {
+        // resLen at protocol limit (16), full response is exactly UMTS_AUTH_RESPONSE_CONTENT_LEN bytes
+        std::vector<uint8_t> nonce;
+        nonce.push_back(UMTS_AUTH_TYPE_TAG);
+        nonce.push_back(UMTS_AUTH_CHALLENGE_RES_LEN);
+        for (int i = 0; i < UMTS_AUTH_CHALLENGE_RES_LEN; i++) {
+            nonce.push_back(i);
+        }
+        nonce.push_back(UMTS_AUTH_CHALLENGE_CK_LEN);
+        for (int i = 0; i < UMTS_AUTH_CHALLENGE_CK_LEN; i++) {
+            nonce.push_back(i);
+        }
+        nonce.push_back(UMTS_AUTH_CHALLENGE_IK_LEN);
+        for (int i = 0; i < UMTS_AUTH_CHALLENGE_IK_LEN; i++) {
+            nonce.push_back(i);
+        }
+        EXPECT_EQ(static_cast<int>(nonce.size()), UMTS_AUTH_RESPONSE_CONTENT_LEN);
+        std::string result = pStaStateMachine->ParseAndFillUmtsAuthParam(nonce);
+        EXPECT_NE(result, "");
+        EXPECT_EQ(result.find("UMTS-AUTH:"), 0);
+        EXPECT_NE(result.find("000102030405060708090a0b0c0d0e0f"), std::string::npos);
+    }
+
+    void ParseAndFillUmtsAuthParamResLenExceedProtoLimitTest()
+    {
+        // resLen exceeds protocol limit (16) but stays within nonce.size()
+        std::vector<uint8_t> nonce;
+        nonce.push_back(UMTS_AUTH_TYPE_TAG);
+        nonce.push_back(UMTS_AUTH_CHALLENGE_RES_LEN + 1); // exceeds protocol limit
+        while (static_cast<int>(nonce.size()) < UMTS_AUTH_RESPONSE_CONTENT_LEN) {
+            nonce.push_back(0);
+        }
+        EXPECT_EQ(pStaStateMachine->ParseAndFillUmtsAuthParam(nonce), "");
+    }
+
+    void ParseAndFillUmtsAuthParamCkLenExceedProtoLimitTest()
+    {
+        // ckLen exceeds protocol limit (16) but stays within nonce.size()
+        std::vector<uint8_t> nonce;
+        nonce.push_back(UMTS_AUTH_TYPE_TAG);
+        nonce.push_back(UMTS_AUTH_CHALLENGE_RES_LEN);
+        for (int i = 0; i < UMTS_AUTH_CHALLENGE_RES_LEN; i++) {
+            nonce.push_back(i);
+        }
+        nonce.push_back(UMTS_AUTH_CHALLENGE_CK_LEN + 1); // exceeds protocol limit
+        while (static_cast<int>(nonce.size()) < UMTS_AUTH_RESPONSE_CONTENT_LEN) {
+            nonce.push_back(0);
+        }
+        EXPECT_EQ(pStaStateMachine->ParseAndFillUmtsAuthParam(nonce), "");
+    }
+
+    void ParseAndFillUmtsAuthParamIkLenExceedProtoLimitTest()
+    {
+        // ikLen exceeds protocol limit (16) but stays within nonce.size()
+        std::vector<uint8_t> nonce;
+        nonce.push_back(UMTS_AUTH_TYPE_TAG);
+        nonce.push_back(UMTS_AUTH_CHALLENGE_RES_LEN);
+        for (int i = 0; i < UMTS_AUTH_CHALLENGE_RES_LEN; i++) {
+            nonce.push_back(i);
+        }
+        nonce.push_back(UMTS_AUTH_CHALLENGE_CK_LEN);
+        for (int i = 0; i < UMTS_AUTH_CHALLENGE_CK_LEN; i++) {
+            nonce.push_back(i);
+        }
+        nonce.push_back(UMTS_AUTH_CHALLENGE_IK_LEN + 1); // exceeds protocol limit
+        while (static_cast<int>(nonce.size()) < UMTS_AUTH_RESPONSE_CONTENT_LEN) {
+            nonce.push_back(0);
+        }
+        EXPECT_EQ(pStaStateMachine->ParseAndFillUmtsAuthParam(nonce), "");
+    }
+
+    void ParseAndFillUmtsAuthParamAutsLenExceedProtoLimitTest()
+    {
+        // autsLen exceeds protocol limit (16) but stays within nonce.size()
+        std::vector<uint8_t> nonce;
+        nonce.push_back(UMTS_AUTS_TYPE_TAG);
+        nonce.push_back(UMTS_AUTH_CHALLENGE_AUTS_LEN + 1); // exceeds protocol limit
+        while (static_cast<int>(nonce.size()) < UMTS_AUTH_RESPONSE_CONTENT_LEN) {
+            nonce.push_back(0);
+        }
+        EXPECT_EQ(pStaStateMachine->ParseAndFillUmtsAuthParam(nonce), "");
     }
 
     void GetUmtsAuthResponseTest()
@@ -3038,6 +3355,36 @@ HWTEST_F(StaStateMachineTest, GetGsmAuthResponseWithoutLengthTest, TestSize.Leve
     GetGsmAuthResponseWithoutLengthTest();
 }
 
+HWTEST_F(StaStateMachineTest, ParseGsmAuthResponseValidTest, TestSize.Level1)
+{
+    ParseGsmAuthResponseValidTest();
+}
+
+HWTEST_F(StaStateMachineTest, ParseGsmAuthResponseEmptyNonceTest, TestSize.Level1)
+{
+    ParseGsmAuthResponseEmptyNonceTest();
+}
+
+HWTEST_F(StaStateMachineTest, ParseGsmAuthResponseSresLenZeroTest, TestSize.Level1)
+{
+    ParseGsmAuthResponseSresLenZeroTest();
+}
+
+HWTEST_F(StaStateMachineTest, ParseGsmAuthResponseSresLenExceedProtoLimitTest, TestSize.Level1)
+{
+    ParseGsmAuthResponseSresLenExceedProtoLimitTest();
+}
+
+HWTEST_F(StaStateMachineTest, ParseGsmAuthResponseKcLenZeroTest, TestSize.Level1)
+{
+    ParseGsmAuthResponseKcLenZeroTest();
+}
+
+HWTEST_F(StaStateMachineTest, ParseGsmAuthResponseKcLenExceedProtoLimitTest, TestSize.Level1)
+{
+    ParseGsmAuthResponseKcLenExceedProtoLimitTest();
+}
+
 HWTEST_F(StaStateMachineTest, PreWpaEapUmtsAuthEventTest, TestSize.Level1)
 {
     PreWpaEapUmtsAuthEventTest();
@@ -3053,6 +3400,90 @@ HWTEST_F(StaStateMachineTest, ParseAndFillUmtsAuthParamTest, TestSize.Level1)
 {
     ParseAndFillUmtsAuthParamTest();
     EXPECT_FALSE(g_errLog.find("service is null")!=std::string::npos);
+}
+
+HWTEST_F(StaStateMachineTest, ParseAndFillUmtsAuthParamEmptyNonceTest, TestSize.Level1)
+{
+    ParseAndFillUmtsAuthParamEmptyNonceTest();
+}
+
+HWTEST_F(StaStateMachineTest, ParseAndFillUmtsAuthParamTooShortNonceTest, TestSize.Level1)
+{
+    ParseAndFillUmtsAuthParamTooShortNonceTest();
+}
+
+HWTEST_F(StaStateMachineTest, ParseAndFillUmtsAuthParamUmtsAuthTooShortTest, TestSize.Level1)
+{
+    ParseAndFillUmtsAuthParamUmtsAuthTooShortTest();
+}
+
+HWTEST_F(StaStateMachineTest, ParseAndFillUmtsAuthParamUmtsAuthValidTest, TestSize.Level1)
+{
+    ParseAndFillUmtsAuthParamUmtsAuthValidTest();
+}
+
+HWTEST_F(StaStateMachineTest, ParseAndFillUmtsAuthParamAutsValidTest, TestSize.Level1)
+{
+    ParseAndFillUmtsAuthParamAutsValidTest();
+}
+
+HWTEST_F(StaStateMachineTest, ParseAndFillUmtsAuthParamAutsValidLenMaxTest, TestSize.Level1)
+{
+    ParseAndFillUmtsAuthParamAutsValidLenMaxTest();
+}
+
+HWTEST_F(StaStateMachineTest, ParseAndFillUmtsAuthParamAutsLenOobTest, TestSize.Level1)
+{
+    ParseAndFillUmtsAuthParamAutsLenOobTest();
+}
+
+HWTEST_F(StaStateMachineTest, ParseUmtsAutsTooShortTest, TestSize.Level1)
+{
+    ParseUmtsAutsTooShortTest();
+}
+
+HWTEST_F(StaStateMachineTest, ParseUmtsAuthResponseTooShortTest, TestSize.Level1)
+{
+    ParseUmtsAuthResponseTooShortTest();
+}
+HWTEST_F(StaStateMachineTest, ParseAndFillUmtsAuthParamResLenOobTest, TestSize.Level1)
+{
+    ParseAndFillUmtsAuthParamResLenOobTest();
+}
+
+HWTEST_F(StaStateMachineTest, ParseAndFillUmtsAuthParamCkLenOobTest, TestSize.Level1)
+{
+    ParseAndFillUmtsAuthParamCkLenOobTest();
+}
+
+HWTEST_F(StaStateMachineTest, ParseAndFillUmtsAuthParamIkLenOobTest, TestSize.Level1)
+{
+    ParseAndFillUmtsAuthParamIkLenOobTest();
+}
+
+HWTEST_F(StaStateMachineTest, ParseAndFillUmtsAuthParamResLenMaxTest, TestSize.Level1)
+{
+    ParseAndFillUmtsAuthParamResLenMaxTest();
+}
+
+HWTEST_F(StaStateMachineTest, ParseAndFillUmtsAuthParamResLenExceedProtoLimitTest, TestSize.Level1)
+{
+    ParseAndFillUmtsAuthParamResLenExceedProtoLimitTest();
+}
+
+HWTEST_F(StaStateMachineTest, ParseAndFillUmtsAuthParamCkLenExceedProtoLimitTest, TestSize.Level1)
+{
+    ParseAndFillUmtsAuthParamCkLenExceedProtoLimitTest();
+}
+
+HWTEST_F(StaStateMachineTest, ParseAndFillUmtsAuthParamIkLenExceedProtoLimitTest, TestSize.Level1)
+{
+    ParseAndFillUmtsAuthParamIkLenExceedProtoLimitTest();
+}
+
+HWTEST_F(StaStateMachineTest, ParseAndFillUmtsAuthParamAutsLenExceedProtoLimitTest, TestSize.Level1)
+{
+    ParseAndFillUmtsAuthParamAutsLenExceedProtoLimitTest();
 }
 
 HWTEST_F(StaStateMachineTest, GetUmtsAuthResponseTest, TestSize.Level1)
