@@ -2963,6 +2963,10 @@ void SelfCureStateMachine::UpdateSelfcureState(int currentCureLevel, bool isSelf
         WIFI_LOGW("selfCureOnGoing state is not change");
         return;
     }
+    IEnhanceService *pEnhanceService = WifiServiceManager::GetInstance().GetEnhanceServiceInst();
+    if (pEnhanceService != nullptr) {
+        pEnhanceService->SetWifiSelfCureState(isSelfCureOnGoing);
+    }
     isSelfCureOnGoing_ = isSelfCureOnGoing;
     WIFI_LOGI("UpdateSelfcureState currentCureLevel: %{public}d, isSelfCureOnGoing: %{public}d",
         currentCureLevel, isSelfCureOnGoing);

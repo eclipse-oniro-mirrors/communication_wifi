@@ -3662,6 +3662,10 @@ void StaStateMachine::ApReconnectState::GoInState()
     WIFI_LOGI("ApReconnectState GoInState function. start reconnect timer!");
     pStaStateMachine->isWaitForReconnect_ = true;
     pStaStateMachine->StartTimer(static_cast<int>(CMD_AP_RECONN_TIMEOUT_CHECK), STA_AP_RECONNECT_TIMEOUT);
+    IEnhanceService *pEnhanceService = WifiServiceManager::GetInstance().GetEnhanceServiceInst();
+    if (pEnhanceService != nullptr) {
+        pEnhanceService->SetWifiSelfCureState(true);
+    }
 }
 
 void StaStateMachine::ApReconnectState::GoOutState()
@@ -3671,6 +3675,10 @@ void StaStateMachine::ApReconnectState::GoOutState()
     pStaStateMachine->isWaitForReconnect_ = false;
     pStaStateMachine->reconnType_ = RECONNECT_TYPE_UNKNOWN;
     pStaStateMachine->StopTimer(static_cast<int>(CMD_AP_RECONN_TIMEOUT_CHECK));
+    IEnhanceService *pEnhanceService = WifiServiceManager::GetInstance().GetEnhanceServiceInst();
+    if (pEnhanceService != nullptr) {
+        pEnhanceService->SetWifiSelfCureState(false);
+    }
 }
 
 void StaStateMachine::ApReconnectState::GetGatewayMac(std::string &gatewayMac)
