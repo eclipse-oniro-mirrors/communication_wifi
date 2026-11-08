@@ -271,6 +271,18 @@ if (defined(ohos_lite)) {
       defines += [ "FEATURE_AP_EXTENSION" ]
     }
 
+    if (wifi_feature_vap_csa_follow) {
+      defines += [ "FEATURE_VAP_CSA_FOLLOW" ]
+    }
+
+    if (wifi_feature_semi_keep_go_hml_alive) {
+      defines += [ "FEATURE_SEMI_KEEP_GO_HML_ALIVE" ]
+    }
+
+    if (wifi_feature_ap_sta_connect_exclusion) {
+      defines += [ "FEATURE_AP_STA_CONNECT_EXCLUSION" ]
+    }
+
     if (wifi_feature_sta_ap_exclusion) {
       defines += [ "FEATURE_STA_AP_EXCLUSION" ]
     }

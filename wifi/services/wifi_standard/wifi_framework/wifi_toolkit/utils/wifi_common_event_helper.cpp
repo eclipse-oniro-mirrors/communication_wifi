@@ -209,6 +209,24 @@ bool WifiCommonEventHelper::PublishP2pGroupStateChangedEvent(const int &code, co
     return WifiCommonEventHelper::PublishEvent(COMMON_EVENT_WIFI_P2P_GROUP_STATE_CHANGED, code, data);
 }
 
+#ifdef FEATURE_VAP_CSA_FOLLOW
+bool WifiCommonEventHelper::PublishP2pChannelSwitchEvent(int frequency)
+{
+    std::vector<std::string> permissions;
+    permissions.push_back(COMMON_EVENT_GET_WIFI_INFO_PERMISSION);
+    return WifiCommonEventHelper::PublishEvent(COMMON_EVENT_WIFI_P2P_CH_SWITCH, frequency, "P2pChannelSwitch",
+        permissions);
+}
+
+bool WifiCommonEventHelper::PublishApChannelSwitchEvent(int frequency)
+{
+    std::vector<std::string> permissions;
+    permissions.push_back(COMMON_EVENT_GET_WIFI_INFO_PERMISSION);
+    return WifiCommonEventHelper::PublishEvent(COMMON_EVENT_WIFI_AP_CH_SWITCH, frequency, "ApChannelSwitch",
+        permissions);
+}
+#endif
+
 bool WifiCommonEventHelper::PublishNotAvailableDialog()
 {
     return WifiCommonEventHelper::PublishEvent(COMMON_EVENT_NOT_AVAILABLE_DIALOG, CANCEL_DIAG, "NotAvailableDialog");

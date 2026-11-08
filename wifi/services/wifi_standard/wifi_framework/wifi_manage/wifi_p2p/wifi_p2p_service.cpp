@@ -69,6 +69,9 @@ ErrCode WifiP2pService::DisableP2p()
 
 ErrCode WifiP2pService::SetEnhanceService(IEnhanceService* enhanceService)
 {
+#ifdef FEATURE_VAP_CSA_FOLLOW
+    pEnhanceService_ = enhanceService;
+#endif
     p2pStateMachine.SetEnhanceService(enhanceService);
     return ErrCode::WIFI_OPT_SUCCESS;
 }
@@ -490,6 +493,24 @@ ErrCode WifiP2pService::HandleBusinessSAException(int systemAbilityId)
     return WIFI_OPT_SUCCESS;
 }
 
+static int GetValid5GRecommendChannel(int default5GChannel)
+{
+    ChannelsTable channels;
+    std::vector<int32_t> vec5GChannels;
+    WifiChannelHelper::GetInstance().GetValidChannels(channels);
+    if (channels.find(BandType::BAND_5GHZ) != channels.end()) {
+        vec5GChannels = channels[BandType::BAND_5GHZ];
+    }
+    if (vec5GChannels.empty()) {
+        return WIFI_OPT_INVALID_PARAM;
+    }
+    if (std::find(vec5GChannels.begin(), vec5GChannels.end(), default5GChannel) != vec5GChannels.end()) {
+        return default5GChannel;
+    }
+
+    return vec5GChannels[0];
+}
+
 int WifiP2pService::GetP2pRecommendChannel(void)
 {
     WIFI_LOGI("GetP2pRecommendChannel");
@@ -498,6 +519,23 @@ int WifiP2pService::GetP2pRecommendChannel(void)
     WifiCountryCodeManager::GetInstance().GetWifiCountryCode(countryCode);
     if (countryCode == COUNTRY_CODE_JAPAN_L || countryCode == COUNTRY_CODE_JAPAN_C) {
         return COMMON_USING_2G_CHANNEL;
+    }
+
+    int frequency = 0;
+#ifdef FEATURE_VAP_CSA_FOLLOW
+    if (pEnhanceService_ != nullptr) {
+        frequency = pEnhanceService_->GetChba0Freq();
+    }
+#else
+    WifiErrorNo ret = WifiP2PHalInterface::GetInstance().GetChba0Freq(frequency);
+    if (ret != WIFI_HAL_OPT_OK) {
+        frequency = 0;
+    }
+#endif
+    if (frequency != 0) {
+        int channel = FrequencyToChannel(frequency);
+        WIFI_LOGI("Recommend channel by chba0Freq: %{public}d", channel);
+        return channel;
     }
 
     int channel = 0; // 0 is invalid channel
@@ -518,20 +556,9 @@ int WifiP2pService::GetP2pRecommendChannel(void)
         }
     }
 
-    ChannelsTable channels;
-    std::vector<int32_t> vec5GChannels;
-    WifiChannelHelper::GetInstance().GetValidChannels(channels);
-    if (channels.find(BandType::BAND_5GHZ) != channels.end()) {
-        vec5GChannels = channels[BandType::BAND_5GHZ];
-    }
-
-    if (!vec5GChannels.empty()) {
-        auto it = std::find(vec5GChannels.begin(), vec5GChannels.end(), COMMON_USING_5G_CHANNEL);
-        if (it != vec5GChannels.end()) {
-            channel = COMMON_USING_5G_CHANNEL;
-        } else {
-            channel = vec5GChannels[0];
-        }
+    int valid5GChannel = GetValid5GRecommendChannel(COMMON_USING_5G_CHANNEL);
+    if (valid5GChannel != WIFI_OPT_INVALID_PARAM) {
+        channel = valid5GChannel;
         WIFI_LOGI("Recommend 5G channel: %{public}d", channel);
         return channel;
     }

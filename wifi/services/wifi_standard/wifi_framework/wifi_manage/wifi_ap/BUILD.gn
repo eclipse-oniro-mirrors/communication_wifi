@@ -103,6 +103,10 @@ ohos_shared_library("wifi_ap_service") {
     "FEATURE_AP_SUPPORT",
   ]
 
+  if (wifi_feature_vap_csa_follow) {
+    defines += [ "FEATURE_VAP_CSA_FOLLOW" ]
+  }
+
   if (wifi_feature_with_dhcp_disable) {
     defines += [ "WIFI_DHCP_DISABLED" ]
   }

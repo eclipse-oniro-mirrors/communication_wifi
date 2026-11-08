@@ -622,6 +622,24 @@ public:
      */
     virtual void SetEnhanceP2pSignalPollInfo(bool needKeepAlgo, const WifiSignalPollInfo &info,
         const std::string p2pInterfaceName) = 0;
+
+#ifdef FEATURE_VAP_CSA_FOLLOW
+    /**
+     * @Description Get the current HML group frequency
+     *
+     * @return int  - HML group frequency in MHz, 0 if no HML group
+     */
+     virtual int GetChba0Freq() = 0;
+
+    /**
+     * @Description Wait for GO/HML to finish the follow switch to the target STA channel
+     * before STA association
+     *
+     * @param targetStaFreq - target STA frequency in MHz
+     * @return int  - true: safe to continue STA association
+     */
+     virtual bool StaWaitForVapSwitch(int targetStaFreq) = 0;
+#endif
 };
 }  // namespace Wifi
 }  // namespace OHOS

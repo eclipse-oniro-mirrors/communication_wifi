@@ -47,6 +47,12 @@ declare_args() {
   }
   wifi_feature_with_data_report = false
   wifi_feature_sta_ap_exclusion = true
+  # vap_csa_follow：多vap信道跟随（sta入网前先把GO/HML迁移到目标信道，避免3vap+DBAC被驱动拒绝）
+  wifi_feature_vap_csa_follow = false
+  # semi_keep_go_hml_alive：关wlan进半开时不再全停manager，只切角色，保住P2P/HML已建组
+  wifi_feature_semi_keep_go_hml_alive = false
+  # ap_sta_connect_exclusion：热点与STA连接互斥，打开一方关闭另一方，先关再开，同步等待。
+  wifi_feature_ap_sta_connect_exclusion = false
   wifi_feature_with_random_mac_addr = true
   wifi_feature_with_hpf_supported = true
   if (factory == true) {
