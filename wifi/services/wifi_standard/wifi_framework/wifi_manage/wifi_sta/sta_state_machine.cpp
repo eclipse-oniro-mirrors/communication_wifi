@@ -6046,6 +6046,8 @@ std::string StaStateMachine::BuildMdmEventContent(const std::string &ssid, const
         cJSON_AddStringToObject(root, "restrictedType", restrictedType.c_str()) == nullptr ||
         cJSON_AddNumberToObject(root, "happenTime", static_cast<double>(happenTime)) == nullptr) {
         WIFI_LOGE("BuildMdmEventContent: add cJSON item failed");
+        cJSON_Delete(root);
+        return "";
     } 
     char *jsonStr = cJSON_PrintUnformatted(root);
     if (jsonStr == nullptr) {
@@ -6068,7 +6070,7 @@ void StaStateMachine::ReportMdmRestrictedEvent(const std::string &ssid, const st
     time_t now = time(nullptr);
     if (dedupKey == lastMdmReportKey_ && now >= lastMdmReportTime_ &&
         now - lastMdmReportTime_ < MDM_REPORT_DEDUP_WINDOW_S) {
-        WIFI_LOGD("ReportMdmRestrictedEvent: duplicate event suppressed, type={public}s", restrictedType.c_str());
+        WIFI_LOGD("ReportMdmRestrictedEvent: duplicate event suppressed, type=%{public}s", restrictedType.c_str());
         return;
     }
     std::string bundleName = "";

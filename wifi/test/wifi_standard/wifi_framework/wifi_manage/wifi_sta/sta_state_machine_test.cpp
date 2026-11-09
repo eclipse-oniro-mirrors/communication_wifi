@@ -4086,7 +4086,7 @@ HWTEST_F(StaStateMachineTest, BuildMdmEventContentEmptyFieldsTest, TestSize.Leve
     cJSON *ssidItem = cJSON_GetObjectItem(root, "ssid");
     ASSERT_NE(ssidItem, nullptr);
     EXPECT_STREQ(ssidItem->valuestring, "");
-    cJSON *happendTimeItem = cJSON_GetObjectItem(root, "happenTime");
+    cJSON *happenTimeItem = cJSON_GetObjectItem(root, "happenTime");
     ASSERT_NE(happenTimeItem, nullptr);
     EXPECT_GT(happenTimeItem->valuedouble, 0);
     cJSON_Delete(root);
@@ -4117,8 +4117,8 @@ HWTEST_F(StaStateMachineTest, BuildMdmEventContentHappenTimeTest, TestSize.Level
     ASSERT_FALSE(content.empty());
     cJSON *root = cJSON_Parse(content.c_str());
     ASSERT_NE(root, nullptr);
-    cJSON *happendTimeItem = cJSON_GetObjectItem(root, "happenTime");
-    ASSERT_NE(root, nullptr);
+    cJSON *happenTimeItem = cJSON_GetObjectItem(root, "happenTime");
+    ASSERT_NE(happenTimeItem, nullptr);
     /* happenTime 为秒级时间戳，应落在本次调用前后的合理区间内 */
     EXPECT_GE(static_cast<int64_t>(happenTimeItem->valuedouble), before);
     EXPECT_LE(static_cast<int64_t>(happenTimeItem->valuedouble), after);
@@ -4127,17 +4127,17 @@ HWTEST_F(StaStateMachineTest, BuildMdmEventContentHappenTimeTest, TestSize.Level
 
 HWTEST_F(StaStateMachineTest, ReportMdmRestrictedEventDuplicateSuppressedTest, TestSize.Level1)
 {
-    /* 同一（bssid, restrictedType, uid）在30s窗口内重复出发被抑制。
-     * 抑制分支直接return，不会刷新去重时间戳， 因此用时间戳是否变化判断是否被抑制。 */
-     pStaStateMachine->ReportMdmRestrictedEvent("TestAP", "aa:bb:cc:dd:ee:ff", "BLOCK_LIST");
-     const std::string firstKey = pStaStateMachine->lastMdmReportKey_;
-     ASSERT_FALSE(firstKey.empty());
-     /* 置为窗口内且明显区别于当前时间的标记值 */
-     const time_t marker = time(nullptr) - 10;
-     pStaStateMachine->lastMdmReportTime_ = marker;
-     pStaStateMachine->ReportMdmRestrictedEvent("TestAP", "aa:bb:cc:dd:ee:ff", "BLOCK_LIST");
-     EXPECT_EQ(pStaStateMachine->lastMdmReportKey_, firstKey);
-     EXPECT_EQ(pStaStateMachine->lastMdmReportTime_, marker);
+    /* 同一(bssid, restrictedType, uid)在30s窗口内重复触发被抑制。
+     * 抑制分支直接return，不会刷新去重时间戳，因此用时间戳是否变化判断是否被抑制。 */
+    pStaStateMachine->ReportMdmRestrictedEvent("TestAP", "aa:bb:cc:dd:ee:ff", "BLOCK_LIST");
+    const std::string firstKey = pStaStateMachine->lastMdmReportKey_;
+    ASSERT_FALSE(firstKey.empty());
+    /* 置为窗口内且明显区别于当前时间的标记值 */
+    const time_t marker = time(nullptr) - 10;
+    pStaStateMachine->lastMdmReportTime_ = marker;
+    pStaStateMachine->ReportMdmRestrictedEvent("TestAP", "aa:bb:cc:dd:ee:ff", "BLOCK_LIST");
+    EXPECT_EQ(pStaStateMachine->lastMdmReportKey_, firstKey);
+    EXPECT_EQ(pStaStateMachine->lastMdmReportTime_, marker);
 }
 
 HWTEST_F(StaStateMachineTest, ReportMdmRestrictedEventWindowExpiredTest, TestSize.Level1)
@@ -4164,7 +4164,7 @@ HWTEST_F(StaStateMachineTest, ReportMdmRestrictedEventDifferentBssidNotSuppresse
     pStaStateMachine->lastMdmReportTime_ = marker;
     pStaStateMachine->ReportMdmRestrictedEvent("TestAP", "11:22:33:44:55:66", "BLOCK_LIST");
     EXPECT_NE(pStaStateMachine->lastMdmReportKey_, firstKey);
-    EXPECT_GT(pStaStateMachine->lastMdmReportTime_, expired);
+    EXPECT_GT(pStaStateMachine->lastMdmReportTime_, marker);
 }
 
 HWTEST_F(StaStateMachineTest, ReportMdmRestrictedEventDifferentTypeNotSuppressedTest, TestSize.Level1)
@@ -4177,7 +4177,7 @@ HWTEST_F(StaStateMachineTest, ReportMdmRestrictedEventDifferentTypeNotSuppressed
     pStaStateMachine->lastMdmReportTime_ = marker;
     pStaStateMachine->ReportMdmRestrictedEvent("TestAP", "aa:bb:cc:dd:ee:ff", "MDM_RESTRICTED");
     EXPECT_NE(pStaStateMachine->lastMdmReportKey_, firstKey);
-    EXPECT_GT(pStaStateMachine->lastMdmReportTime_, expired);
+    EXPECT_GT(pStaStateMachine->lastMdmReportTime_, marker);
 }
 #endif
 } // namespace Wifi
