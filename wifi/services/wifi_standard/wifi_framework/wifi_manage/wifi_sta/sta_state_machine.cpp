@@ -6048,7 +6048,7 @@ std::string StaStateMachine::BuildMdmEventContent(const std::string &ssid, const
         WIFI_LOGE("BuildMdmEventContent: add cJSON item failed");
         cJSON_Delete(root);
         return "";
-    } 
+    }
     char *jsonStr = cJSON_PrintUnformatted(root);
     if (jsonStr == nullptr) {
         WIFI_LOGE("BuildMdmEventContent: print cJSON failed");
