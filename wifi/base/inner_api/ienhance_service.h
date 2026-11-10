@@ -545,6 +545,13 @@ public:
     virtual ErrCode SetBtCoexistState(CoexistState state, CoexistReason reason) = 0;
 
     /**
+     * @Description Set wifi fast reconnect and self-cure ongoing state
+     *
+     * @param isEnable - true: start 2s delay notify timer; false: stop the timer
+     */
+    virtual void SetWifiSelfCureState(bool isEnable) = 0;
+
+    /**
      * @Description Set game latency gain statistics feature enabled state
      *
      * @param enabled - whether the feature is enabled

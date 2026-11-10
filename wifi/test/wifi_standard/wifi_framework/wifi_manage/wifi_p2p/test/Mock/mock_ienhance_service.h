@@ -80,6 +80,7 @@ public:
     MOCK_METHOD1(NotifyGenelinkSelectedConfig, ErrCode(WifiDeviceConfig &));
     MOCK_METHOD1(RegisterStaEnhanceCallback, ErrCode(StaEnhanceCallback));
     MOCK_METHOD2(SetBtCoexistState, ErrCode(CoexistState, CoexistReason));
+    MOCK_METHOD1(SetWifiSelfCureState, void(bool));
     MOCK_METHOD2(SetGameLatencyFeatureEnabled, void(bool, const std::string &));
     MOCK_METHOD3(OnWifiDeviceConfigChange, void(int32_t, const WifiDeviceConfig &, bool));
     MOCK_METHOD2(IsSameGateway, bool(const std::string &, const std::string &));
