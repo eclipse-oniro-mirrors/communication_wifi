@@ -122,6 +122,41 @@ ErrCode WifiP2pImpl::RequestService(const WifiP2pDevice &device, const WifiP2pSe
     return client_->RequestService(device, request);
 }
 
+ErrCode WifiP2pImpl::AddP2pServiceRequest(const WifiP2pServiceRequest &request)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    RETURN_IF_FAIL(GetWifiP2pProxy());
+    return client_->AddP2pServiceRequest(request);
+}
+
+ErrCode WifiP2pImpl::RemoveP2pServiceRequest(const WifiP2pServiceRequest &request)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    RETURN_IF_FAIL(GetWifiP2pProxy());
+    return client_->RemoveP2pServiceRequest(request);
+}
+
+ErrCode WifiP2pImpl::ClearP2pServiceRequests(void)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    RETURN_IF_FAIL(GetWifiP2pProxy());
+    return client_->ClearP2pServiceRequests();
+}
+
+ErrCode WifiP2pImpl::AddDnsSdServiceRequest(const std::string &instanceName, const std::string &serviceType)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    RETURN_IF_FAIL(GetWifiP2pProxy());
+    return client_->AddDnsSdServiceRequest(instanceName, serviceType);
+}
+
+ErrCode WifiP2pImpl::AddUpnpServiceRequest(const std::string &searchTarget)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    RETURN_IF_FAIL(GetWifiP2pProxy());
+    return client_->AddUpnpServiceRequest(searchTarget);
+}
+
 ErrCode WifiP2pImpl::PutLocalP2pService(const WifiP2pServiceInfo &srvInfo)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -276,6 +311,13 @@ ErrCode WifiP2pImpl::QueryLocalP2pServices(std::vector<WifiP2pServiceInfo> &serv
     std::lock_guard<std::mutex> lock(mutex_);
     RETURN_IF_FAIL(GetWifiP2pProxy());
     return client_->QueryLocalP2pServices(services);
+}
+
+ErrCode WifiP2pImpl::QueryP2pServiceRequests(std::vector<WifiP2pServiceRequest> &requests)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    RETURN_IF_FAIL(GetWifiP2pProxy());
+    return client_->QueryP2pServiceRequests(requests);
 }
 
 ErrCode WifiP2pImpl::RegisterCallBack(const sptr<IWifiP2pCallback> &callback, const std::vector<std::string> &event)

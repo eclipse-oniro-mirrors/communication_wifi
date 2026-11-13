@@ -1123,6 +1123,9 @@ void WifiInternalEventDispatcher::SendP2pCallbackMsg(sptr<IWifiP2pCallback> &cal
         case WIFI_CBK_MSG_P2P_CHR_ERRCODE_REPORT:
             callback->OnP2pChrErrCodeReport(msg.errCode);
             break;
+        case WIFI_CBK_MSG_P2P_SERVICE_DISCOVERY_RESULT:
+            callback->OnP2pServiceDiscoveryResult(msg.p2pServiceDiscoveryInfo, msg.p2pDevice);
+            break;
         default:
             WIFI_LOGI("UnKnown msgcode %{public}d", msg.msgCode);
             break;

@@ -244,6 +244,13 @@ public:
     virtual ErrCode QueryLocalP2pServices(std::vector<WifiP2pServiceInfo> &services) = 0;
 
     /**
+     * @Description - Query pending P2P service discovery requests.
+     * @param requests - pending WifiP2pServiceRequest list
+     * @return ErrCode - operation result
+     */
+    virtual ErrCode QueryP2pServiceRequests(std::vector<WifiP2pServiceRequest> &requests) = 0;
+
+    /**
      * @Description - The interface of register p2p service callbacks,
      * @param  callbacks - information of callbacks.
      * @return ErrCode - operation result
@@ -441,6 +448,41 @@ public:
      * @param screenState - MODE_STATE_OPEN (screen on)/MODE_STATE_CLOSE (Screen off)
      */
     virtual void OnScreenStateChanged(int screenState) = 0;
+
+    /**
+     * @Description - Add a pending P2P service discovery request.
+     * @param request - service request information
+     * @return ErrCode - operation result
+     */
+    virtual ErrCode AddP2pServiceRequest(const WifiP2pServiceRequest &request) = 0;
+
+    /**
+     * @Description - Remove a pending P2P service discovery request.
+     * @param request - service request information
+     * @return ErrCode - operation result
+     */
+    virtual ErrCode RemoveP2pServiceRequest(const WifiP2pServiceRequest &request) = 0;
+
+    /**
+     * @Description - Clear all pending P2P service discovery requests.
+     * @return ErrCode - operation result
+     */
+    virtual ErrCode ClearP2pServiceRequests() = 0;
+
+    /**
+     * @Description - Add Bonjour (DNS-SD) P2P service discovery request (create then add).
+     * @param instanceName - DNS-SD instance name, can be empty
+     * @param serviceType - DNS-SD service type, can be empty
+     * @return ErrCode - operation result
+     */
+    virtual ErrCode AddDnsSdServiceRequest(const std::string &instanceName, const std::string &serviceType) = 0;
+
+    /**
+     * @Description - Add UPnP P2P service discovery request (create then add).
+     * @param searchTarget - UPnP search target, can be empty
+     * @return ErrCode - operation result
+     */
+    virtual ErrCode AddUpnpServiceRequest(const std::string &searchTarget) = 0;
 };
 } // namespace Wifi
 } // namespace OHOS

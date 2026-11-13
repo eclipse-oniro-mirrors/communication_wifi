@@ -47,6 +47,12 @@ public:
      */
     static WifiP2pDnsSdServiceRequest Create(const std::string &instanceName, const std::string &serviceType);
 
+    /**
+     * @Description Destroy the WifiP2pDnsSdServiceRequest object.
+     *
+     */
+    ~WifiP2pDnsSdServiceRequest() = default;
+
 private:
     /**
      * @Description Construction method.
@@ -68,11 +74,6 @@ private:
      * @param version - DNS version
      */
     WifiP2pDnsSdServiceRequest(const std::string &dnsQuery, int dnsType, int version);
-    /**
-     * @Description Destroy the WifiP2pDnsSdServiceRequest object.
-     *
-     */
-    ~WifiP2pDnsSdServiceRequest() = default;
 };
 }  // namespace Wifi
 }  // namespace OHOS

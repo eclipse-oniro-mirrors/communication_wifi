@@ -275,6 +275,139 @@ ErrCode WifiP2pProxy::RequestService(const WifiP2pDevice &device, const WifiP2pS
     return ErrCode(reply.ReadInt32());
 }
 
+ErrCode WifiP2pProxy::AddP2pServiceRequest(const WifiP2pServiceRequest &request)
+{
+    if (mRemoteDied) {
+        WIFI_LOGW("failed to `%{public}s`,remote service is died!", __func__);
+        return WIFI_OPT_FAILED;
+    }
+    MessageOption option;
+    MessageParcel data;
+    MessageParcel reply;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        WIFI_LOGE("Write interface token error: %{public}s", __func__);
+        return WIFI_OPT_FAILED;
+    }
+    data.WriteInt32(0);
+    WriteWifiP2pServiceRequestOnly(data, request);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(P2PInterfaceCode::WIFI_SVR_CMD_P2P_ADD_SERVICE_REQUEST), data, reply, option);
+    if (error != ERR_NONE) {
+        return WIFI_OPT_FAILED;
+    }
+    int exception = reply.ReadInt32();
+    if (exception) {
+        return WIFI_OPT_FAILED;
+    }
+    return ErrCode(reply.ReadInt32());
+}
+
+ErrCode WifiP2pProxy::RemoveP2pServiceRequest(const WifiP2pServiceRequest &request)
+{
+    if (mRemoteDied) {
+        WIFI_LOGW("failed to `%{public}s`,remote service is died!", __func__);
+        return WIFI_OPT_FAILED;
+    }
+    MessageOption option;
+    MessageParcel data;
+    MessageParcel reply;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        WIFI_LOGE("Write interface token error: %{public}s", __func__);
+        return WIFI_OPT_FAILED;
+    }
+    data.WriteInt32(0);
+    WriteWifiP2pServiceRequestOnly(data, request);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(P2PInterfaceCode::WIFI_SVR_CMD_P2P_REMOVE_SERVICE_REQUEST), data, reply, option);
+    if (error != ERR_NONE) {
+        return WIFI_OPT_FAILED;
+    }
+    int exception = reply.ReadInt32();
+    if (exception) {
+        return WIFI_OPT_FAILED;
+    }
+    return ErrCode(reply.ReadInt32());
+}
+
+ErrCode WifiP2pProxy::ClearP2pServiceRequests(void)
+{
+    if (mRemoteDied) {
+        WIFI_LOGW("failed to `%{public}s`,remote service is died!", __func__);
+        return WIFI_OPT_FAILED;
+    }
+    MessageOption option;
+    MessageParcel data;
+    MessageParcel reply;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        WIFI_LOGE("Write interface token error: %{public}s", __func__);
+        return WIFI_OPT_FAILED;
+    }
+    data.WriteInt32(0);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(P2PInterfaceCode::WIFI_SVR_CMD_P2P_CLEAR_SERVICE_REQUESTS), data, reply, option);
+    if (error != ERR_NONE) {
+        return WIFI_OPT_FAILED;
+    }
+    int exception = reply.ReadInt32();
+    if (exception) {
+        return WIFI_OPT_FAILED;
+    }
+    return ErrCode(reply.ReadInt32());
+}
+
+ErrCode WifiP2pProxy::BuildP2pServiceRequest(MessageParcel &data)
+{
+    MessageOption option;
+    MessageParcel reply;
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(P2PInterfaceCode::WIFI_SVR_CMD_P2P_ADD_TYPED_SERVICE_REQUEST), data, reply, option);
+    if (error != ERR_NONE) {
+        WIFI_LOGE("Set Attr(%{public}d) failed,error code is %{public}d",
+            static_cast<int32_t>(P2PInterfaceCode::WIFI_SVR_CMD_P2P_ADD_TYPED_SERVICE_REQUEST), error);
+        return WIFI_OPT_FAILED;
+    }
+    int exception = reply.ReadInt32();
+    if (exception) {
+        return WIFI_OPT_FAILED;
+    }
+    return ErrCode(reply.ReadInt32());
+}
+
+ErrCode WifiP2pProxy::AddDnsSdServiceRequest(const std::string &instanceName, const std::string &serviceType)
+{
+    if (mRemoteDied) {
+        WIFI_LOGW("failed to `%{public}s`,remote service is died!", __func__);
+        return WIFI_OPT_FAILED;
+    }
+    MessageParcel data;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        WIFI_LOGE("Write interface token error: %{public}s", __func__);
+        return WIFI_OPT_FAILED;
+    }
+    data.WriteInt32(0);
+    data.WriteInt32(static_cast<int32_t>(P2pBuildServiceType::BUILD_DNS_SD));
+    data.WriteCString(instanceName.c_str());
+    data.WriteCString(serviceType.c_str());
+    return BuildP2pServiceRequest(data);
+}
+
+ErrCode WifiP2pProxy::AddUpnpServiceRequest(const std::string &searchTarget)
+{
+    if (mRemoteDied) {
+        WIFI_LOGW("failed to `%{public}s`,remote service is died!", __func__);
+        return WIFI_OPT_FAILED;
+    }
+    MessageParcel data;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        WIFI_LOGE("Write interface token error: %{public}s", __func__);
+        return WIFI_OPT_FAILED;
+    }
+    data.WriteInt32(0);
+    data.WriteInt32(static_cast<int32_t>(P2pBuildServiceType::BUILD_UPNP));
+    data.WriteCString(searchTarget.c_str());
+    return BuildP2pServiceRequest(data);
+}
+
 ErrCode WifiP2pProxy::PutLocalP2pService(const WifiP2pServiceInfo &srvInfo)
 {
     if (mRemoteDied) {
@@ -643,6 +776,11 @@ void WifiP2pProxy::WriteWifiP2pServiceRequest(
     MessageParcel &data, const WifiP2pDevice &device, const WifiP2pServiceRequest &request) const
 {
     WriteWifiP2pDeviceData(data, device);
+    WriteWifiP2pServiceRequestOnly(data, request);
+}
+
+void WifiP2pProxy::WriteWifiP2pServiceRequestOnly(MessageParcel &data, const WifiP2pServiceRequest &request) const
+{
     data.WriteInt32(static_cast<int>(request.GetProtocolType()));
     data.WriteInt32(request.GetTransactionId());
     std::vector<unsigned char> query = request.GetQuery();
@@ -650,7 +788,21 @@ void WifiP2pProxy::WriteWifiP2pServiceRequest(
     for (std::size_t i = 0; i < query.size(); i++) {
         data.WriteInt8(query[i]);
     }
-    return;
+}
+
+void WifiP2pProxy::ReadWifiP2pServiceRequestOnly(MessageParcel &reply, WifiP2pServiceRequest &request) const
+{
+    constexpr int MAX_QUERY_SIZE = 256;
+    request.SetProtocolType(static_cast<P2pServicerProtocolType>(reply.ReadInt32()));
+    request.SetTransactionId(reply.ReadInt32());
+    int size = reply.ReadInt32();
+    std::vector<unsigned char> query;
+    for (int i = 0; i < size; i++) {
+        query.push_back(static_cast<unsigned char>(reply.ReadInt8()));
+    }
+    if (size < MAX_QUERY_SIZE) {
+        request.SetQuery(query);
+    }
 }
 
 void WifiP2pProxy::WriteWifiP2pDeviceData(MessageParcel &data, const WifiP2pDevice &device) const
@@ -1193,6 +1345,7 @@ ErrCode WifiP2pProxy::QueryLocalP2pServices(std::vector<WifiP2pServiceInfo> &ser
         return ErrCode(ret);
     }
     const size_t MAX_LOCAL_P2P_SERVICES = 512;
+
     int size = reply.ReadInt32();
     if (size > static_cast<int>(MAX_LOCAL_P2P_SERVICES)) {
         WIFI_LOGE("Get local p2p service size error: %{public}d", size);
@@ -1202,6 +1355,51 @@ ErrCode WifiP2pProxy::QueryLocalP2pServices(std::vector<WifiP2pServiceInfo> &ser
         WifiP2pServiceInfo info;
         ReadWifiP2pServiceInfo(reply, info);
         services.emplace_back(info);
+    }
+    return WIFI_OPT_SUCCESS;
+}
+
+ErrCode WifiP2pProxy::QueryP2pServiceRequests(std::vector<WifiP2pServiceRequest> &requests)
+{
+    if (mRemoteDied) {
+        WIFI_LOGW("failed to `%{public}s`,remote service is died!", __func__);
+        return WIFI_OPT_FAILED;
+    }
+    MessageOption option;
+    MessageParcel data;
+    MessageParcel reply;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        WIFI_LOGE("Write interface token error: %{public}s", __func__);
+        return WIFI_OPT_FAILED;
+    }
+    data.WriteInt32(0);
+    int error = Remote()->SendRequest(static_cast<uint32_t>(P2PInterfaceCode::WIFI_SVR_CMD_P2P_QUERY_SERVICE_REQUESTS),
+        data, reply, option);
+    if (error != ERR_NONE) {
+        WIFI_LOGE("Set Attr(%{public}d) failed,error code is %{public}d",
+            static_cast<int32_t>(P2PInterfaceCode::WIFI_SVR_CMD_P2P_QUERY_SERVICE_REQUESTS), error);
+        return WIFI_OPT_FAILED;
+    }
+
+    int exception = reply.ReadInt32();
+    if (exception) {
+        return WIFI_OPT_FAILED;
+    }
+    int ret = reply.ReadInt32();
+    if (ErrCode(ret) != WIFI_OPT_SUCCESS) {
+        return ErrCode(ret);
+    }
+
+    constexpr int MAX_SIZE = 512;
+    int size = reply.ReadInt32();
+    if (size > MAX_SIZE) {
+        WIFI_LOGE("Get p2p service request size error: %{public}d", size);
+        return WIFI_OPT_FAILED;
+    }
+    for (int i = 0; i < size; ++i) {
+        WifiP2pServiceRequest request;
+        ReadWifiP2pServiceRequestOnly(reply, request);
+        requests.emplace_back(request);
     }
     return WIFI_OPT_SUCCESS;
 }

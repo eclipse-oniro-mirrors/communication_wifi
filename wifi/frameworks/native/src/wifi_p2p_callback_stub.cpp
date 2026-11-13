@@ -60,6 +60,8 @@ void WifiP2pCallbackStub::InitHandleMap()
         &WifiP2pCallbackStub::RemoteOnP2pPrivatePeersChanged;
     handleFuncMap[static_cast<uint32_t>(P2PInterfaceCode::WIFI_CBK_CMD_CHR_ERRCODE_REPORT)] =
         &WifiP2pCallbackStub::RemoteOnP2pChrErrCodeReport;
+    handleFuncMap[static_cast<uint32_t>(P2PInterfaceCode::WIFI_CBK_CMD_SERVICE_DISCOVERY_RESULT)] =
+        &WifiP2pCallbackStub::RemoteOnP2pServiceDiscoveryResult;
     return;
 }
 
@@ -215,6 +217,15 @@ void WifiP2pCallbackStub::OnP2pChrErrCodeReport(const int errCode)
     WIFI_LOGD("WifiP2pCallbackStub::OnP2pChrErrCodeReport, %{public}d", errCode);
     if (userCallback_) {
         userCallback_->OnP2pChrErrCodeReport(errCode);
+    }
+}
+
+void WifiP2pCallbackStub::OnP2pServiceDiscoveryResult(const P2pServiceDiscoveryInfo &info,
+    const WifiP2pDevice &device)
+{
+    WIFI_LOGI("WifiP2pCallbackStub::OnP2pServiceDiscoveryResult, type=%{public}d", static_cast<int>(info.type));
+    if (userCallback_) {
+        userCallback_->OnP2pServiceDiscoveryResult(info, device);
     }
 }
 
@@ -418,6 +429,67 @@ void WifiP2pCallbackStub::RemoteOnP2pChrErrCodeReport(uint32_t code, MessageParc
     WIFI_LOGD("run %{public}s code %{public}u, datasize %{public}zu", __func__, code, data.GetRawDataSize());
     int errCode = data.ReadInt32();
     OnP2pChrErrCodeReport(errCode);
+}
+
+bool WifiP2pCallbackStub::ReadP2pServiceDiscoveryInfo(MessageParcel &data, P2pServiceDiscoveryInfo &info)
+{
+    constexpr int MAX_TXT_SIZE = 256;
+    constexpr int MAX_NAME_SIZE = 256;
+    constexpr int MAX_RESP_SIZE = 1024;
+    constexpr size_t MAX_UPNP_NAME_LEN = 1024;
+    info.type = static_cast<P2pServiceDiscoveryResultType>(data.ReadInt32());
+    info.dnsSdName = data.ReadString();
+    info.dnsSdRegistrationType = data.ReadString();
+    int txtSize = data.ReadInt32();
+    if (txtSize < 0 || txtSize > MAX_TXT_SIZE) {
+        WIFI_LOGE("Service discovery txt size error: %{public}d", txtSize);
+        return false;
+    }
+    info.dnsSdTxtRecord.clear();
+    for (int i = 0; i < txtSize; ++i) {
+        std::string key = data.ReadString();
+        std::string value = data.ReadString();
+        info.dnsSdTxtRecord.emplace(key, value);
+    }
+    int nameSize = data.ReadInt32();
+    if (nameSize < 0 || nameSize > MAX_NAME_SIZE) {
+        WIFI_LOGE("Service discovery upnp name size error: %{public}d", nameSize);
+        return false;
+    }
+    info.upnpUniqueServiceNames.clear();
+    info.upnpUniqueServiceNames.reserve(static_cast<size_t>(nameSize));
+    for (int i = 0; i < nameSize; ++i) {
+        std::string name = data.ReadString();
+        if (name.size() > MAX_UPNP_NAME_LEN) {
+            WIFI_LOGE("Service discovery upnp name length error: %{public}zu", name.size());
+            return false;
+        }
+        info.upnpUniqueServiceNames.push_back(name);
+    }
+    info.protocolType = static_cast<P2pServicerProtocolType>(data.ReadInt32());
+    int respSize = data.ReadInt32();
+    if (respSize < 0 || respSize > MAX_RESP_SIZE) {
+        WIFI_LOGE("Service discovery response data size error: %{public}d", respSize);
+        return false;
+    }
+    info.responseData.clear();
+    info.responseData.reserve(static_cast<size_t>(respSize));
+    for (int i = 0; i < respSize; ++i) {
+        info.responseData.push_back(static_cast<unsigned char>(data.ReadUint8()));
+    }
+    return true;
+}
+
+void WifiP2pCallbackStub::RemoteOnP2pServiceDiscoveryResult(uint32_t code, MessageParcel &data, MessageParcel &reply)
+{
+    WIFI_LOGD("run %{public}s code %{public}u, datasize %{public}zu", __func__, code, data.GetRawDataSize());
+    P2pServiceDiscoveryInfo info;
+    if (!ReadP2pServiceDiscoveryInfo(data, info)) {
+        return;
+    }
+    WifiP2pDevice device;
+    ReadWifiP2pDeviceData(data, device);
+    OnP2pServiceDiscoveryResult(info, device);
 }
 }  // namespace Wifi
 }  // namespace OHOS

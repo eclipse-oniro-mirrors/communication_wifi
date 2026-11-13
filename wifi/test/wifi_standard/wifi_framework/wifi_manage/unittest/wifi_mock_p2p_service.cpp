@@ -137,21 +137,44 @@ ErrCode WifiMockP2pService::RequestService(const WifiP2pDevice &device, const Wi
     return WIFI_OPT_SUCCESS;
 }
 
-ErrCode WifiMockP2pService::PutLocalP2pService(const WifiP2pServiceInfo &srvInfo)
+ErrCode WifiMockP2pService::AddP2pServiceRequest(const WifiP2pServiceRequest &request)
 {
-    LOGI("Mock_p2p:PutLocalP2pService");
-    std::vector<WifiP2pServiceInfo> services;
-    LOGI("srvInfo.GetServiceName() = %s", srvInfo.GetServiceName().c_str());
-    LOGI("srvInfo.GetDeviceAddress() = %s", srvInfo.GetDeviceAddress().c_str());
-    LOGI("srvInfo.GetServicerProtocolType() = %d", static_cast<int>(srvInfo.GetServicerProtocolType()));
-    services.emplace_back(srvInfo);
-    mCallback.OnP2pServicesChangedEvent(services);
+    LOGI("Mock_p2p:AddP2pServiceRequest");
+    LOGI("request.GetProtocolType() = %d", static_cast<int>(request.GetProtocolType()));
     return WIFI_OPT_SUCCESS;
 }
 
-ErrCode WifiMockP2pService::DeleteLocalP2pService(const WifiP2pServiceInfo &srvInfo)
+ErrCode WifiMockP2pService::RemoveP2pServiceRequest(const WifiP2pServiceRequest &request)
 {
-    LOGI("Mock_p2p:DeleteLocalP2pService");
+    LOGI("Mock_p2p:RemoveP2pServiceRequest");
+    LOGI("request.GetProtocolType() = %d", static_cast<int>(request.GetProtocolType()));
+    return WIFI_OPT_SUCCESS;
+}
+
+ErrCode WifiMockP2pService::ClearP2pServiceRequests()
+{
+    LOGI("Mock_p2p:ClearP2pServiceRequests");
+    return WIFI_OPT_SUCCESS;
+}
+
+ErrCode WifiMockP2pService::AddDnsSdServiceRequest(const std::string &instanceName, const std::string &serviceType)
+{
+    LOGI("Mock_p2p:AddDnsSdServiceRequest instanceName=%s serviceType=%s",
+        instanceName.c_str(), serviceType.c_str());
+    WifiP2pServiceRequest request;
+    return AddP2pServiceRequest(request);
+}
+
+ErrCode WifiMockP2pService::AddUpnpServiceRequest(const std::string &searchTarget)
+{
+    LOGI("Mock_p2p:AddUpnpServiceRequest searchTarget=%s", searchTarget.c_str());
+    WifiP2pServiceRequest request;
+    return AddP2pServiceRequest(request);
+}
+
+ErrCode WifiMockP2pService::PutLocalP2pService(const WifiP2pServiceInfo &srvInfo)
+{
+    LOGI("Mock_p2p:PutLocalP2pService");
     std::vector<WifiP2pServiceInfo> services;
     LOGI("srvInfo.GetServiceName() = %s", srvInfo.GetServiceName().c_str());
     LOGI("srvInfo.GetDeviceAddress() = %s", srvInfo.GetDeviceAddress().c_str());
@@ -174,6 +197,18 @@ ErrCode WifiMockP2pService::AddUpnpLocalP2pService(const std::string &uuid, cons
 {
     LOGI("Mock_p2p:AddUpnpLocalP2pService uuid=%s device=%s serviceName=%s services=%zu",
         uuid.c_str(), device.c_str(), serviceName.c_str(), services.size());
+    return WIFI_OPT_SUCCESS;
+}
+
+ErrCode WifiMockP2pService::DeleteLocalP2pService(const WifiP2pServiceInfo &srvInfo)
+{
+    LOGI("Mock_p2p:DeleteLocalP2pService");
+    std::vector<WifiP2pServiceInfo> services;
+    LOGI("srvInfo.GetServiceName() = %s", srvInfo.GetServiceName().c_str());
+    LOGI("srvInfo.GetDeviceAddress() = %s", srvInfo.GetDeviceAddress().c_str());
+    LOGI("srvInfo.GetServicerProtocolType() = %d", static_cast<int>(srvInfo.GetServicerProtocolType()));
+    services.emplace_back(srvInfo);
+    mCallback.OnP2pServicesChangedEvent(services);
     return WIFI_OPT_SUCCESS;
 }
 
@@ -435,6 +470,13 @@ ErrCode WifiMockP2pService::QueryLocalP2pServices(std::vector<WifiP2pServiceInfo
 {
     LOGI("Mock_p2p:QueryLocalP2pServices");
     return QueryP2pServices(services);
+}
+
+ErrCode WifiMockP2pService::QueryP2pServiceRequests(std::vector<WifiP2pServiceRequest> &requests)
+{
+    LOGI("Mock_p2p:QueryP2pServiceRequests");
+    requests.clear();
+    return WIFI_OPT_SUCCESS;
 }
 
 ErrCode WifiMockP2pService::RegisterP2pServiceCallbacks(const IP2pServiceCallbacks &callbacks)

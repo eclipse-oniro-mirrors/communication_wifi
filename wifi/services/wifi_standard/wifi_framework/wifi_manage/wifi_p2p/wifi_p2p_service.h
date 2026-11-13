@@ -227,6 +227,13 @@ public:
     virtual ErrCode QueryLocalP2pServices(std::vector<WifiP2pServiceInfo> &services) override;
 
     /**
+     * @Description - Query pending P2P service discovery requests.
+     * @param requests - pending WifiP2pServiceRequest list
+     * @return ErrCode - operation result
+     */
+    virtual ErrCode QueryP2pServiceRequests(std::vector<WifiP2pServiceRequest> &requests) override;
+
+    /**
      * @Description - Register all callbacks provided by the P2P.
      * @param  callbacks - all callbacks added
      * @return ErrCode - operation result
@@ -424,6 +431,41 @@ public:
      * @param screenState - MODE_STATE_OPEN (screen on) / MODE_STATE_CLOSE (screen off)
      */
     void OnScreenStateChanged(int screenState) override;
+
+    /**
+     * @Description - Add a pending P2P service discovery request.
+     * @param  request - service request information
+     * @return ErrCode - operation result
+     */
+    virtual ErrCode AddP2pServiceRequest(const WifiP2pServiceRequest &request) override;
+
+    /**
+     * @Description - Remove a pending P2P service discovery request.
+     * @param  request - service request information
+     * @return ErrCode - operation result
+     */
+    virtual ErrCode RemoveP2pServiceRequest(const WifiP2pServiceRequest &request) override;
+
+    /**
+     * @Description - Clear all pending P2P service discovery requests.
+     * @return ErrCode - operation result
+     */
+    virtual ErrCode ClearP2pServiceRequests() override;
+
+    /**
+     * @Description - Add Bonjour (DNS-SD) P2P service discovery request (create then add).
+     * @param instanceName - DNS-SD instance name, can be empty
+     * @param serviceType - DNS-SD service type, can be empty
+     * @return ErrCode - operation result
+     */
+    virtual ErrCode AddDnsSdServiceRequest(const std::string &instanceName, const std::string &serviceType) override;
+
+    /**
+     * @Description - Add UPnP P2P service discovery request (create then add).
+     * @param searchTarget - UPnP search target, can be empty
+     * @return ErrCode - operation result
+     */
+    virtual ErrCode AddUpnpServiceRequest(const std::string &searchTarget) override;
 private:
     /**
      * @Description - P2P state machine deregistration event callback.

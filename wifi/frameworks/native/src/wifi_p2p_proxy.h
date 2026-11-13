@@ -262,6 +262,14 @@ public:
     ErrCode QueryLocalP2pServices(std::vector<WifiP2pServiceInfo> &services) override;
 
     /**
+     * @Description Query pending P2P service discovery requests
+     *
+     * @param requests - pending WifiP2pServiceRequest list
+     * @return ErrCode - operation result
+     */
+    ErrCode QueryP2pServiceRequests(std::vector<WifiP2pServiceRequest> &requests) override;
+
+    /**
      * @Description Register callback function
      *
      * @param callback - IWifiP2pCallback object
@@ -472,6 +480,46 @@ public:
      */
     ErrCode Hid2dSetGroupType(GroupLiveType groupType) override;
 
+    /**
+     * @Description Add a pending P2P service discovery request
+     *
+     * @param request - WifiP2pServiceRequest object
+     * @return ErrCode - operation result
+     */
+    ErrCode AddP2pServiceRequest(const WifiP2pServiceRequest &request) override;
+
+    /**
+     * @Description Remove a pending P2P service discovery request
+     *
+     * @param request - WifiP2pServiceRequest object
+     * @return ErrCode - operation result
+     */
+    ErrCode RemoveP2pServiceRequest(const WifiP2pServiceRequest &request) override;
+
+    /**
+     * @Description Clear all pending P2P service discovery requests
+     *
+     * @return ErrCode - operation result
+     */
+    ErrCode ClearP2pServiceRequests(void) override;
+
+    /**
+     * @Description Add Bonjour (DNS-SD) P2P service discovery request (create then add)
+     *
+     * @param instanceName - DNS-SD instance name, can be empty
+     * @param serviceType - DNS-SD service type, can be empty
+     * @return ErrCode - operation result
+     */
+    ErrCode AddDnsSdServiceRequest(const std::string &instanceName, const std::string &serviceType) override;
+
+    /**
+     * @Description Add UPnP P2P service discovery request (create then add)
+     *
+     * @param searchTarget - UPnP search target, can be empty
+     * @return ErrCode - operation result
+     */
+    ErrCode AddUpnpServiceRequest(const std::string &searchTarget) override;
+
 private:
     class WifiDeathRecipient : public IRemoteObject::DeathRecipient {
     public:
@@ -491,6 +539,9 @@ private:
     void WriteWifiP2pServiceInfo(MessageParcel &data, const WifiP2pServiceInfo &info) const;
     void WriteWifiP2pServiceRequest(
         MessageParcel &data, const WifiP2pDevice &device, const WifiP2pServiceRequest &request) const;
+    void WriteWifiP2pServiceRequestOnly(MessageParcel &data, const WifiP2pServiceRequest &request) const;
+    void ReadWifiP2pServiceRequestOnly(MessageParcel &reply, WifiP2pServiceRequest &request) const;
+    ErrCode BuildP2pServiceRequest(MessageParcel &data);
     void WriteWifiP2pDeviceData(MessageParcel &data, const WifiP2pDevice &device) const;
     void ReadWifiP2pDeviceData(MessageParcel &reply, WifiP2pDevice &device) const;
     void WriteWifiP2pGroupData(MessageParcel &data, const WifiP2pGroupInfo &info) const;

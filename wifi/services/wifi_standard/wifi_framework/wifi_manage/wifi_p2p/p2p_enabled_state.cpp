@@ -144,6 +144,12 @@ void P2pEnabledState::InitProcessMsg()
     mProcessFunMap.insert(std::make_pair(P2P_STATE_MACHINE_CMD::UNTRUST_INVITATION_RESULT,
         [this](InternalMessagePtr msg) { return this->ProcessUntrustInvitationDialogResult(msg); }));
 #endif
+    mProcessFunMap.insert(std::make_pair(P2P_STATE_MACHINE_CMD::CMD_ADD_SERVICE_REQUEST,
+        [this](InternalMessagePtr msg) { return this->ProcessCmdAddServiceRequest(msg); }));
+    mProcessFunMap.insert(std::make_pair(P2P_STATE_MACHINE_CMD::CMD_REMOVE_SERVICE_REQUEST,
+        [this](InternalMessagePtr msg) { return this->ProcessCmdRemoveServiceRequest(msg); }));
+    mProcessFunMap.insert(std::make_pair(P2P_STATE_MACHINE_CMD::CMD_CLEAR_SERVICE_REQUESTS,
+        [this](InternalMessagePtr msg) { return this->ProcessCmdClearServiceRequests(msg); }));
 }
 
 bool P2pEnabledState::ProcessCmdDisable(InternalMessagePtr msg) const
@@ -260,9 +266,7 @@ bool P2pEnabledState::ProcessDeviceLostEvt(InternalMessagePtr msg) const
         p2pStateMachine.BroadcastP2pPeersChanged();
     }
 
-    if (p2pStateMachine.serviceManager.DelServicesFormAddress(device.GetDeviceAddress())) {
-        p2pStateMachine.BroadcastP2pServicesChanged();
-    }
+    p2pStateMachine.serviceManager.DelServicesFormAddress(device.GetDeviceAddress());
 
     if (p2pStateMachine.serviceManager.RemoveServiceResponse(device.GetDeviceAddress())) {
         WIFI_LOGI("device: %{private}s , Delete a response record.", device.GetDeviceAddress().c_str());
@@ -443,15 +447,19 @@ bool P2pEnabledState::ProcessCmdDiscServices(InternalMessagePtr msg) const
     WIFI_LOGI("P2P ProcessCmdDiscServices recv CMD: %{public}d", msg->GetMessageName());
     p2pStateMachine.CancelSupplicantSrvDiscReq();
     std::string reqId;
-    WifiP2pServiceRequest request;
+    std::vector<unsigned char> tlvs;
+    if (!p2pStateMachine.serviceManager.GetPendingServiceRequestTlvs(tlvs)) {
+        WifiP2pServiceRequest request;
+        request.SetProtocolType(P2pServicerProtocolType::SERVICE_TYPE_ALL);
+        request.SetTransactionId(p2pStateMachine.serviceManager.GetTransId());
+        tlvs = request.GetTlv();
+    }
     WifiP2pDevice device;
     device.SetDeviceAddress(std::string("00:00:00:00:00:00"));
-    request.SetProtocolType(P2pServicerProtocolType::SERVICE_TYPE_ALL);
-    request.SetTransactionId(p2pStateMachine.serviceManager.GetTransId());
 
     p2pStateMachine.StopTimer(static_cast<int>(P2P_STATE_MACHINE_CMD::P2P_REMOVE_DEVICE));
     WifiErrorNo retCode =
-        WifiP2PHalInterface::GetInstance().ReqServiceDiscovery(device.GetDeviceAddress(), request.GetTlv(), reqId);
+        WifiP2PHalInterface::GetInstance().ReqServiceDiscovery(device.GetDeviceAddress(), tlvs, reqId);
     if (WifiErrorNo::WIFI_HAL_OPT_OK != retCode) {
         WIFI_LOGI("Failed to schedule the P2P service discovery request.");
         p2pStateMachine.BroadcastActionResult(P2pActionCallback::DiscoverServices, ErrCode::WIFI_OPT_FAILED);
@@ -514,6 +522,43 @@ bool P2pEnabledState::ProcessCmdRequestService(InternalMessagePtr msg) const
     }
 
     p2pStateMachine.BroadcastActionResult(P2pActionCallback::RequestService, ErrCode::WIFI_OPT_SUCCESS);
+    return EXECUTED;
+}
+
+bool P2pEnabledState::ProcessCmdAddServiceRequest(InternalMessagePtr msg) const
+{
+    WifiP2pServiceRequest request;
+    if (!msg->GetMessageObj(request)) {
+        WIFI_LOGE("Failed to obtain WifiP2pServiceRequest information.");
+        return EXECUTED;
+    }
+    if (p2pStateMachine.serviceManager.AddPendingServiceRequest(request)) {
+        p2pStateMachine.BroadcastActionResult(P2pActionCallback::AddServiceRequest, ErrCode::WIFI_OPT_SUCCESS);
+    } else {
+        p2pStateMachine.BroadcastActionResult(P2pActionCallback::AddServiceRequest, ErrCode::WIFI_OPT_FAILED);
+    }
+    return EXECUTED;
+}
+
+bool P2pEnabledState::ProcessCmdRemoveServiceRequest(InternalMessagePtr msg) const
+{
+    WifiP2pServiceRequest request;
+    if (!msg->GetMessageObj(request)) {
+        WIFI_LOGE("Failed to obtain WifiP2pServiceRequest information.");
+        return EXECUTED;
+    }
+    if (p2pStateMachine.serviceManager.RemovePendingServiceRequest(request)) {
+        p2pStateMachine.BroadcastActionResult(P2pActionCallback::RemoveServiceRequest, ErrCode::WIFI_OPT_SUCCESS);
+    } else {
+        p2pStateMachine.BroadcastActionResult(P2pActionCallback::RemoveServiceRequest, ErrCode::WIFI_OPT_FAILED);
+    }
+    return EXECUTED;
+}
+
+bool P2pEnabledState::ProcessCmdClearServiceRequests(InternalMessagePtr msg) const
+{
+    p2pStateMachine.serviceManager.ClearPendingServiceRequests();
+    p2pStateMachine.BroadcastActionResult(P2pActionCallback::ClearServiceRequests, ErrCode::WIFI_OPT_SUCCESS);
     return EXECUTED;
 }
 

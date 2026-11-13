@@ -106,6 +106,11 @@ extern std::vector<::taihe::optional<::taihe::callback<void(int)>>>
     g_wifiP2pDiscoveryChangeVec;
 extern std::shared_mutex g_wifiP2pDiscoveryChangeLock;
 
+extern std::vector<::taihe::optional<::taihe::callback<void(
+    ::ohos::wifiManager::P2pServiceDiscoveryInfo const&)>>>
+    g_wifiP2pServiceDiscoveryVec;
+extern std::shared_mutex g_wifiP2pServiceDiscoveryLock;
+
 class WifiIdlDeviceEventCallback : public IWifiDeviceCallBack {
 public:
     void OnWifiStateChanged(int state) override;
@@ -164,6 +169,8 @@ public:
     void OnP2pGcLeaveGroup(const OHOS::Wifi::GcInfo &info) override;
     void OnP2pPrivatePeersChanged(const std::string &priWfdInfo) override;
     void OnP2pChrErrCodeReport(const int errCode) override;
+    void OnP2pServiceDiscoveryResult(const OHOS::Wifi::P2pServiceDiscoveryInfo &info,
+        const WifiP2pDevice &device) override;
     OHOS::sptr<OHOS::IRemoteObject> AsObject() override;
 
 public:

@@ -16,6 +16,7 @@
 #ifndef OHOS_WIFI_P2P_MSG_H
 #define OHOS_WIFI_P2P_MSG_H
 
+#include <map>
 #include <string>
 #include <vector>
 #include <climits>
@@ -47,6 +48,24 @@ enum class P2pServicerProtocolType : unsigned char {
     SERVICE_TYPE_VENDOR_SPECIFIC = 255,
 };
 
+enum class P2pServiceDiscoveryResultType : unsigned char {
+    DNS_SD_SERVICE = 0,
+    DNS_SD_TXT_RECORD = 1,
+    UPNP_SERVICE = 2,
+    GENERIC_SERVICE = 3,
+};
+
+struct P2pServiceDiscoveryInfo {
+    P2pServiceDiscoveryResultType type = P2pServiceDiscoveryResultType::GENERIC_SERVICE;
+    /* DNS-SD PTR: instanceName; DNS-SD TXT: wholeDomainName */
+    std::string dnsSdName;
+    std::string dnsSdRegistrationType;
+    std::map<std::string, std::string> dnsSdTxtRecord;
+    std::vector<std::string> upnpUniqueServiceNames;
+    P2pServicerProtocolType protocolType = P2pServicerProtocolType::SERVICE_TYPE_ALL;
+    std::vector<unsigned char> responseData;
+};
+
 enum class P2pActionCallback : unsigned char {
     DiscoverDevices,
     StopDiscoverDevices,
@@ -67,6 +86,9 @@ enum class P2pActionCallback : unsigned char {
     Hid2dConnect,
     RemoveGroupClient,
     DiscoverPeers,
+    AddServiceRequest,
+    RemoveServiceRequest,
+    ClearServiceRequests,
     UNKNOWN
 };
 

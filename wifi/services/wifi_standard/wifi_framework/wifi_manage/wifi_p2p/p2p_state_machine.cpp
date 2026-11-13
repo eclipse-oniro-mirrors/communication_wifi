@@ -587,46 +587,13 @@ void P2pStateMachine::BroadcastActionResult(P2pActionCallback action, ErrCode re
     }
 }
 
-void P2pStateMachine::BroadcastServiceResult(P2pServicerProtocolType serviceType,
-    const std::vector<unsigned char> &respData, const WifiP2pDevice &srcDevice) const
+void P2pStateMachine::BroadcastP2pServiceDiscoveryResult(
+    const P2pServiceDiscoveryInfo &info, const WifiP2pDevice &srcDevice) const
 {
     std::unique_lock<std::mutex> lock(cbMapMutex);
     for (const auto &callBackItem : p2pServiceCallbacks) {
-        if (callBackItem.second.OnP2pServiceAvailable != nullptr) {
-            callBackItem.second.OnP2pServiceAvailable(serviceType, respData, srcDevice);
-        }
-    }
-}
-
-void P2pStateMachine::BroadcastDnsSdServiceResult(
-    const std::string &instName, const std::string &regType, const WifiP2pDevice &srcDevice) const
-{
-    std::unique_lock<std::mutex> lock(cbMapMutex);
-    for (const auto &callBackItem : p2pServiceCallbacks) {
-        if (callBackItem.second.OnP2pDnsSdServiceAvailable != nullptr) {
-            callBackItem.second.OnP2pDnsSdServiceAvailable(instName, regType, srcDevice);
-        }
-    }
-}
-
-void P2pStateMachine::BroadcastDnsSdTxtRecordResult(const std::string &wholeDomainName,
-    const std::map<std::string, std::string> &txtMap, const WifiP2pDevice &srcDevice) const
-{
-    std::unique_lock<std::mutex> lock(cbMapMutex);
-    for (const auto &callBackItem : p2pServiceCallbacks) {
-        if (callBackItem.second.OnP2pDnsSdTxtRecordAvailable != nullptr) {
-            callBackItem.second.OnP2pDnsSdTxtRecordAvailable(wholeDomainName, txtMap, srcDevice);
-        }
-    }
-}
-
-void P2pStateMachine::BroadcastUpnpServiceResult(
-    const std::vector<std::string> &uniqueServiceNames, const WifiP2pDevice &srcDevice) const
-{
-    std::unique_lock<std::mutex> lock(cbMapMutex);
-    for (const auto &callBackItem : p2pServiceCallbacks) {
-        if (callBackItem.second.OnP2pUpnpServiceAvailable != nullptr) {
-            callBackItem.second.OnP2pUpnpServiceAvailable(uniqueServiceNames, srcDevice);
+        if (callBackItem.second.OnP2pServiceDiscoveryResult != nullptr) {
+            callBackItem.second.OnP2pServiceDiscoveryResult(info, srcDevice);
         }
     }
 }
@@ -1015,6 +982,47 @@ void P2pStateMachine::StartDhcpClientInterface()
     WIFI_LOGI("StartDhcpClient ok");
 }
 
+void P2pStateMachine::HandleBonjourServiceResp(const WifiP2pServiceResponse &resp, const WifiP2pDevice &dev) const
+{
+    WifiP2pDnsSdServiceResponse dnsSrvResp = WifiP2pDnsSdServiceResponse(resp);
+    if (!dnsSrvResp.ParseData()) {
+        WIFI_LOGE("Parse WifiP2pDnsServiceResponse failed!");
+        return;
+    }
+    serviceManager.UpdateServiceName(dev.GetDeviceAddress(), dynamic_cast<WifiP2pServiceResponse &>(dnsSrvResp));
+    P2pServiceDiscoveryInfo info;
+    if (dnsSrvResp.GetDnsType() == WifiP2pDnsSdServiceInfo::DNS_PTR_TYPE) {
+        info.type = P2pServiceDiscoveryResultType::DNS_SD_SERVICE;
+        info.dnsSdName = dnsSrvResp.GetInstanceName();
+        info.dnsSdRegistrationType = dnsSrvResp.GetQueryName();
+        BroadcastP2pServiceDiscoveryResult(info, dev);
+        return;
+    }
+    if (dnsSrvResp.GetDnsType() == WifiP2pDnsSdServiceInfo::DNS_TXT_TYPE) {
+        info.type = P2pServiceDiscoveryResultType::DNS_SD_TXT_RECORD;
+        info.dnsSdName = dnsSrvResp.GetQueryName();
+        info.dnsSdTxtRecord = dnsSrvResp.GetTxtRecord();
+        BroadcastP2pServiceDiscoveryResult(info, dev);
+        return;
+    }
+    WIFI_LOGE("Parse WifiP2pDnsSdServiceResponse Dnstype failed!");
+}
+
+void P2pStateMachine::HandleUpnpServiceResp(const WifiP2pServiceResponse &resp, const WifiP2pDevice &dev) const
+{
+    WifiP2pUpnpServiceResponse upnpSrvResp =
+        WifiP2pUpnpServiceResponse::Create(resp.GetServiceStatus(), resp.GetTransactionId(), resp.GetData());
+    if (!upnpSrvResp.ParseData()) {
+        WIFI_LOGE("Parse WifiP2pUpnpServiceResponse failed!");
+        return;
+    }
+    serviceManager.UpdateServiceName(dev.GetDeviceAddress(), dynamic_cast<WifiP2pServiceResponse &>(upnpSrvResp));
+    P2pServiceDiscoveryInfo info;
+    info.type = P2pServiceDiscoveryResultType::UPNP_SERVICE;
+    info.upnpUniqueServiceNames = upnpSrvResp.GetUniqueServNames();
+    BroadcastP2pServiceDiscoveryResult(info, dev);
+}
+
 void P2pStateMachine::HandleP2pServiceResp(const WifiP2pServiceResponse &resp, const WifiP2pDevice &dev) const
 {
     WIFI_LOGI("HandleP2pServiceResp");
@@ -1024,38 +1032,18 @@ void P2pStateMachine::HandleP2pServiceResp(const WifiP2pServiceResponse &resp, c
         return;
     }
     if (resp.GetProtocolType() == P2pServicerProtocolType::SERVICE_TYPE_BONJOUR) {
-        WifiP2pDnsSdServiceResponse dnsSrvResp = WifiP2pDnsSdServiceResponse(resp);
-        if (!dnsSrvResp.ParseData()) {
-            WIFI_LOGE("Parse WifiP2pDnsServiceResponse failed!");
-            return;
-        }
-        serviceManager.UpdateServiceName(dev.GetDeviceAddress(), dynamic_cast<WifiP2pServiceResponse &>(dnsSrvResp));
-        if (dnsSrvResp.GetDnsType() == WifiP2pDnsSdServiceInfo::DNS_PTR_TYPE) {
-            BroadcastDnsSdServiceResult(dnsSrvResp.GetInstanceName(), dnsSrvResp.GetQueryName(), dev);
-            return;
-        }
-        if (dnsSrvResp.GetDnsType() == WifiP2pDnsSdServiceInfo::DNS_TXT_TYPE) {
-            BroadcastDnsSdTxtRecordResult(dnsSrvResp.GetQueryName(), dnsSrvResp.GetTxtRecord(), dev);
-            return;
-        }
-        WIFI_LOGE("Parse WifiP2pDnsSdServiceResponse Dnstype failed!");
+        HandleBonjourServiceResp(resp, dev);
         return;
     }
     if (resp.GetProtocolType() == P2pServicerProtocolType::SERVICE_TYPE_UP_NP) {
-        WifiP2pUpnpServiceResponse upnpSrvResp =
-            WifiP2pUpnpServiceResponse::Create(resp.GetServiceStatus(), resp.GetTransactionId(), resp.GetData());
-        if (upnpSrvResp.ParseData()) {
-            serviceManager.UpdateServiceName(
-                dev.GetDeviceAddress(), dynamic_cast<WifiP2pServiceResponse &>(upnpSrvResp));
-            BroadcastUpnpServiceResult(upnpSrvResp.GetUniqueServNames(), dev);
-        } else {
-            WIFI_LOGE("Parse WifiP2pUpnpServiceResponse failed!");
-        }
+        HandleUpnpServiceResp(resp, dev);
         return;
     }
-
-    BroadcastServiceResult(resp.GetProtocolType(), resp.GetData(), dev);
-    return;
+    P2pServiceDiscoveryInfo info;
+    info.type = P2pServiceDiscoveryResultType::GENERIC_SERVICE;
+    info.protocolType = resp.GetProtocolType();
+    info.responseData = resp.GetData();
+    BroadcastP2pServiceDiscoveryResult(info, dev);
 }
 
 bool P2pStateMachine::GetAllFreqsByBand(GroupOwnerBand band, std::vector<int>& freqList) const

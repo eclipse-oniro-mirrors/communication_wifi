@@ -45,6 +45,7 @@ private:
     void DealP2pPeerJoinOrLeave(bool isJoin, const std::string &mac);
     void DealP2pPeersChanged(const std::vector<WifiP2pDevice> &vPeers);
     void DealP2pServiceChanged(const std::vector<WifiP2pServiceInfo> &vServices);
+    void DealP2pServiceDiscoveryResult(const P2pServiceDiscoveryInfo &info, const WifiP2pDevice &device);
     void DealP2pConnectionChanged(const WifiP2pLinkedInfo &info);
     void DealP2pThisDeviceChanged(const WifiP2pDevice &info);
     void DealP2pDiscoveryChanged(bool bState);

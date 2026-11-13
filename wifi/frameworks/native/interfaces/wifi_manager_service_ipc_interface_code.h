@@ -226,6 +226,11 @@ enum class  P2PInterfaceCode {
     WIFI_SVR_CMD_SET_P2P_GROUP_ALIVE_MODE = 0x2030,  /* Set p2p group alive mode*/
     WIFI_SVR_CMD_P2P_ADD_LOCAL_SERVICE = 0x2031,   /* add typed local P2P service (create+put) */
     WIFI_SVR_CMD_P2P_QUERY_LOCAL_SERVICES = 0x2032, /* query local registered P2P services */
+    WIFI_SVR_CMD_P2P_ADD_SERVICE_REQUEST = 0x2033,   /* add pending P2P service discovery request */
+    WIFI_SVR_CMD_P2P_REMOVE_SERVICE_REQUEST = 0x2034,  /* remove pending P2P service discovery request */
+    WIFI_SVR_CMD_P2P_CLEAR_SERVICE_REQUESTS = 0x2035, /* clear pending P2P service discovery requests */
+    WIFI_SVR_CMD_P2P_ADD_TYPED_SERVICE_REQUEST = 0x2036, /* add typed P2P service discovery request (create+add) */
+    WIFI_SVR_CMD_P2P_QUERY_SERVICE_REQUESTS = 0x2037, /* query pending P2P service discovery requests */
 
     /* 新增WIFI_SVR_CMD_类code，请在此下方添加 */
     WIFI_SVR_CMD_P2P_REMOVE_GROUP_CLIENT = 0x3000,
@@ -243,6 +248,7 @@ enum class  P2PInterfaceCode {
     WIFI_CBK_CMD_P2P_GC_LEAVE_GROUP = 0x3210,    /* Gc disconnected */
     WIFI_CBK_CMD_PRIVATE_PEER_CHANGE = 0x3211,
     WIFI_CBK_CMD_CHR_ERRCODE_REPORT = 0x3212,
+    WIFI_CBK_CMD_SERVICE_DISCOVERY_RESULT = 0x3213,
 };
 
 enum class P2pBuildServiceType : int32_t {

@@ -1349,7 +1349,9 @@ WifiErrorNo WifiHdiWpaClient::ReqP2pReqServiceDiscovery(
     }
     struct HdiP2pReqService wpsParam = {0};
     wpsParam.bssid = (unsigned char *)deviceAddress.c_str();
+    wpsParam.bssidLen = static_cast<uint32_t>(deviceAddress.size());
     wpsParam.msg = (unsigned char *)pTlvs;
+    wpsParam.msgLen = size - 1; /* hex string length, excluding '\0' */
     char retBuf[HAL_P2P_TMP_BUFFER_SIZE_128] = {0};
     WifiErrorNo ret = HdiP2pReqServiceDiscovery(&wpsParam, retBuf, HAL_P2P_TMP_BUFFER_SIZE_128);
     if (ret == WIFI_HAL_OPT_OK) {

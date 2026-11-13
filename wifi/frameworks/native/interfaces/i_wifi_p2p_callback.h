@@ -125,6 +125,14 @@ public:
      */
     virtual void OnP2pChrErrCodeReport(const int errCode) = 0;
 
+    /**
+     * @Description Unified P2P service discovery result (DNS-SD / UPnP / generic).
+     *
+     * @param info - discovery payload discriminated by info.type
+     * @param device - source device
+     */
+    virtual void OnP2pServiceDiscoveryResult(const P2pServiceDiscoveryInfo &info, const WifiP2pDevice &device) = 0;
+
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"ohos.wifi.IWifiP2pCallback");
 };

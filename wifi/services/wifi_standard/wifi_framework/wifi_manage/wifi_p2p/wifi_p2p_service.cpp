@@ -25,7 +25,9 @@
 #include "wifi_p2p_hal_interface.h"
 #include "wifi_notification_util.h"
 #include "wifi_p2p_dns_sd_service_info.h"
+#include "wifi_p2p_dns_sd_service_request.h"
 #include "wifi_p2p_upnp_service_info.h"
+#include "wifi_p2p_upnp_service_request.h"
 #include "ap_define.h"
 #include "p2p_chr_reporter.h"
 
@@ -154,6 +156,55 @@ ErrCode WifiP2pService::RequestService(const WifiP2pDevice &device, const WifiP2
     const std::any info = std::pair<WifiP2pDevice, WifiP2pServiceRequest>(device, request);
     p2pStateMachine.SendMessage(static_cast<int>(P2P_STATE_MACHINE_CMD::CMD_REQUEST_SERVICE), info);
     return ErrCode::WIFI_OPT_SUCCESS;
+}
+
+ErrCode WifiP2pService::AddP2pServiceRequest(const WifiP2pServiceRequest &request)
+{
+    WIFI_LOGI("AddP2pServiceRequest");
+    const std::any info = request;
+    p2pStateMachine.SendMessage(static_cast<int>(P2P_STATE_MACHINE_CMD::CMD_ADD_SERVICE_REQUEST), info);
+    return ErrCode::WIFI_OPT_SUCCESS;
+}
+
+ErrCode WifiP2pService::RemoveP2pServiceRequest(const WifiP2pServiceRequest &request)
+{
+    WIFI_LOGI("RemoveP2pServiceRequest");
+    const std::any info = request;
+    p2pStateMachine.SendMessage(static_cast<int>(P2P_STATE_MACHINE_CMD::CMD_REMOVE_SERVICE_REQUEST), info);
+    return ErrCode::WIFI_OPT_SUCCESS;
+}
+
+ErrCode WifiP2pService::ClearP2pServiceRequests()
+{
+    WIFI_LOGI("ClearP2pServiceRequests");
+    p2pStateMachine.SendMessage(static_cast<int>(P2P_STATE_MACHINE_CMD::CMD_CLEAR_SERVICE_REQUESTS));
+    return ErrCode::WIFI_OPT_SUCCESS;
+}
+
+ErrCode WifiP2pService::AddDnsSdServiceRequest(const std::string &instanceName, const std::string &serviceType)
+{
+    WIFI_LOGI("AddDnsSdServiceRequest");
+    WifiP2pServiceRequest request;
+    if (instanceName.empty() && serviceType.empty()) {
+        request = WifiP2pDnsSdServiceRequest::Create();
+    } else if (instanceName.empty()) {
+        request = WifiP2pDnsSdServiceRequest::Create(serviceType);
+    } else {
+        request = WifiP2pDnsSdServiceRequest::Create(instanceName, serviceType);
+    }
+    return AddP2pServiceRequest(request);
+}
+
+ErrCode WifiP2pService::AddUpnpServiceRequest(const std::string &searchTarget)
+{
+    WIFI_LOGI("AddUpnpServiceRequest");
+    WifiP2pServiceRequest request;
+    if (searchTarget.empty()) {
+        request = WifiP2pUpnpServiceRequest::Create();
+    } else {
+        request = WifiP2pUpnpServiceRequest::Create(searchTarget);
+    }
+    return AddP2pServiceRequest(request);
 }
 
 ErrCode WifiP2pService::StartP2pListen(int period, int interval)
@@ -401,6 +452,13 @@ ErrCode WifiP2pService::QueryLocalP2pServices(std::vector<WifiP2pServiceInfo> &s
 {
     WIFI_LOGI("QueryLocalP2pServices");
     services = serviceManager.GetLocalServiceList();
+    return ErrCode::WIFI_OPT_SUCCESS;
+}
+
+ErrCode WifiP2pService::QueryP2pServiceRequests(std::vector<WifiP2pServiceRequest> &requests)
+{
+    WIFI_LOGI("QueryP2pServiceRequests");
+    serviceManager.GetPendingServiceRequestList(requests);
     return ErrCode::WIFI_OPT_SUCCESS;
 }
 

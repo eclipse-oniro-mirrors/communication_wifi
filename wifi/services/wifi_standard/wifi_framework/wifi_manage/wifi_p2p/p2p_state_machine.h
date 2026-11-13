@@ -309,6 +309,20 @@ private:
      */
     virtual void HandleP2pServiceResp(const WifiP2pServiceResponse &resp, const WifiP2pDevice &dev) const;
     /**
+     * @Description Process Bonjour (DNS-SD) P2P service response and broadcast discovery result.
+     *
+     * @param resp - result of service response
+     * @param dev - source device
+     */
+    virtual void HandleBonjourServiceResp(const WifiP2pServiceResponse &resp, const WifiP2pDevice &dev) const;
+    /**
+     * @Description Process UPnP P2P service response and broadcast discovery result.
+     *
+     * @param resp - result of service response
+     * @param dev - source device
+     */
+    virtual void HandleUpnpServiceResp(const WifiP2pServiceResponse &resp, const WifiP2pDevice &dev) const;
+    /**
      * @Description Get the list of frequencies by band.
      *
      * @param band - specified band
@@ -446,40 +460,13 @@ private:
      */
     virtual void BroadcastActionResult(P2pActionCallback action, ErrCode result) const;
     /**
-     * @Description Broadcast receive p2p service response result in addition to bonjour and upnp.
+     * @Description Broadcast unified P2P service discovery result.
      *
-     * @param serviceType - protocol type
-     * @param respData - service response data
+     * @param info - discovery payload
      * @param srcDevice - source device
      */
-    virtual void BroadcastServiceResult(P2pServicerProtocolType serviceType,
-        const std::vector<unsigned char> &respData, const WifiP2pDevice &srcDevice) const;
-    /**
-     * @Description Broadcast receive bonjour service response result.
-     *
-     * @param instName - instance name
-     * @param regType - registration type
-     * @param srcDevice - source device
-     */
-    virtual void BroadcastDnsSdServiceResult(
-        const std::string &instName, const std::string &regType, const WifiP2pDevice &srcDevice) const;
-    /**
-     * @Description Broadcast receive the result of bonjour txt record for a service.
-     *
-     * @param wholeDomainName - the whole domain name
-     * @param txtMap - txt record data as a map of key/value pairs
-     * @param srcDevice source device
-     */
-    virtual void BroadcastDnsSdTxtRecordResult(const std::string &wholeDomainName,
-        const std::map<std::string, std::string> &txtMap, const WifiP2pDevice &srcDevice) const;
-    /**
-     * @Description Broadcast receive upnp service response result.
-     *
-     * @param uniqueServiceNames - the list of unique service names
-     * @param srcDevice - source device
-     */
-    virtual void BroadcastUpnpServiceResult(
-        const std::vector<std::string> &uniqueServiceNames, const WifiP2pDevice &srcDevice) const;
+    virtual void BroadcastP2pServiceDiscoveryResult(
+        const P2pServiceDiscoveryInfo &info, const WifiP2pDevice &srcDevice) const;
 
     /**
      * @Description - Start the dhcp server and save the IP address to be assigned.

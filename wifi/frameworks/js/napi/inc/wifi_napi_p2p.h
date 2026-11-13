@@ -37,7 +37,13 @@ napi_value SetDeviceName(napi_env env, napi_callback_info info);
 napi_value AddDnsSdLocalP2pService(napi_env env, napi_callback_info info);
 napi_value AddUpnpLocalP2pService(napi_env env, napi_callback_info info);
 napi_value RemoveLocalP2pService(napi_env env, napi_callback_info info);
+napi_value AddDnsSdServiceRequest(napi_env env, napi_callback_info info);
+napi_value AddUpnpServiceRequest(napi_env env, napi_callback_info info);
+napi_value RemoveP2pServiceRequest(napi_env env, napi_callback_info info);
+napi_value RemoveAllP2pServiceRequests(napi_env env, napi_callback_info info);
+napi_value DiscoverServices(napi_env env, napi_callback_info info);
 napi_value GetLocalP2pServices(napi_env env, napi_callback_info info);
+napi_value GetP2pServiceRequest(napi_env env, napi_callback_info info);
 
 class P2pLocalDeviceAsyncContext : public AsyncContext {
 public:

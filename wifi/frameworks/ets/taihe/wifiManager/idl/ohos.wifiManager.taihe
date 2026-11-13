@@ -414,6 +414,41 @@ struct WifiP2pServiceInfo {
     queryList: Array<String>;
 }
 
+struct WifiP2pServiceRequest {
+    protocolType: P2pServiceProtocolType;
+    query: @typedarray Array<u8>;
+}
+
+struct P2pDnsSdInfo {
+    instanceName: String;
+    registrationType: String;
+    device: WifiP2pDevice;
+}
+
+struct P2pDnsSdTxtInfo {
+    wholeDomainName: String;
+    txtRecord: Map<String, String>;
+    device: WifiP2pDevice;
+}
+
+struct P2pUpnpInfo {
+    uniqueServiceNames: Array<String>;
+    device: WifiP2pDevice;
+}
+
+struct P2pGenericInfo {
+    protocolType: P2pServiceProtocolType;
+    responseData: @typedarray Array<u8>;
+    device: WifiP2pDevice;
+}
+
+union P2pServiceDiscoveryInfo {
+    dnsSd: P2pDnsSdInfo;
+    dnsSdTxt: P2pDnsSdTxtInfo;
+    upnp: P2pUpnpInfo;
+    generic: P2pGenericInfo;
+}
+
 struct ConnectSettings {
     networkId: i32;
     withUserAction: Optional<bool>;
@@ -543,8 +578,17 @@ function AddDnsSdLocalP2pService(instanceName: String, serviceType: String, txtR
 function AddUpnpLocalP2pService(uuid: String, device: String, services: Array<String>, serviceName: String): void;
 function RemoveLocalP2pService(srvInfo: WifiP2pServiceInfo): void;
 
+function AddDnsSdServiceRequest(@optional serviceType: Optional<String>,  @optional instanceName: Optional<String>): void;
+function AddUpnpServiceRequest(@optional searchTarget: Optional<String>): void;
+function RemoveP2pServiceRequest(request: WifiP2pServiceRequest): void;
+function RemoveAllP2pServiceRequests(): void;
+function DiscoverServices(): void;
+
 @gen_promise("getLocalP2pServices")
 function GetLocalP2pServicesSync(): Array<WifiP2pServiceInfo>;
+
+@gen_promise("getP2pServiceRequest")
+function GetP2pServiceRequestSync(): Array<WifiP2pServiceRequest>;
 
 function OnWifiStateChange(callback: (data: i32) => void): void;
 function OffWifiStateChange(callback: Optional<(data: i32) => void>): void;
@@ -594,3 +638,6 @@ function OffP2pPersistentGroupChange(callback: Optional<(data: UndefinedType) =>
 
 function OnP2pDiscoveryChange(callback: (data: i32) => void): void;
 function OffP2pDiscoveryChange(callback: Optional<(data: i32) => void>): void;
+
+function OnP2pServiceDiscovery(callback: (data: P2pServiceDiscoveryInfo) => void): void;
+function OffP2pServiceDiscovery(callback: Optional<(data: P2pServiceDiscoveryInfo) => void>): void;

@@ -17,6 +17,7 @@
 #include <uv.h>
 #include "accesstoken_kit.h"
 #include "ipc_skeleton.h"
+#include "securec.h"
 #include "wifi_device.h"
 #include "wifi_logger.h"
 #include "wifi_napi_utils.h"
@@ -48,6 +49,8 @@ static std::set<std::string> g_supportEventList = {
     EVENT_P2P_PERSISTENT_GROUP_CHANGE,
     EVENT_P2P_PEER_DEVICE_CHANGE,
     EVENT_P2P_DISCOVERY_CHANGE,
+    EVENT_P2P_SERVICES_CHANGE,
+    EVENT_P2P_SERVICE_DISCOVERY,
 };
 
 std::map<std::string, std::int32_t> g_EventSysCapMap = {
@@ -66,6 +69,8 @@ std::map<std::string, std::int32_t> g_EventSysCapMap = {
     { EVENT_P2P_PERSISTENT_GROUP_CHANGE, SYSCAP_WIFI_P2P },
     { EVENT_P2P_PEER_DEVICE_CHANGE, SYSCAP_WIFI_P2P },
     { EVENT_P2P_DISCOVERY_CHANGE, SYSCAP_WIFI_P2P },
+    { EVENT_P2P_SERVICES_CHANGE, SYSCAP_WIFI_P2P },
+    { EVENT_P2P_SERVICE_DISCOVERY, SYSCAP_WIFI_P2P },
 };
 
 void NapiEvent::EventNotify(AsyncEventData *asyncEvent)
@@ -197,6 +202,96 @@ napi_value NapiEvent::CreateResult(const napi_env& env, const WifiP2pLinkedInfo&
     SetValueInt32(env, "connectState", static_cast<int>(info.GetConnectState()), result);
     SetValueBool(env, "isGroupOwner", info.IsGroupOwner(), result);
     SetValueUtf8String(env, "groupOwnerAddr", info.GetGroupOwnerAddress(), result);
+    return result;
+}
+
+static void FillDnsSdServiceResult(const napi_env& env, const P2pServiceDiscoveryInfo& info, napi_value result)
+{
+    SetValueUtf8String(env, "instanceName", info.dnsSdName, result);
+    SetValueUtf8String(env, "registrationType", info.dnsSdRegistrationType, result);
+}
+
+static void FillDnsSdTxtRecordResult(const napi_env& env, const P2pServiceDiscoveryInfo& info, napi_value result)
+{
+    constexpr size_t MAP_SET_ARGC = 2;
+    SetValueUtf8String(env, "wholeDomainName", info.dnsSdName, result);
+    napi_value global = nullptr;
+    napi_value mapCtor = nullptr;
+    napi_value txtMap = nullptr;
+    napi_get_global(env, &global);
+    napi_get_named_property(env, global, "Map", &mapCtor);
+    napi_new_instance(env, mapCtor, 0, nullptr, &txtMap);
+    napi_value setFn = nullptr;
+    napi_get_named_property(env, txtMap, "set", &setFn);
+    for (const auto &item : info.dnsSdTxtRecord) {
+        napi_value key = nullptr;
+        napi_value value = nullptr;
+        napi_create_string_utf8(env, item.first.c_str(), NAPI_AUTO_LENGTH, &key);
+        napi_create_string_utf8(env, item.second.c_str(), NAPI_AUTO_LENGTH, &value);
+        napi_value argv[MAP_SET_ARGC] = {key, value};
+        napi_call_function(env, txtMap, setFn, MAP_SET_ARGC, argv, nullptr);
+    }
+    napi_set_named_property(env, result, "txtRecord", txtMap);
+}
+
+static void FillUpnpServiceResult(const napi_env& env, const P2pServiceDiscoveryInfo& info, napi_value result)
+{
+    napi_value nameArray = nullptr;
+    napi_create_array_with_length(env, info.upnpUniqueServiceNames.size(), &nameArray);
+    for (uint32_t i = 0; i < info.upnpUniqueServiceNames.size(); ++i) {
+        napi_value item = nullptr;
+        napi_create_string_utf8(env, info.upnpUniqueServiceNames[i].c_str(), NAPI_AUTO_LENGTH, &item);
+        napi_set_element(env, nameArray, i, item);
+    }
+    napi_set_named_property(env, result, "uniqueServiceNames", nameArray);
+}
+
+static void FillGenericServiceResult(const napi_env& env, const P2pServiceDiscoveryInfo& info, napi_value result)
+{
+    SetValueInt32(env, "protocolType", static_cast<int>(info.protocolType), result);
+    void *bufferData = nullptr;
+    napi_value arrayBuffer = nullptr;
+    napi_status status = napi_create_arraybuffer(env, info.responseData.size(), &bufferData, &arrayBuffer);
+    if (status != napi_ok || arrayBuffer == nullptr) {
+        WIFI_LOGE("CreateResult P2pServiceDiscovery napi_create_arraybuffer failed: %{public}d", status);
+        return;
+    }
+    if (bufferData != nullptr && !info.responseData.empty()) {
+        if (memcpy_s(bufferData, info.responseData.size(), info.responseData.data(),
+            info.responseData.size()) != EOK) {
+            WIFI_LOGE("CreateResult P2pServiceDiscovery memcpy_s failed");
+        }
+    }
+    napi_value dataArray = nullptr;
+    status = napi_create_typedarray(env, napi_uint8_array, info.responseData.size(), arrayBuffer, 0, &dataArray);
+    if (status != napi_ok || dataArray == nullptr) {
+        WIFI_LOGE("CreateResult P2pServiceDiscovery napi_create_typedarray failed: %{public}d", status);
+        return;
+    }
+    napi_set_named_property(env, result, "responseData", dataArray);
+}
+
+napi_value NapiEvent::CreateResult(const napi_env& env, const P2pServiceDiscoveryEvent& event)
+{
+    napi_value result;
+    napi_create_object(env, &result);
+    SetValueInt32(env, "kind", static_cast<int>(event.info.type), result);
+    switch (event.info.type) {
+        case P2pServiceDiscoveryResultType::DNS_SD_SERVICE:
+            FillDnsSdServiceResult(env, event.info, result);
+            break;
+        case P2pServiceDiscoveryResultType::DNS_SD_TXT_RECORD:
+            FillDnsSdTxtRecordResult(env, event.info, result);
+            break;
+        case P2pServiceDiscoveryResultType::UPNP_SERVICE:
+            FillUpnpServiceResult(env, event.info, result);
+            break;
+        case P2pServiceDiscoveryResultType::GENERIC_SERVICE:
+        default:
+            FillGenericServiceResult(env, event.info, result);
+            break;
+    }
+    napi_set_named_property(env, result, "device", CreateResult(env, event.device));
     return result;
 }
 
@@ -469,6 +564,13 @@ public:
         WIFI_LOGI("received OnP2pChrErrCodeReport event");
     }
 
+    void OnP2pServiceDiscoveryResult(const P2pServiceDiscoveryInfo &info, const WifiP2pDevice &device) override
+    {
+        WIFI_LOGI("received p2p service discovery result, type=%{public}d", static_cast<int>(info.type));
+        P2pServiceDiscoveryEvent event{info, device};
+        CheckAndNotify(EVENT_P2P_SERVICE_DISCOVERY, event);
+    }
+
     OHOS::sptr<OHOS::IRemoteObject> AsObject() override {
         return nullptr;
     }
@@ -545,6 +647,49 @@ napi_value Off(napi_env env, napi_callback_info cbinfo) {
         EventRegister::GetInstance().Unregister(env, type, argv[1]);
     } else {
         EventRegister::GetInstance().Unregister(env, type, nullptr);
+    }
+    napi_value result = nullptr;
+    napi_get_undefined(env, &result);
+    return result;
+}
+
+napi_value OnP2pServiceDiscovery(napi_env env, napi_callback_info cbinfo)
+{
+    TRACE_FUNC_CALL;
+    size_t argc = 1;
+    napi_value argv[1] = {0};
+    napi_get_cb_info(env, cbinfo, &argc, argv, nullptr, nullptr);
+    if (argc < 1) {
+        WIFI_NAPI_RETURN_NUM_CODE(env, false, WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+    }
+    napi_valuetype handler = napi_undefined;
+    napi_typeof(env, argv[0], &handler);
+    if (handler != napi_function) {
+        WIFI_NAPI_RETURN_NUM_CODE(env, false, WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+    }
+    EventRegister::GetInstance().Register(env, EVENT_P2P_SERVICE_DISCOVERY, argv[0]);
+    napi_value result = nullptr;
+    napi_get_undefined(env, &result);
+    return result;
+}
+
+napi_value OffP2pServiceDiscovery(napi_env env, napi_callback_info cbinfo)
+{
+    TRACE_FUNC_CALL;
+    size_t argc = 1;
+    napi_value argv[1] = {0};
+    napi_get_cb_info(env, cbinfo, &argc, argv, nullptr, nullptr);
+    napi_valuetype handler = napi_undefined;
+    if (argc >= 1) {
+        napi_typeof(env, argv[0], &handler);
+        if (handler != napi_function && handler != napi_null && handler != napi_undefined) {
+            WIFI_NAPI_RETURN_NUM_CODE(env, false, WIFI_OPT_INVALID_PARAM, SYSCAP_WIFI_P2P);
+        }
+    }
+    if (argc >= 1 && handler == napi_function) {
+        EventRegister::GetInstance().Unregister(env, EVENT_P2P_SERVICE_DISCOVERY, argv[0]);
+    } else {
+        EventRegister::GetInstance().Unregister(env, EVENT_P2P_SERVICE_DISCOVERY, nullptr);
     }
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
@@ -764,6 +909,10 @@ void EventRegister::Register(const napi_env& env, const std::string& type, napi_
         }
         g_eventRegisterInfo[type] = std::vector<RegObj>{regObj};
     } else {
+        if (iter->second.size() > REGISTERINFO_MAX_NUM) {
+            WIFI_LOGE("RegisterInfo for %{public}s exceeds the maximum value!", type.c_str());
+            return;
+        }
         iter->second.emplace_back(regObj);
     }
 }

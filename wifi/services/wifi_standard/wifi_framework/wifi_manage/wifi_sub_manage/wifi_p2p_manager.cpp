@@ -320,6 +320,11 @@ void WifiP2pManager::InitP2pCallback(void)
     mP2pCallback.OnP2pServicesChangedEvent = [this](const std::vector<WifiP2pServiceInfo> &vServices) {
         this->DealP2pServiceChanged(vServices);
     };
+    /* Discovery response: HandleP2pServiceResp -> BroadcastP2pServiceDiscoveryResult */
+    mP2pCallback.OnP2pServiceDiscoveryResult = [this](const P2pServiceDiscoveryInfo &info,
+        const WifiP2pDevice &device) {
+        this->DealP2pServiceDiscoveryResult(info, device);
+    };
     mP2pCallback.OnP2pConnectionChangedEvent = [this](const WifiP2pLinkedInfo &info) {
         this->DealP2pConnectionChanged(info);
     };
@@ -419,6 +424,16 @@ void WifiP2pManager::DealP2pServiceChanged(const std::vector<WifiP2pServiceInfo>
     cbMsg.serviceInfo = vServices;
     WifiInternalEventDispatcher::GetInstance().AddBroadCastMsg(cbMsg);
     return;
+}
+
+void WifiP2pManager::DealP2pServiceDiscoveryResult(const P2pServiceDiscoveryInfo &info, const WifiP2pDevice &device)
+{
+    WIFI_LOGI("DealP2pServiceDiscoveryResult, type=%{public}d", static_cast<int>(info.type));
+    WifiEventCallbackMsg cbMsg;
+    cbMsg.msgCode = WIFI_CBK_MSG_P2P_SERVICE_DISCOVERY_RESULT;
+    cbMsg.p2pServiceDiscoveryInfo = info;
+    cbMsg.p2pDevice = device;
+    WifiInternalEventDispatcher::GetInstance().AddBroadCastMsg(cbMsg);
 }
 
 void WifiP2pManager::DealP2pConnectionChanged(const WifiP2pLinkedInfo &info)

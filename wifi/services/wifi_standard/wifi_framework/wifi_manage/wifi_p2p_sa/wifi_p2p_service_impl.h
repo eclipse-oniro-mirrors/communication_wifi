@@ -272,6 +272,54 @@ public:
     ErrCode QueryLocalP2pServices(std::vector<WifiP2pServiceInfo> &services) override;
 
     /**
+     * @Description Query pending P2P service discovery requests
+     *
+     * @param requests - pending WifiP2pServiceRequest list
+     * @return ErrCode - operation result
+     */
+    ErrCode QueryP2pServiceRequests(std::vector<WifiP2pServiceRequest> &requests) override;
+
+    /**
+     * @Description Add a pending P2P service discovery request
+     *
+     * @param request - WifiP2pServiceRequest object
+     * @return ErrCode - operation result
+     */
+    ErrCode AddP2pServiceRequest(const WifiP2pServiceRequest &request) override;
+
+    /**
+     * @Description Remove a pending P2P service discovery request
+     *
+     * @param request - WifiP2pServiceRequest object
+     * @return ErrCode - operation result
+     */
+    ErrCode RemoveP2pServiceRequest(const WifiP2pServiceRequest &request) override;
+
+    /**
+     * @Description Clear all pending P2P service discovery requests
+     *
+     * @return ErrCode - operation result
+     */
+    ErrCode ClearP2pServiceRequests(void) override;
+
+    /**
+     * @Description Add Bonjour (DNS-SD) P2P service discovery request (create then add)
+     *
+     * @param instanceName - DNS-SD instance name, can be empty
+     * @param serviceType - DNS-SD service type, can be empty
+     * @return ErrCode - operation result
+     */
+    ErrCode AddDnsSdServiceRequest(const std::string &instanceName, const std::string &serviceType) override;
+
+    /**
+     * @Description Add UPnP P2P service discovery request (create then add)
+     *
+     * @param searchTarget - UPnP search target, can be empty
+     * @return ErrCode - operation result
+     */
+    ErrCode AddUpnpServiceRequest(const std::string &searchTarget) override;
+
+    /**
      * @Description Register callback function
      *
      * @param callback - IWifiP2pCallback object

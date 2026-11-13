@@ -32,6 +32,64 @@ void WifiP2pServiceManager::ClearAll()
     ClearAllServiceResponse();
     ClearAllDeviceService();
     ClearLocalService();
+    ClearPendingServiceRequests();
+}
+
+bool WifiP2pServiceManager::AddPendingServiceRequest(const WifiP2pServiceRequest &req)
+{
+    WifiP2pServiceRequest request = req;
+    request.SetTransactionId(GetTransId());
+    std::unique_lock<std::mutex> lock(serviceMutex);
+    const std::vector<WifiP2pServiceRequest> &list = pendingServiceRequests.GetServiceRequestList();
+    for (auto iter = list.begin(); iter != list.end(); ++iter) {
+        if (iter->GetProtocolType() == request.GetProtocolType() &&
+            iter->GetQuery() == request.GetQuery()) {
+            WIFI_LOGD("WifiP2pServiceRequest has been added when AddPendingServiceRequest.");
+            return false;
+        }
+    }
+    return pendingServiceRequests.AddServiceRequest(request);
+}
+
+bool WifiP2pServiceManager::RemovePendingServiceRequest(const WifiP2pServiceRequest &req)
+{
+    std::unique_lock<std::mutex> lock(serviceMutex);
+    const std::vector<WifiP2pServiceRequest> &list = pendingServiceRequests.GetServiceRequestList();
+    for (auto iter = list.begin(); iter != list.end(); ++iter) {
+        if (iter->GetProtocolType() == req.GetProtocolType() &&
+            iter->GetQuery() == req.GetQuery()) {
+            WifiP2pServiceRequest request = *iter;
+            return pendingServiceRequests.RemoveServiceRequest(request);
+        }
+    }
+    WIFI_LOGD("Cannot find WifiP2pServiceRequest when RemovePendingServiceRequest.");
+    return false;
+}
+
+void WifiP2pServiceManager::ClearPendingServiceRequests()
+{
+    std::unique_lock<std::mutex> lock(serviceMutex);
+    pendingServiceRequests.ClearServiceRequest();
+}
+
+bool WifiP2pServiceManager::GetPendingServiceRequestTlvs(std::vector<unsigned char> &tlvs)
+{
+    std::unique_lock<std::mutex> lock(serviceMutex);
+    if (pendingServiceRequests.GetServiceRequestList().empty()) {
+        return false;
+    }
+    tlvs = pendingServiceRequests.GetTlvs();
+    return !tlvs.empty();
+}
+
+void WifiP2pServiceManager::GetPendingServiceRequestList(std::vector<WifiP2pServiceRequest> &requests)
+{
+    std::unique_lock<std::mutex> lock(serviceMutex);
+    requests.clear();
+    const std::vector<WifiP2pServiceRequest> &list = pendingServiceRequests.GetServiceRequestList();
+    for (auto iter = list.begin(); iter != list.end(); ++iter) {
+        requests.push_back(*iter);
+    }
 }
 
 void WifiP2pServiceManager::SetQueryId(const std::string &setQueryId)
@@ -124,6 +182,10 @@ bool WifiP2pServiceManager::AddDeviceService(const WifiP2pServiceResponse &rsp, 
     std::vector<std::string> queryList;
     std::string query;
     for (auto itRsp = rsp.GetData().begin(); itRsp != rsp.GetData().end(); ++itRsp) {
+        if (*itRsp == 0) {
+            query += ' ';
+            continue;
+        }
         query += *itRsp;
     }
     queryList.push_back(query);
@@ -385,9 +447,19 @@ bool WifiP2pServiceManager::UpdateServiceName(const std::string &devAddr, const 
         return false;
     }
 
-    std::string tlvString(svrInfo.GetData().begin(), svrInfo.GetData().end());
+    std::string tlvString;
+    for (auto itRsp = svrInfo.GetData().begin(); itRsp != svrInfo.GetData().end(); ++itRsp) {
+        if (*itRsp == 0) {
+            tlvString += ' ';
+            continue;
+        }
+        tlvString += *itRsp;
+    }
     std::vector<WifiP2pServiceInfo> &svrInfos = iter->second;
     for (auto iterSvrInfo = svrInfos.begin(); iterSvrInfo != svrInfos.end(); ++iterSvrInfo) {
+        if (iterSvrInfo->GetQueryList().empty()) {
+            continue;
+        }
         if (iterSvrInfo->GetServicerProtocolType() == svrInfo.GetProtocolType() &&
             iterSvrInfo->GetDeviceAddress() == devAddr && iterSvrInfo->GetQueryList().at(0) == tlvString) {
             iterSvrInfo->SetServiceName(svrInfo.GetServiceName());

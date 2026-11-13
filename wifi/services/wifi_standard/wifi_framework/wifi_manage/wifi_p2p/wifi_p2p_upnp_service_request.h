@@ -37,6 +37,12 @@ public:
      */
     static WifiP2pUpnpServiceRequest Create(std::string searchTarget);
 
+    /**
+     * @Description Destroy the WifiP2pUpnpServiceRequest object.
+     *
+     */
+    ~WifiP2pUpnpServiceRequest() = default;
+
 protected:
     /**
      * @Description Construct a new WifiP2pUpnpServiceRequest object.
@@ -49,11 +55,6 @@ protected:
      * @param query - unique query string
      */
     explicit WifiP2pUpnpServiceRequest(std::string query);
-    /**
-     * @Description Destroy the WifiP2pUpnpServiceRequest object.
-     *
-     */
-    ~WifiP2pUpnpServiceRequest() = default;
 };
 }  // namespace Wifi
 }  // namespace OHOS

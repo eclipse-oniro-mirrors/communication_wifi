@@ -55,6 +55,7 @@ public:
     ErrCode QueryP2pGroups(std::vector<WifiP2pGroupInfo> &groups);
     ErrCode QueryP2pServices(std::vector<WifiP2pServiceInfo> &services);
     ErrCode QueryLocalP2pServices(std::vector<WifiP2pServiceInfo> &services);
+    ErrCode QueryP2pServiceRequests(std::vector<WifiP2pServiceRequest> &requests);
     ErrCode RegisterP2pServiceCallbacks(const IP2pServiceCallbacks &callbacks);
     ErrCode CreateRptGroup(const WifiP2pConfig &config);
     ErrCode GetRptStationsList(std::vector<StationInfo> &result);
@@ -66,6 +67,11 @@ public:
     ErrCode SetMiracastSinkConfig(const std::string& config);
     ErrCode NotifyRemoteDie(int uid);
     ErrCode SetP2pHighPerf(bool isEnable);
+    ErrCode AddP2pServiceRequest(const WifiP2pServiceRequest &request);
+    ErrCode RemoveP2pServiceRequest(const WifiP2pServiceRequest &request);
+    ErrCode ClearP2pServiceRequests();
+    ErrCode AddDnsSdServiceRequest(const std::string &instanceName, const std::string &serviceType);
+    ErrCode AddUpnpServiceRequest(const std::string &searchTarget);
 
 public:
     IP2pServiceCallbacks mCallback;

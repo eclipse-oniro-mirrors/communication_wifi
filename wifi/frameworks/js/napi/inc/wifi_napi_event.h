@@ -83,6 +83,11 @@ public:
 static std::shared_mutex g_regInfoMutex;
 inline std::map<std::string, std::vector<RegObj>> g_eventRegisterInfo;
 
+struct P2pServiceDiscoveryEvent {
+    P2pServiceDiscoveryInfo info;
+    WifiP2pDevice device;
+};
+
 class NapiEvent {
 public:
     napi_value CreateResult(const napi_env& env, int value);
@@ -91,6 +96,7 @@ public:
     napi_value CreateResult(const napi_env& env, const WifiP2pDevice& device);
     napi_value CreateResult(const napi_env& env, const std::vector<WifiP2pDevice>& devices);
     napi_value CreateResult(const napi_env& env, const WifiP2pLinkedInfo& info);
+    napi_value CreateResult(const napi_env& env, const P2pServiceDiscoveryEvent& event);
     void EventNotify(AsyncEventData *asyncEvent);
 
     template<typename T>
@@ -162,6 +168,8 @@ private:
 
 napi_value On(napi_env env, napi_callback_info cbinfo);
 napi_value Off(napi_env env, napi_callback_info cbinfo);
+napi_value OnP2pServiceDiscovery(napi_env env, napi_callback_info cbinfo);
+napi_value OffP2pServiceDiscovery(napi_env env, napi_callback_info cbinfo);
 }  // namespace Wifi
 }  // namespace OHOS
 

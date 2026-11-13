@@ -130,6 +130,14 @@ public:
      */
     void OnP2pChrErrCodeReport(const int errCode) override;
 
+    /**
+     * @Description Unified P2P service discovery result (DNS-SD / UPnP / generic).
+     *
+     * @param info - discovery payload discriminated by info.type
+     * @param device - source device
+     */
+    void OnP2pServiceDiscoveryResult(const P2pServiceDiscoveryInfo &info, const WifiP2pDevice &device) override;
+
     void RegisterCallBack(const sptr<IWifiP2pCallback> &userCallback);
     bool IsRemoteDied() const;
     void SetRemoteDied(bool val);
@@ -137,6 +145,7 @@ public:
 private:
     void InitHandleMap();
     void ReadWifiP2pDeviceData(MessageParcel &data, WifiP2pDevice &device);
+    bool ReadP2pServiceDiscoveryInfo(MessageParcel &data, P2pServiceDiscoveryInfo &info);
     void RemoteOnP2pStateChanged(uint32_t code, MessageParcel &data, MessageParcel &reply);
     void RemoteOnP2pPersistentGroupsChanged(uint32_t code, MessageParcel &data, MessageParcel &reply);
     void RemoteOnP2pThisDeviceChanged(uint32_t code, MessageParcel &data, MessageParcel &reply);
@@ -150,6 +159,7 @@ private:
     void RemoteOnP2pGcLeaveGroup(uint32_t code, MessageParcel &data, MessageParcel &reply);
     void RemoteOnP2pPrivatePeersChanged(uint32_t code, MessageParcel &data, MessageParcel &reply);
     void RemoteOnP2pChrErrCodeReport(uint32_t code, MessageParcel &data, MessageParcel &reply);
+    void RemoteOnP2pServiceDiscoveryResult(uint32_t code, MessageParcel &data, MessageParcel &reply);
 
 private:
     HandleFuncMap handleFuncMap;

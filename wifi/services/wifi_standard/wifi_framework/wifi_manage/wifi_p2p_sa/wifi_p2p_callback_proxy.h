@@ -122,8 +122,17 @@ public:
      */
     void OnP2pChrErrCodeReport(const int errCode) override;
 
+    /**
+     * @Description Unified P2P service discovery result (DNS-SD / UPnP / generic).
+     *
+     * @param info - discovery payload discriminated by info.type
+     * @param device - source device
+     */
+    void OnP2pServiceDiscoveryResult(const P2pServiceDiscoveryInfo &info, const WifiP2pDevice &device) override;
+
 private:
     void WriteWifiP2pDeviceData(MessageParcel &data, const WifiP2pDevice &device);
+    void WriteP2pServiceDiscoveryInfo(MessageParcel &data, const P2pServiceDiscoveryInfo &info);
 
 private:
     static inline BrokerDelegator<WifiP2pCallbackProxy> delegator;
