@@ -896,6 +896,9 @@ void WifiServiceScheduler::DispatchWifiSemiActiveRes(OperateResState state, int 
         WifiConfigCenter::GetInstance().SetWifiState(static_cast<int>(WifiState::DISABLED), instId);
         WifiConfigCenter::GetInstance().SetWifiDetailState(WifiDetailState::STATE_SEMI_ACTIVE, instId);
         WifiConfigCenter::GetInstance().SetWifiMidState(WifiOprMidState::SEMI_ACTIVE, instId);
+#ifdef FEATURE_SEMI_KEEP_GO_HML_ALIVE
+        BroadCastWifiStateChange(WifiState::DISABLED, instId);
+#endif
         cbMsg.msgData = static_cast<int>(WifiDetailState::STATE_SEMI_ACTIVE);
         WifiInternalEventDispatcher::GetInstance().AddBroadCastMsg(cbMsg);
         WriteWifiOperateStateHiSysEvent(static_cast<int>(WifiOperateType::STA_SEMI_OPEN),

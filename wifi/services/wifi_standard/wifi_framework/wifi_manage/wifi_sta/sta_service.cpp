@@ -14,6 +14,7 @@
  */
 
 #include "sta_service.h"
+#include "sync_event_waiter.h"
 #include "sta_define.h"
 #include "sta_service_callback.h"
 #ifndef OHOS_ARCH_LITE
@@ -628,6 +629,12 @@ ErrCode StaService::ConnectToDevice(const WifiDeviceConfig &config) const
 {
     LOGI(
         "Enter ConnectToDevice, ssid = %{public}s instId:%{public}d. \n", SsidAnonymize(config.ssid).c_str(), m_instId);
+#ifdef FEATURE_AP_STA_CONNECT_EXCLUSION
+    if (SyncEventWaiter::GetInstance().EnsureHotspotStoppedForConnect() != WIFI_OPT_SUCCESS) {
+        LOGE("ConnectToDevice failed, wait hotspot stop timeout");
+        return WIFI_OPT_FAILED;
+    }
+#endif
     CHECK_NULL_AND_RETURN(pStaStateMachine, WIFI_OPT_FAILED);
 #ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
     if (pStaStateMachine->WhetherRestrictedByMdm(config.ssid, config.bssid, false)) {
@@ -652,6 +659,13 @@ ErrCode StaService::ConnectToDevice(const WifiDeviceConfig &config) const
 ErrCode StaService::ConnectToNetwork(int networkId, int type) const
 {
     LOGI("Enter ConnectToNetwork, networkId is %{public}d.", networkId);
+#ifdef FEATURE_AP_STA_CONNECT_EXCLUSION
+    if (type == NETWORK_SELECTED_BY_USER &&
+        SyncEventWaiter::GetInstance().EnsureHotspotStoppedForConnect() != WIFI_OPT_SUCCESS) {
+        LOGE("ConnectToNetwork failed, wait hotspot stop timeout");
+        return WIFI_OPT_FAILED;
+    }
+#endif
     WifiDeviceConfig config;
     if (WifiSettings::GetInstance().GetDeviceConfig(networkId, config, m_instId) != 0) {
         LOGE("WifiDeviceConfig is null!");

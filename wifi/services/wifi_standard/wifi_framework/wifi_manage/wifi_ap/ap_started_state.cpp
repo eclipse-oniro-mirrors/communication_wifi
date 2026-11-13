@@ -36,6 +36,9 @@
 #include "wifi_hisysevent.h"
 #include "wifi_global_func.h"
 #include "wifi_cmd_client.h"
+#ifdef FEATURE_VAP_CSA_FOLLOW
+#include "wifi_common_event_helper.h"
+#endif
 #include "wifi_sta_hal_interface.h"
 #include "wifi_randommac_helper.h"
 #include "wifi_battery_utils.h"
@@ -495,6 +498,9 @@ void ApStartedState::ProcessCmdHotspotChannelChanged(InternalMessagePtr msg)
     WifiSettings::GetInstance().GetHotspotConfig(m_hotspotConfig, m_id);
     m_hotspotConfig.SetChannel(channel);
     WifiSettings::GetInstance().SetHotspotConfig(m_hotspotConfig, m_id);
+#ifdef FEATURE_VAP_CSA_FOLLOW
+    WifiCommonEventHelper::PublishApChannelSwitchEvent(freq);
+#endif
 }
 
 void ApStartedState::ProcessCmdAssociatedStaChanged(InternalMessagePtr msg)

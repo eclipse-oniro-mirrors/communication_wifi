@@ -1047,6 +1047,7 @@ ErrCode WifiDeviceServiceImpl::AllowAutoConnect(int32_t networkId, bool isAllowe
 
 void WifiDeviceServiceImpl::CheckAndHandleVapConflict()
 {
+#ifndef FEATURE_AP_STA_CONNECT_EXCLUSION
     if (IsOtherVapConnect()) {
         LOGI("ConnectToNetwork: p2p or hml connected, and hotspot is enable");
 #ifndef OHOS_ARCH_LITE
@@ -1066,6 +1067,7 @@ void WifiDeviceServiceImpl::CheckAndHandleVapConflict()
             }
         }
 #endif
+#endif // FEATURE_AP_STA_CONNECT_EXCLUSION
 }
 
 ErrCode WifiDeviceServiceImpl::ConnectToNetwork(int networkId, bool isCandidate, int dialogTimeout)

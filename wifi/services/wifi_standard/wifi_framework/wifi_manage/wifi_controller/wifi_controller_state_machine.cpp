@@ -15,6 +15,7 @@
 
 #include "wifi_controller_state_machine.h"
 #include "wifi_controller_define.h"
+#include "sync_event_waiter.h"
 #include "wifi_manager.h"
 #include "wifi_config_center.h"
 #include "wifi_msg.h"
@@ -715,6 +716,19 @@ void WifiControllerMachine::EnableState::HandleWifiToggleChangeInEnabledState(In
     }
 
     if (pWifiControllerMachine->ShouldDisableWifi(msg)) {
+#if defined(FEATURE_SEMI_KEEP_GO_HML_ALIVE) && !defined(OHOS_ARCH_LITE)
+        if (msg->GetMessageName() == CMD_WIFI_TOGGLED &&
+            WifiConfigCenter::GetInstance().GetWifiToggledEnable(msg->GetParam2()) == WIFI_STATE_SEMI_ENABLED &&
+            pWifiControllerMachine->concreteManagers.IdExist(INSTID_WLAN0)) {
+            WIFI_LOGI("%{public}s, wlan -> semi hot switch, keep concrete and p2p alive", __func__);
+            pWifiControllerMachine->SwitchRole(pWifiControllerMachine->GetWifiRole());
+            if (msg->GetParam2() == INSTID_WLAN0) {
+                WifiNotificationUtil::GetInstance().CancelWifiNotification(
+                    WifiNotificationId::WIFI_PORTAL_NOTIFICATION_ID);
+            }
+            return;
+        }
+#endif
         pWifiControllerMachine->multiStaManagers.StopAllManagers();
         pWifiControllerMachine->concreteManagers.StopAllManagers();
 #ifndef OHOS_ARCH_LITE
@@ -838,6 +852,15 @@ void WifiControllerMachine::EnableState::HandleSoftapOpen(int id)
             return;
         }
 #endif
+#ifdef FEATURE_AP_STA_CONNECT_EXCLUSION
+    if (SyncEventWaiter::GetInstance().EnsureStaDisconnectedForHotspot(id) != WIFI_OPT_SUCCESS) {
+        WIFI_LOGE("%{public}s, wait sta disconnect failed, hotspot open aborted", __func__);
+        WifiConfigCenter::GetInstance().SetSoftapToggledState(false);
+        WriteSoftApOpenAndCloseFailedEvent(static_cast<int>(SoftApperateType::OPEN_SOFT_AP_FAILED),
+            "STA_DISCONNECT_TIMEOUT");
+        return;
+    }
+#endif
     // If WiFi is not connected, disable WiFi before starting hotspot
     if (pWifiControllerMachine->IsEnableScanOnlyOnHotspot() &&
         pWifiControllerMachine->GetWifiRole() == ConcreteManagerRole::ROLE_CLIENT_STA) {
@@ -907,12 +930,18 @@ void WifiControllerMachine::EnableState::HandleSoftapClose(int id)
         WIFI_LOGI("Current ap state is %{public}d, return", apState);
         return;
     }
-    if (pWifiControllerMachine->softApManagers.IdExist(id)) {
+    bool hasSoftapManager = pWifiControllerMachine->softApManagers.IdExist(id);
+    if (hasSoftapManager) {
         pWifiControllerMachine->softApManagers.StopManager(id);
         pWifiControllerMachine->StartTimer(CMD_AP_STOP_TIME, SOFT_AP_TIME_OUT);
     } else {
         WIFI_LOGE("%{public}s, no softAp manager for id %{public}d", __func__, id);
     }
+#ifdef FEATURE_AP_STA_CONNECT_EXCLUSION
+    if (!hasSoftapManager) {
+        SyncEventWaiter::GetInstance().OnHotspotStopped();
+    }
+#endif
     // Recover WiFi if needed
     if (pWifiControllerMachine->wifiStateBeforeHotspot_ && pWifiControllerMachine->IsEnableScanOnlyOnHotspot()) {
         WIFI_LOGI("%{public}s, recover WiFi after hotspot closed", __func__);
@@ -1115,6 +1144,9 @@ void WifiControllerMachine::HandleHotspotStop(int id, HotspotMode THotspotMode, 
     if (hotspotMode == THotspotMode && !TManagers.HasAnyManager()) {
         hotspotMode = HotspotMode::NONE;
     }
+#ifdef FEATURE_AP_STA_CONNECT_EXCLUSION
+    SyncEventWaiter::GetInstance().OnHotspotStopped();
+#endif
     if (roleIsRemoved) {
         if (!HasAnyManager()) {
             SwitchState(pDisableState);

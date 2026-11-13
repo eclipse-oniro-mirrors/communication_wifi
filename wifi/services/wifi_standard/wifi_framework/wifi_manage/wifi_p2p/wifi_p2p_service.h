@@ -435,6 +435,9 @@ private:
     WifiP2pDeviceManager &deviceManager; /* device manager */
     WifiP2pGroupManager &groupManager;   /* group manager */
     WifiP2pServiceManager &serviceManager;
+#ifdef FEATURE_VAP_CSA_FOLLOW
+    IEnhanceService *pEnhanceService_ {nullptr};
+#endif
 };
 }  // namespace Wifi
 }  // namespace OHOS

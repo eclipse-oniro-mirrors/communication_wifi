@@ -92,6 +92,10 @@ public:
 #ifndef OHOS_ARCH_LITE
     MOCK_METHOD1(GetWifiEnhanceConfig, EnhanceConfigVariant(WifiEnhanceConfigType));
 #endif
+#ifdef FEATURE_VAP_CSA_FOLLOW
+    MOCK_METHOD0(GetChba0Freq, int());
+    MOCK_METHOD1(StaWaitForVapSwitch, bool(int));
+#endif
 };
 }  // namespace Wifi
 }  // namespace OHOS

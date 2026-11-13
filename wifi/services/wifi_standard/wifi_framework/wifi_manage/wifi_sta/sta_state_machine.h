@@ -714,6 +714,15 @@ private:
      */
     ErrCode StartConnectToNetwork(int networkId, const std::string &bssid, int connTriggerMode);
 
+#ifdef FEATURE_VAP_CSA_FOLLOW
+    /**
+     * @Description  在真正发起连接前，按本次已确定的BSSID判断是否需要等GO/HML 跟随换到目标信道
+     *
+     * @param bssid - 本次连接最终使用的BSSID
+     */
+    void WaitForVapSwitchBeforeConnect(const std::string &apBssid);
+#endif
+
     void SetAllowAutoConnectStatus(int32_t networkId, bool status);
 
     /**

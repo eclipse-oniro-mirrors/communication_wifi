@@ -44,6 +44,10 @@ inline const std::string COMMON_EVENT_WIFI_P2P_PEERS_DISCOVERY_STATE_CHANGED =
 inline const std::string COMMON_EVENT_WIFI_P2P_CURRENT_DEVICE_STATE_CHANGED =
     "usual.event.wifi.p2p.CURRENT_DEVICE_CHANGE";
 inline const std::string COMMON_EVENT_WIFI_P2P_GROUP_STATE_CHANGED = "usual.event.wifi.p2p.GROUP_STATE_CHANGED";
+#ifdef FEATURE_VAP_CSA_FOLLOW
+inline const std::string COMMON_EVENT_WIFI_P2P_CH_SWITCH = "usual.event.wifi.p2p.CH_SWITCH";
+inline const std::string COMMON_EVENT_WIFI_AP_CH_SWITCH = "usual.event.wifi.ap.CH_SWITCH";
+#endif
 inline const std::string COMMON_EVENT_WIFI_SELF_CURE_STATE_CHANGED = "usual.event.wifi.selfcure.STATE_CHANGED";
 inline const std::string COMMON_EVENT_VOWIFI_SIGNAL_DETECT_INTERRUPT =
     "usual.event.wifi.VOWIFI_SIGNAL_DETECT_INTERRUPT";
@@ -91,6 +95,10 @@ public:
     static bool PublishP2pDicoveryStateChangedEvent(const int &code, const std::string &data);
     static bool PublishP2pCurrentDeviceStateChangedEvent(const int &code, const std::string &data);
     static bool PublishP2pGroupStateChangedEvent(const int &code, const std::string &data);
+#ifdef FEATURE_VAP_CSA_FOLLOW
+    static bool PublishP2pChannelSwitchEvent(int frequency);
+    static bool PublishApChannelSwitchEvent(int frequency);
+#endif
     static bool PublishSelfcureStateChangedEvent(const int &pid, const int &code, bool isSelfCureOnGoing);
     static bool PublishVoWifiSignalDetectInterruptEvent(const int &code, const std::string &data);
     static bool PublishNotAvailableDialog();

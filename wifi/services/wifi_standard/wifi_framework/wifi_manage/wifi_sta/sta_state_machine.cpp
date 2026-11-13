@@ -5702,6 +5702,9 @@ ErrCode StaStateMachine::StartConnectToNetwork(int networkId, const std::string 
     } else {
         WIFI_LOGI("SetBssid bssid=%{public}s", MacAnonymize(apBssid).c_str());
     }
+#ifdef FEATURE_VAP_CSA_FOLLOW
+    WaitForVapSwitchBeforeConnect(apBssid);
+#endif
 #ifdef FEATURE_WIFI_SECURE_SCHEDULE_SUPPORT
     if (IsInsecureNetworkByBssid(apBssid)) {
         WIFI_LOGI("StartConnectToNetwork rejected: insecure network, keyMgmt=%{public}s, bssid=%{public}s, "
@@ -5744,6 +5747,30 @@ ErrCode StaStateMachine::StartConnectToNetwork(int networkId, const std::string 
     WifiConfigCenter::GetInstance().EnableNetwork(networkId, connTriggerMode == NETWORK_SELECTED_BY_USER, m_instId);
     return WIFI_OPT_SUCCESS;
 }
+
+#ifdef FEATURE_VAP_CSA_FOLLOW
+void StaStateMachine::WaitForVapSwitchBeforeConnect(const std::string &apBssid)
+{
+    if (apBssid.empty() || enhanceService_ == nullptr) {
+        return;
+    }
+    int targetFreq = 0;
+    std::vector<WifiScanInfo> scanInfoList;
+    WifiConfigCenter::GetInstance().GetWifiScanConfig()->GetScanInfoList(scanInfoList);
+    for (const auto &scanInfo : scanInfoList) {
+        if (scanInfo.bssid == apBssid) {
+            targetFreq = scanInfo.frequency;
+            break;
+        }
+    }
+    WIFI_LOGI("WaitForVapSwitchBeforeConnect, bssid: %{public}s, scanNum: %{public}d, targetFreq: %{public}d",
+        MacAnonymize(apBssid).c_str(), static_cast<int>(scanInfoList.size()), targetFreq);
+    if (targetFreq == 0) {
+        return;
+    }
+    enhanceService_->StaWaitForVapSwitch(targetFreq);
+}
+#endif
 
 void StaStateMachine::MacAddressGenerate(WifiStoreRandomMac &randomMacInfo)
 {

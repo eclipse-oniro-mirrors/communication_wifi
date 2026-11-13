@@ -157,6 +157,14 @@ if (defined(ohos_lite)) {
 
     defines = [ "FEATURE_STA_SUPPORT" ]
 
+    if (wifi_feature_vap_csa_follow) {
+      defines += [ "FEATURE_VAP_CSA_FOLLOW" ]
+    }
+
+    if (wifi_feature_ap_sta_connect_exclusion) {
+      defines += [ "FEATURE_AP_STA_CONNECT_EXCLUSION" ]
+    }
+
     if (wifi_feature_with_local_random_mac) {
       defines += [ "SUPPORT_LOCAL_RANDOM_MAC" ]
     }

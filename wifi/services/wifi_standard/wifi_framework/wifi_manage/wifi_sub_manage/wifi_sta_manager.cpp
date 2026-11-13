@@ -16,6 +16,7 @@
 #include "wifi_sta_manager.h"
 #include "magic_enum.h"
 #include "wifi_manager.h"
+#include "sync_event_waiter.h"
 #include "wifi_service_manager.h"
 #include "wifi_config_center.h"
 #include "wifi_global_func.h"
@@ -134,6 +135,9 @@ void WifiStaManager::InitStaCallback(void)
     using namespace std::placeholders;
     mStaCallback.callbackModuleName = "WifiStaManager";
     mStaCallback.OnStaConnChanged = [this](OperateResState state, const WifiLinkedInfo &info, int instId) {
+#ifdef FEATURE_AP_STA_CONNECT_EXCLUSION
+        SyncEventWaiter::GetInstance().OnStaConnChanged(static_cast<int>(state), instId);
+#endif
         this->DealStaConnChanged(state, info, instId);
     };
     mStaCallback.OnWpsChanged = [this](WpsStartState state, const int pinCode, int instId) {

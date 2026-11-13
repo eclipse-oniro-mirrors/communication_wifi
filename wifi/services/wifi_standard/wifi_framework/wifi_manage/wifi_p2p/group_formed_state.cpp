@@ -19,6 +19,9 @@
 #include "wifi_p2p_temp_disc_event.h"
 #include "wifi_logger.h"
 #include "wifi_hisysevent.h"
+#ifdef FEATURE_VAP_CSA_FOLLOW
+#include "wifi_common_event_helper.h"
+#endif
 
 DEFINE_WIFILOG_P2P_LABEL("GroupFormedState");
 
@@ -414,6 +417,9 @@ bool GroupFormedState::ProcessCmdChSwitch(const InternalMessagePtr msg) const
     WifiP2pGroupInfo currGroup = groupManager.GetCurrentGroup();
     currGroup.SetFrequency(freq);
     groupManager.SetCurrentGroup(WifiMacAddrInfoType::P2P_CURRENT_GROUP_MACADDR_INFO, currGroup);
+#ifdef FEATURE_VAP_CSA_FOLLOW
+    WifiCommonEventHelper::PublishP2pChannelSwitchEvent(freq);
+#endif
     return EXECUTED;
 }
 

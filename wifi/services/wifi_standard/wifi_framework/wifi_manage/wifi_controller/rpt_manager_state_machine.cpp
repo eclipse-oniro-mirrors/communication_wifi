@@ -16,6 +16,7 @@
 #include "rpt_manager_state_machine.h"
 #include "wifi_manager.h"
 #include "wifi_service_manager.h"
+#include "ienhance_service.h"
 #include "wifi_config_center.h"
 #include "wifi_settings.h"
 #include "wifi_common_event_helper.h"
@@ -26,6 +27,9 @@
 #ifdef FEATURE_WITH_GO_SIMULATION_AP
 #include "wifi_common_util.h"
 #include "wifi_ap_msg.h"
+#ifdef FEATURE_VAP_CSA_FOLLOW
+#include "wifi_channel_helper.h"
+#endif
 #endif
 
 #define TIME_DELAY (1000)
@@ -550,9 +554,38 @@ WifiP2pConfig RptManagerMachine::CreateRptConfig()
     WifiSettings::GetInstance().GetRptHotspotConfig(hotspotConfig);
     p2pConfig.SetGroupName(hotspotConfig.GetSsid());
     p2pConfig.SetPassphrase(hotspotConfig.GetPreSharedKey());
-    int freq = ChannelToFrequency(hotspotConfig.GetChannel() > 0 ?
-        hotspotConfig.GetChannel() : AP_CHANNEL_5G_DEFAULT);
-    p2pConfig.SetFreq(freq);
+    int rptChannel = hotspotConfig.GetChannel() > 0 ?
+            hotspotConfig.GetChannel() : AP_CHANNEL_5G_DEFAULT;
+#ifdef FEATURE_VAP_CSA_FOLLOW
+    int followChannel = 0;
+    IEnhanceService *pEnhanceService = WifiServiceManager::GetInstance().GetEnhanceServiceInst();
+    if (pEnhanceService != nullptr) {
+        int hmlFrequency = pEnhanceService->GetChba0Freq();
+        if (hmlFrequency > 0) {
+            int hmlChannel = FrequencyToChannel(hmlFrequency);
+            if (WifiChannelHelper::GetInstance().TransformChannelToBand(hmlChannel) == BandType::BAND_5GHZ) {
+                WIFI_LOGI("RPT GO follow hml channel, hml Channel:%{public}d", hmlChannel);
+                followChannel = hmlChannel;
+            }
+        }
+    }
+    if (followChannel == 0 &&
+        WifiConfigCenter::GetInstance().GetHotspotState(0) == static_cast<int>(ApState::AP_STATE_STARTED)) {
+        HotspotConfig apConfig;
+        if (WifiSettings::GetInstance().GetHotspotConfig(apConfig, 0) == 0) {
+            int apChannel = apConfig.GetChannel();
+            if (WifiChannelHelper::GetInstance().TransformChannelToBand(apChannel) == BandType::BAND_5GHZ) {
+                WIFI_LOGI("RPT GO follow hotspot channel, apChannel:%{public}d, rptChannel:%{public}d",
+                    apChannel, rptChannel);
+                followChannel = apChannel;
+            }
+        }
+    }
+    if (followChannel > 0) {
+        rptChannel = followChannel;
+    }
+#endif
+    p2pConfig.SetFreq(ChannelToFrequency(rptChannel));
     p2pConfig.SetGoBand(GroupOwnerBand::GO_BAND_5GHZ);
 #else
     WifiSettings::GetInstance().GetHotspotConfig(hotspotConfig, mid);
