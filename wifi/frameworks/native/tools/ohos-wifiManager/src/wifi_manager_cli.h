@@ -14,35 +14,27 @@
  */
 #ifndef OHOS_WIFI_MANAGER_CLI_H
 #define OHOS_WIFI_MANAGER_CLI_H
-
 #include <string>
-#include "wifi_common_util.h"
+
 #include "cJSON.h"
+#include "wifi_errcode.h"
 
 namespace OHOS {
 namespace WifiCli {
-enum class CliErrCode {
-    SUCCESS = 0,
-    FAILED = 1,
-};
 
-struct ErrMsg {
-    ErrMsg(std::string c, std::string m)
-        : ErrMsg(std::move(c), std::move(m), {}) {}
-
-    ErrMsg(std::string c, std::string m, std::string s)
-        : code(std::move(c)),
-          errMsg(std::move(m)),
-          suggestion(std::move(s)) {}
-
-    std::string code;
-    std::string errMsg;
-    std::string suggestion;
+enum class WifiCliErrCode {
+    NETWORK_NOT_FOUND = 240,
+    BAND_NOT_SUPPORTED,
+    SSID_INVALID,
+    PSK_INVALID,
+    BAND_INVALID,
+    MISSING_PARAM,
 };
 
 void OutputSuccessJson(cJSON* data);
-void OutputErrorJson(const ErrMsg& errMessage);
+void OutputErrorJson(OHOS::Wifi::ErrCode code);
 int RunCommand(int argc, char** argv);
+void ClearString(std::string& str);
 
 } // namespace WifiCli
 } // namespace OHOS

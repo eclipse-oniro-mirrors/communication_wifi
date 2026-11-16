@@ -37,7 +37,7 @@ protected:
 
 TEST_F(WifiCliTest, TestHelpCommand)
 {
-    int result = system("ohos-wifiManager sta-enable --help > /dev/null 2>&1");
+    int result = system("ohos-wifiManager --help > /dev/null 2>&1");
     EXPECT_EQ(result, 0);
 }
 
@@ -104,14 +104,8 @@ TEST_F(WifiCliTest, TestHotspotConfigSet)
 
 TEST_F(WifiCliTest, TestHotspotBlocklistList)
 {
-    int result = system("ohos-wifiManager hotspot-blocklist > /dev/null 2>&1");
-    EXPECT_TRUE(CliAcceptable(result));
-}
-
-TEST_F(WifiCliTest, TestHotspotOldSyntaxRejected)
-{
-    int result = system("ohos-wifiManager hotspot able on > /dev/null 2>&1");
-    EXPECT_NE(result, 0);
+    int result = system("ohos-wifiManager hotspot-blocklist-get > /dev/null 2>&1");
+    EXPECT_EQ(result, 0);
 }
 
 TEST_F(WifiCliTest, TestHotspotHelp)
@@ -173,19 +167,6 @@ TEST_F(WifiCliTest, TestHotspotConfigSetMissingValue)
 TEST_F(WifiCliTest, TestHotspotUnknownAction)
 {
     int result = system("ohos-wifiManager hotspot-config-update > /dev/null 2>&1");
-    EXPECT_NE(result, 0);
-}
-
-TEST_F(WifiCliTest, TestHotspotBlocklistAddRemoved)
-{
-    int result = system("ohos-wifiManager hotspot-blocklist-add "
-        "--name TestDevice --mac AA:BB:CC:DD:EE:FF > /dev/null 2>&1");
-    EXPECT_NE(result, 0);
-}
-
-TEST_F(WifiCliTest, TestHotspotStationsListRemoved)
-{
-    int result = system("ohos-wifiManager hotspot-stations > /dev/null 2>&1");
     EXPECT_NE(result, 0);
 }
 

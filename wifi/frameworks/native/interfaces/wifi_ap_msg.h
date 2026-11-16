@@ -38,6 +38,9 @@ namespace Wifi {
 #define AP_CHANNEL_5G_160M_SET_BEGIN 36
 #define AP_CHANNEL_5G_160M_SET_END 48
 
+constexpr int MIN_PSK_LEN = 8;
+constexpr int MAX_PSK_LEN = 63;
+
 inline const std::string AP_DEFAULT_IP = "192.168.43.1";
 
 enum class ApState {
@@ -131,7 +134,6 @@ struct HotspotConfig {
     {
         return band;
     }
-
     inline void SetBandWidth(int32_t BandWidth)
     {
         apBandWidth = BandWidth;
