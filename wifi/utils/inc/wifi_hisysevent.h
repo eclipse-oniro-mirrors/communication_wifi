@@ -193,14 +193,6 @@ struct AppNetworkSpeedLimitStatisticInfo {
     int speedLimitGameState = -1;
 };
 
-struct MdmRestrictedInfo {
-    std::string ssid = "";
-    std::string bssid = "";
-    std::string restrictedType = "";
-    int uid = 0;
-    std::string bundleName = "";
-};
-
 struct WifiRiskInfo {
     int riskType = -1;
     int lastDisconnectTime = -1;
@@ -318,8 +310,6 @@ void WriteAutoSelectHiSysEvent(int selectType, const std::string &selectedInfo,
 void WriteDhcpInfoHiSysEvent(const IpInfo &ipInfo, const IpV6Info &ipv6Info);
 
 void WriteIodHiSysEvent(const IodStatisticInfo &iodStatisticInfo);
-
-void WriteMdmHiSysEvent(const MdmRestrictedInfo &mdmRestrictedInfo);
 
 void WriteWifiConfigStatusHiSysEvent(const std::string &packageName, WifiConfigReportType reportType);
 

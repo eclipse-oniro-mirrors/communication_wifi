@@ -14,6 +14,7 @@
  */
 
 #include <gtest/gtest.h>
+#include "cJSON.h"
 #include "internal_message.h"
 #include "mock_dhcp_service.h"
 #include "mock_if_config.h"
@@ -4471,6 +4472,143 @@ HWTEST_F(InsecureNetworkInterceptionTest, StartConnectToNetwork_Wpa2, TestSize.L
     EXPECT_CALL(WifiStaHalInterface::GetInstance(), Connect(_, _)).WillRepeatedly(Return(WIFI_HAL_OPT_OK));
     EXPECT_EQ(WIFI_OPT_SUCCESS,
         pStaStateMachine->StartConnectToNetwork(1, WPA2_BSSID, NETWORK_SELECTED_BY_USER));
+}
+#endif
+
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+HWTEST_F(StaStateMachineTest, BuildMdmEventContentFieldsTest, TestSize.Level1)
+{
+    const std::string ssid = "TestAP";
+    const std::string bssid = "aa:bb:cc:dd:ee:ff";
+    const std::string restrictedType = "BLOCK_LIST";
+    const int uid = 10001;
+    const std::string bundleName = "com.test.mdm";
+    std::string content = pStaStateMachine->BuildMdmEventContent(ssid, bssid, restrictedType, uid, bundleName);
+    EXPECT_FALSE(content.empty());
+    cJSON *root = cJSON_Parse(content.c_str());
+    ASSERT_NE(root, nullptr);
+    cJSON *bundleNameItem = cJSON_GetObjectItem(root, "bundlename");
+    ASSERT_NE(bundleNameItem, nullptr);
+    EXPECT_STREQ(bundleNameItem->valuestring, bundleName.c_str());
+    cJSON *uidItem = cJSON_GetObjectItem(root, "uid");
+    ASSERT_NE(uidItem, nullptr);
+    EXPECT_EQ(uidItem->valueint, uid);
+    cJSON *ssidItem = cJSON_GetObjectItem(root, "ssid");
+    ASSERT_NE(ssidItem, nullptr);
+    EXPECT_STREQ(ssidItem->valuestring, ssid.c_str());
+    cJSON *bssidItem = cJSON_GetObjectItem(root, "bssid");
+    ASSERT_NE(bssidItem, nullptr);
+    EXPECT_STREQ(bssidItem->valuestring, bssid.c_str());
+    cJSON *restrictedTypeItem = cJSON_GetObjectItem(root, "restrictedType");
+    ASSERT_NE(restrictedTypeItem, nullptr);
+    EXPECT_STREQ(restrictedTypeItem->valuestring, restrictedType.c_str());
+    cJSON *happenTimeItem = cJSON_GetObjectItem(root, "happenTime");
+    ASSERT_NE(happenTimeItem, nullptr);
+    EXPECT_GT(happenTimeItem->valuedouble, 0);
+    cJSON_Delete(root);
+}
+
+HWTEST_F(StaStateMachineTest, BuildMdmEventContentEmptyFieldsTest, TestSize.Level1)
+{
+    std::string content = pStaStateMachine->BuildMdmEventContent("", "", "", 0, "");
+    EXPECT_FALSE(content.empty());
+    cJSON *root = cJSON_Parse(content.c_str());
+    ASSERT_NE(root, nullptr);
+    cJSON *ssidItem = cJSON_GetObjectItem(root, "ssid");
+    ASSERT_NE(ssidItem, nullptr);
+    EXPECT_STREQ(ssidItem->valuestring, "");
+    cJSON *happenTimeItem = cJSON_GetObjectItem(root, "happenTime");
+    ASSERT_NE(happenTimeItem, nullptr);
+    EXPECT_GT(happenTimeItem->valuedouble, 0);
+    cJSON_Delete(root);
+}
+
+HWTEST_F(StaStateMachineTest, BuildMdmEventContentUidZeroTest, TestSize.Level1)
+{
+    /* uid 为 0、bundleName 为空时仍应产出结构完整的 JSON，便于上游按 uid 归因 */
+    std::string content = pStaStateMachine->BuildMdmEventContent("ap", "aa:bb:cc:dd:ee:ff", "MDM_RESTRICTED", 0, "");
+    ASSERT_FALSE(content.empty());
+    cJSON *root = cJSON_Parse(content.c_str());
+    ASSERT_NE(root, nullptr);
+    cJSON *uidItem = cJSON_GetObjectItem(root, "uid");
+    ASSERT_NE(uidItem, nullptr);
+    EXPECT_EQ(uidItem->valueint, 0);
+    cJSON *bundleItem = cJSON_GetObjectItem(root, "bundlename");
+    ASSERT_NE(bundleItem, nullptr);
+    EXPECT_STREQ(bundleItem->valuestring, "");
+    cJSON_Delete(root);
+}
+
+HWTEST_F(StaStateMachineTest, BuildMdmEventContentHappenTimeTest, TestSize.Level1)
+{
+    const int64_t before = static_cast<int64_t>(time(nullptr));
+    std::string content = pStaStateMachine->BuildMdmEventContent("ap", "aa:bb:cc:dd:ee:ff", "BLOCK_LIST", 10001,
+        "com.test.mdm");
+    const int64_t after = static_cast<int64_t>(time(nullptr));
+    ASSERT_FALSE(content.empty());
+    cJSON *root = cJSON_Parse(content.c_str());
+    ASSERT_NE(root, nullptr);
+    cJSON *happenTimeItem = cJSON_GetObjectItem(root, "happenTime");
+    ASSERT_NE(happenTimeItem, nullptr);
+    /* happenTime 为秒级时间戳，应落在本次调用前后的合理区间内 */
+    EXPECT_GE(static_cast<int64_t>(happenTimeItem->valuedouble), before);
+    EXPECT_LE(static_cast<int64_t>(happenTimeItem->valuedouble), after);
+    cJSON_Delete(root);
+}
+
+HWTEST_F(StaStateMachineTest, ReportMdmRestrictedEventDuplicateSuppressedTest, TestSize.Level1)
+{
+    /* 同一(bssid, restrictedType, uid)在30s窗口内重复触发被抑制。
+     * 抑制分支直接return，不会刷新去重时间戳，因此用时间戳是否变化判断是否被抑制。 */
+    pStaStateMachine->ReportMdmRestrictedEvent("TestAP", "aa:bb:cc:dd:ee:ff", "BLOCK_LIST");
+    const std::string firstKey = pStaStateMachine->lastMdmReportKey_;
+    ASSERT_FALSE(firstKey.empty());
+    /* 置为窗口内且明显区别于当前时间的标记值 */
+    const time_t marker = time(nullptr) - 10;
+    pStaStateMachine->lastMdmReportTime_ = marker;
+    pStaStateMachine->ReportMdmRestrictedEvent("TestAP", "aa:bb:cc:dd:ee:ff", "BLOCK_LIST");
+    EXPECT_EQ(pStaStateMachine->lastMdmReportKey_, firstKey);
+    EXPECT_EQ(pStaStateMachine->lastMdmReportTime_, marker);
+}
+
+HWTEST_F(StaStateMachineTest, ReportMdmRestrictedEventWindowExpiredTest, TestSize.Level1)
+{
+    /* 超过去重窗口后同一事件不应被抑制，去重时间戳应刷新 */
+    pStaStateMachine->ReportMdmRestrictedEvent("TestAP", "aa:bb:cc:dd:ee:ff", "BLOCK_LIST");
+    const std::string firstKey = pStaStateMachine->lastMdmReportKey_;
+    ASSERT_FALSE(firstKey.empty());
+    /* 将上次上报时间回拨到窗口之外， 模拟30s已过 */
+    const time_t expired = time(nullptr) - 31;
+    pStaStateMachine->lastMdmReportTime_ = expired;
+    pStaStateMachine->ReportMdmRestrictedEvent("TestAP", "aa:bb:cc:dd:ee:ff", "BLOCK_LIST");
+    EXPECT_EQ(pStaStateMachine->lastMdmReportKey_, firstKey);
+    EXPECT_GT(pStaStateMachine->lastMdmReportTime_, expired);
+}
+
+HWTEST_F(StaStateMachineTest, ReportMdmRestrictedEventDifferentBssidNotSuppressedTest, TestSize.Level1)
+{
+    /* 去重Key含bssid维度：不同bssid属于不同事件， 窗口内也应分别上报 */
+    pStaStateMachine->ReportMdmRestrictedEvent("TestAP", "aa:bb:cc:dd:ee:ff", "BLOCK_LIST");
+    const std::string firstKey = pStaStateMachine->lastMdmReportKey_;
+    ASSERT_FALSE(firstKey.empty());
+    const time_t marker = time(nullptr) - 10;
+    pStaStateMachine->lastMdmReportTime_ = marker;
+    pStaStateMachine->ReportMdmRestrictedEvent("TestAP", "11:22:33:44:55:66", "BLOCK_LIST");
+    EXPECT_NE(pStaStateMachine->lastMdmReportKey_, firstKey);
+    EXPECT_GT(pStaStateMachine->lastMdmReportTime_, marker);
+}
+
+HWTEST_F(StaStateMachineTest, ReportMdmRestrictedEventDifferentTypeNotSuppressedTest, TestSize.Level1)
+{
+    /* 去重key含restrictedType维度：不同拦截类型属于不同事件，窗口内也应分别上报 */
+    pStaStateMachine->ReportMdmRestrictedEvent("TestAP", "aa:bb:cc:dd:ee:ff", "BLOCK_LIST");
+    const std::string firstKey = pStaStateMachine->lastMdmReportKey_;
+    ASSERT_FALSE(firstKey.empty());
+    const time_t marker = time(nullptr) - 10;
+    pStaStateMachine->lastMdmReportTime_ = marker;
+    pStaStateMachine->ReportMdmRestrictedEvent("TestAP", "aa:bb:cc:dd:ee:ff", "MDM_RESTRICTED");
+    EXPECT_NE(pStaStateMachine->lastMdmReportKey_, firstKey);
+    EXPECT_GT(pStaStateMachine->lastMdmReportTime_, marker);
 }
 #endif
 } // namespace Wifi

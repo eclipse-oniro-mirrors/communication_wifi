@@ -231,6 +231,10 @@ if (defined(ohos_lite)) {
       "time_service:time_client",
     ]
 
+    if (wifi_feature_mdm_restricted_enable) {
+      external_deps += [ "security_guard:libsg_collect_sdk" ]
+    }
+
     if (wifi_feature_with_extensible_authentication) {
       defines += [ "EXTENSIBLE_AUTHENTICATION" ]
       external_deps += ["netmanager_ext:ethernet_manager_if",]

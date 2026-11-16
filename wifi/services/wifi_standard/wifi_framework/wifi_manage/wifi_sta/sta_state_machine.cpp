@@ -51,6 +51,13 @@
 #ifdef WIFI_SECURITY_DETECT_ENABLE
 #include "wifi_security_detect.h"
 #endif
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+#include <memory>
+#include "cJSON.h"
+#include "event_info.h"
+#include "security_guard_error_code.h"
+#include "sg_collect_client.h"
+#endif
 #include "wifi_notification_util.h"
 #include "wifi_net_stats_manager.h"
 #include "wifi_history_record_manager.h"
@@ -80,6 +87,12 @@ constexpr const char* WIFI_IS_CONNECT_FROM_USER = "persist.wifi.is_connect_from_
 constexpr int MAX_CHLOAD = 800;
 constexpr int PRE_ROAM_SCAN_WAIT_TIME_MS = 100;
 constexpr int HIDDEN_SSID_SCAN_WAIT_TIME_MS = 2000;
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+/* SecurityGuard 安全事件：WiFi 拦截事件，ID 由安全事件规范分配（0x03xxxxxx 段） */
+constexpr int64_t WIFI_INTERCEPTED_EVENT_ID = 0x03000100;
+constexpr const char *WIFI_INTERCEPTED_EVENT_VERSION = "1.0";
+constexpr int MDM_REPORT_DEDUP_WINDOW_S = 30;
+#endif
 
 #ifdef READ_MAC_FROM_OEM
 /*
@@ -6070,19 +6083,66 @@ bool StaStateMachine::WhetherRestrictedByMdm(const std::string &ssid, const std:
     }
 }
 
+std::string StaStateMachine::BuildMdmEventContent(const std::string &ssid, const std::string &bssid,
+    const std::string &restrictedType, int uid, const std::string &bundleName)
+{
+    cJSON *root = cJSON_CreateObject();
+    if (root == nullptr) {
+        WIFI_LOGE("BuildMdmEventContent: create cJSON object failed");
+        return "";
+    }
+    /* happenTime 采用秒级时间戳，与security_guard 保持一致 */
+    int64_t happenTime = static_cast<int64_t>(time(nullptr));
+    if (cJSON_AddStringToObject(root, "bundlename", bundleName.c_str()) == nullptr ||
+        cJSON_AddNumberToObject(root, "uid", uid) == nullptr ||
+        cJSON_AddStringToObject(root, "ssid", ssid.c_str()) == nullptr ||
+        cJSON_AddStringToObject(root, "bssid", bssid.c_str()) == nullptr ||
+        cJSON_AddStringToObject(root, "restrictedType", restrictedType.c_str()) == nullptr ||
+        cJSON_AddNumberToObject(root, "happenTime", static_cast<double>(happenTime)) == nullptr) {
+        WIFI_LOGE("BuildMdmEventContent: add cJSON item failed");
+        cJSON_Delete(root);
+        return "";
+    }
+    char *jsonStr = cJSON_PrintUnformatted(root);
+    if (jsonStr == nullptr) {
+        WIFI_LOGE("BuildMdmEventContent: print cJSON failed");
+        cJSON_Delete(root);
+        return "";
+    }
+    std::string content(jsonStr);
+    cJSON_free(jsonStr);
+    cJSON_Delete(root);
+    return content;
+}
+
 void StaStateMachine::ReportMdmRestrictedEvent(const std::string &ssid, const std::string &bssid,
     const std::string &restrictedType)
 {
     int uid = GetCallingUid();
+    /* 去重：弱信号反复重连或被策略持续拦截时，同一组合在窗口期内只上报一次，避免刷屏 */
+    std::string dedupKey = bssid + "|" + restrictedType + "|" + std::to_string(uid);
+    time_t now = time(nullptr);
+    if (dedupKey == lastMdmReportKey_ && now >= lastMdmReportTime_ &&
+        now - lastMdmReportTime_ < MDM_REPORT_DEDUP_WINDOW_S) {
+        WIFI_LOGD("ReportMdmRestrictedEvent: duplicate event suppressed, type=%{public}s", restrictedType.c_str());
+        return;
+    }
     std::string bundleName = "";
     GetBundleNameByUid(uid, bundleName);
-    MdmRestrictedInfo mdmInfo;
-    mdmInfo.ssid = ssid;
-    mdmInfo.bssid = bssid;
-    mdmInfo.restrictedType = restrictedType;
-    mdmInfo.uid = uid;
-    mdmInfo.bundleName = bundleName;
-    WriteMdmHiSysEvent(mdmInfo);
+    std::string content = BuildMdmEventContent(ssid, bssid, restrictedType, uid, bundleName);
+    if (content.empty()) {
+        return;
+    }
+    std::shared_ptr<OHOS::Security::SecurityGuard::EventInfo> eventInfo =
+        std::make_shared<OHOS::Security::SecurityGuard::EventInfo>(
+        WIFI_INTERCEPTED_EVENT_ID, WIFI_INTERCEPTED_EVENT_VERSION, content);
+    int32_t ret = OHOS::Security::SecurityGuard::NativeDataCollectKit::ReportSecurityInfoAsync(eventInfo);
+    if (ret != OHOS::Security::SecurityGuard::SUCCESS) {
+        WIFI_LOGE("ReportMdmRestrictedEvent: ReportSecurityInfoAsync failed, ret=%{public}d", ret);
+        return;
+    }
+    lastMdmReportKey_ = dedupKey;
+    lastMdmReportTime_ = now;
 }
 #endif
 
