@@ -22,7 +22,7 @@
 namespace OHOS {
 namespace WifiCli {
 
-CliErrCode CmdWifiException(int argc, char** argv);
+OHOS::Wifi::ErrCode CmdWifiException(int argc, char** argv);
 
 } // namespace WifiCli
 } // namespace OHOS

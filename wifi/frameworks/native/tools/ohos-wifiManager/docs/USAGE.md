@@ -28,12 +28,13 @@ ohos-wifiManager <command>
 ```bash
 ohos-wifiManager sta-enable
 ```
-
+- 幂等调用：WiFi 本就处于目标状态时同样返回成功
 ### 禁用 WiFi STA 模式
 
 ```bash
 ohos-wifiManager sta-disable
 ```
+- 幂等调用：WiFi 本就处于目标状态时同样返回成功
 
 ### 启动 WiFi 扫描
 
@@ -125,14 +126,14 @@ ohos-wifiManager hotspot-blocklist-get
 }
 ```
 
-命令失败时返回错误信息（`suggestion` 为修复建议，参数错误时附 Usage 引导）：
+命令失败时返回错误信息（`errCode` 为 `ERR_PARAM_INVALID` 或 `WIFI_ERROR`；`suggestion` 为修复建议，参数错误时提示运行 `ohos-wifiManager --help` 查看用法）：
 
 ```json
 {
   "type": "result",
   "status": "failed",
   "errCode": "WIFI_ERROR",
-  "errMsg": "WiFi cannot be enabled in airplane mode",
-  "suggestion": "Check WiFi permissions and airplane mode"
+  "errMsg": "WiFi operation is forbidden in airplane mode",
+  "suggestion": "Turn off airplane mode first"
 }
 ```

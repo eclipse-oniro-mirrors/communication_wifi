@@ -116,22 +116,22 @@ static void ApplyPerApLimit(std::vector<OHOS::Wifi::ApGroup>& groups, int perAp)
     }
 }
 
-static CliErrCode DoClearExceptions()
+static OHOS::Wifi::ErrCode DoClearExceptions()
 {
     using namespace OHOS::Wifi;
     WifiExceptionRecordUtils utils;
     int32_t ret = utils.ClearExceptions();
     if (ret != 0) {
-        OutputErrorJson({"CLEAR_ERROR", "Failed to clear exception records"});
-        return CliErrCode::FAILED;
+        return WIFI_OPT_FAILED;
     }
     cJSON* data = cJSON_CreateObject();
     cJSON_AddStringToObject(data, "message", "All exception records cleared");
     OutputSuccessJson(data);
-    return CliErrCode::SUCCESS;
+    return WIFI_OPT_SUCCESS;
 }
 
-static CliErrCode DoListExceptions(const std::string& ssid, const std::string& category, int reasonCode, int perAp)
+static OHOS::Wifi::ErrCode DoListExceptions(const std::string& ssid, const std::string& category, int reasonCode,
+    int perAp)
 {
     using namespace OHOS::Wifi;
     WifiExceptionRecordUtils utils;
@@ -157,7 +157,7 @@ static CliErrCode DoListExceptions(const std::string& ssid, const std::string& c
     cJSON_AddItemToObject(data, "exceptions", arr);
     cJSON_AddNumberToObject(data, "count", count);
     OutputSuccessJson(data);
-    return CliErrCode::SUCCESS;
+    return OHOS::Wifi::WIFI_OPT_SUCCESS;
 }
 
 static bool ParseIntArg(const char* str, int& outValue, std::string& errMsg)
@@ -181,7 +181,7 @@ static bool ParseIntArg(const char* str, int& outValue, std::string& errMsg)
     return true;
 }
 
-CliErrCode CmdWifiException(int argc, char** argv)
+OHOS::Wifi::ErrCode CmdWifiException(int argc, char** argv)
 {
     bool doClear = false;
     std::string filterSsid;
@@ -199,14 +199,12 @@ CliErrCode CmdWifiException(int argc, char** argv)
         } else if (arg == "--reason" && i + 1 < argc) {
             std::string err;
             if (!ParseIntArg(argv[++i], filterReason, err)) {
-                OutputErrorJson({"ERR_PARAM_INVALID", "Invalid --reason value", err});
-                return CliErrCode::FAILED;
+                return OHOS::Wifi::WIFI_OPT_INVALID_PARAM;
             }
         } else if (arg == "--per-ap" && i + 1 < argc) {
             std::string err;
             if (!ParseIntArg(argv[++i], perAp, err)) {
-                OutputErrorJson({"ERR_PARAM_INVALID", "Invalid --per-ap value", err});
-                return CliErrCode::FAILED;
+                return OHOS::Wifi::WIFI_OPT_INVALID_PARAM;
             }
         }
     }

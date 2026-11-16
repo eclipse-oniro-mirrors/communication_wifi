@@ -20,11 +20,11 @@
 namespace OHOS {
 namespace WifiCli {
 
-CliErrCode CmdEnableHotspot(int argc, char** argv);
-CliErrCode CmdDisableHotspot(int argc, char** argv);
-CliErrCode CmdSetHotspotConfig(int argc, char** argv);
-CliErrCode CmdGetHotspotConfig(int argc, char** argv);
-CliErrCode CmdGetHotspotBlocklist(int argc, char** argv);
+OHOS::Wifi::ErrCode CmdEnableHotspot(int argc, char** argv);
+OHOS::Wifi::ErrCode CmdDisableHotspot(int argc, char** argv);
+OHOS::Wifi::ErrCode CmdSetHotspotConfig(int argc, char** argv);
+OHOS::Wifi::ErrCode CmdGetHotspotConfig(int argc, char** argv);
+OHOS::Wifi::ErrCode CmdGetHotspotBlocklist(int argc, char** argv);
 
 } // namespace WifiCli
 } // namespace OHOS
