@@ -925,6 +925,7 @@ struct WifiDeviceConfig {
     int dualStackNetState {-1};
     bool showNoInternetDialog { true };
     int64_t ipv6DisableTimestamp { 0 };
+    int meteredOverride { 0 };
 
     WifiDeviceConfig()
     {
@@ -967,6 +968,7 @@ struct WifiDeviceConfig {
         lastDetectTime = -1;
         lastDisconnectTime = -1;
         riskType = WifiRiskType::INVALID;
+        meteredOverride = 0;
     }
 };
 
