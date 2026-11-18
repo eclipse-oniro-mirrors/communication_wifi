@@ -152,6 +152,13 @@ void RptManager::DelBlock(const std::string &mac)
     pRptManagerMachine->SendMessage(msg);
 }
 
+void RptManager::DisconnectSta(const std::string &mac)
+{
+    auto msg = pRptManagerMachine->CreateMessage(RPT_CMD_DISASSOC_STA);
+    msg->AddStringMessageBody(mac);
+    pRptManagerMachine->SendMessage(msg);
+}
+
 ErrCode RptManager::GetStationList(std::vector<StationInfo> &result)
 {
 #ifndef FEATURE_P2P_SUPPORT

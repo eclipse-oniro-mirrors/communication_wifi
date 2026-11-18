@@ -43,8 +43,8 @@
 #include "wifi_protect_manager.h"
 #include "wifi_global_func.h"
 #include "wifi_sta_hal_interface.h"
+#include "wifi_ap_hal_interface.h"
 #include "wifi_randommac_helper.h"
-#include "wifi_sta_hal_interface.h"
 #include "block_connect_service.h"
 #include "wifi_hisysevent.h"
 #ifdef WIFI_EXCEPTION_RECORD_ENABLE
@@ -659,23 +659,39 @@ ErrCode WifiDeviceServiceImpl::AddDeviceConfig(const WifiDeviceConfig &config, i
     return WIFI_OPT_SUCCESS;
 }
 
-ErrCode WifiDeviceServiceImpl::SetWifiRestrictedList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList)
+ErrCode WifiDeviceServiceImpl::SetWifiRestrictedList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList,
+    int mode)
 {
 #ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
     if (WifiPermissionUtils::VerifyManageEdmPolicyPermission() == PERMISSION_DENIED) {
         WIFI_LOGE("SetWifiRestrictedList:VerifyManageEdmPolicyPermission PERMISSION_DENIED!");
         return WIFI_OPT_PERMISSION_DENIED;
     }
-    std::vector<WifiRestrictedInfo> tmp;
-    tmp.assign(wifiRestrictedInfoList.begin(), wifiRestrictedInfoList.end());
-    ErrCode checkResult = WifiSettings::GetInstance().CheckWifiMdmRestrictedList(tmp);
+    switch (mode) {
+        case static_cast<int>(WifiListMode::STA_RESTRICTED_LIST):
+            return SetStaRestrictedList(wifiRestrictedInfoList);
+        case static_cast<int>(WifiListMode::AP_WHITE_LIST):
+            return SetApMdmWhiteList(wifiRestrictedInfoList);
+        default:
+            WIFI_LOGE("SetWifiRestrictedList: invalid mode %{public}d", mode);
+            return WIFI_OPT_INVALID_PARAM;
+    }
+#else
+    return WIFI_OPT_FAILED;
+#endif
+}
+
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+ErrCode WifiDeviceServiceImpl::SetStaRestrictedList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList)
+{
+    ErrCode checkResult = WifiSettings::GetInstance().CheckWifiMdmRestrictedList(wifiRestrictedInfoList);
     if (checkResult != WIFI_OPT_SUCCESS) {
         return checkResult;
     }
     BlockConnectService::GetInstance().ClearBlockConnectForMdmRestrictedList();
     WifiSettings::GetInstance().ClearWifiRestrictedListConfig(m_instId);
-    for (size_t i = 0; i < tmp.size() && i <= MAX_MDM_RESTRICTED_SIZE; i++) {
-        WifiSettings::GetInstance().AddWifiRestrictedListConfig(m_instId, tmp[i]);
+    for (size_t i = 0; i < wifiRestrictedInfoList.size() && i <= MAX_MDM_RESTRICTED_SIZE; i++) {
+        WifiSettings::GetInstance().AddWifiRestrictedListConfig(m_instId, wifiRestrictedInfoList[i]);
     }
     WifiSettings::GetInstance().SyncWifiRestrictedListConfig();
     BlockConnectService::GetInstance().UpdateNetworkSelectStatusForMdmRestrictedList();
@@ -684,10 +700,85 @@ ErrCode WifiDeviceServiceImpl::SetWifiRestrictedList(const std::vector<WifiRestr
         return WIFI_OPT_SUCCESS;
     }
     return pService->SetWifiRestrictedList(wifiRestrictedInfoList);
-#else
-    return WIFI_OPT_FAILED;
-#endif
 }
+
+ErrCode WifiDeviceServiceImpl::SetApMdmWhiteList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList)
+{
+    ErrCode ret = WifiSettings::GetInstance().CheckApMdmWhiteList(wifiRestrictedInfoList);
+    if (ret != WIFI_OPT_SUCCESS) {
+        return ret;
+    }
+    WifiSettings::GetInstance().ClearApMdmWhiteListConfig();
+    for (const auto &item : wifiRestrictedInfoList) {
+        WifiSettings::GetInstance().AddApMdmWhiteListConfig(item);
+    }
+    WifiSettings::GetInstance().SyncApMdmWhiteListConfig();
+    return KickStaNotInApMdmWhiteList();
+}
+
+ErrCode WifiDeviceServiceImpl::KickStaNotInApMdmWhiteList()
+{
+    ErrCode softapRet = KickSoftApStaNotInWhiteList();
+    ErrCode rptRet = KickRptStaNotInWhiteList();
+    if (softapRet != WIFI_OPT_SUCCESS || rptRet != WIFI_OPT_SUCCESS) {
+        WIFI_LOGW("kick sta not in whitelist partially failed, softap:%{public}d rpt:%{public}d",
+            softapRet, rptRet);
+        return WIFI_OPT_FAILED;
+    }
+    return WIFI_OPT_SUCCESS;
+}
+
+ErrCode WifiDeviceServiceImpl::KickSoftApStaNotInWhiteList()
+{
+    if (WifiConfigCenter::GetInstance().GetApMidState(m_instId) != WifiOprMidState::RUNNING) {
+        return WIFI_OPT_SUCCESS;
+    }
+    std::vector<StationInfo> stations;
+    WifiConfigCenter::GetInstance().GetStationList(stations);
+    std::string ifName = WifiConfigCenter::GetInstance().GetApIfaceName();
+    if (ifName.empty()) {
+        WIFI_LOGE("KickSoftApStaNotInWhiteList: ap iface name is empty");
+        return WIFI_OPT_FAILED;
+    }
+
+    for (const auto &sta : stations) {
+        if (WifiSettings::GetInstance().IsApWhiteListMacAllowed(sta.bssid)) {
+            continue;
+        }
+        WIFI_LOGW("kick softap sta not in whitelist: %{public}s", MacAnonymize(sta.bssid).c_str());
+        WifiErrorNo err = WifiApHalInterface::GetInstance().DisAssociateSta(ifName, sta.bssid);
+        if (err != WIFI_HAL_OPT_OK) {
+            WIFI_LOGE("kick softap sta failed");
+        }
+    }
+    return WIFI_OPT_SUCCESS;
+}
+
+ErrCode WifiDeviceServiceImpl::KickRptStaNotInWhiteList()
+{
+#ifdef FEATURE_RPT_SUPPORT
+    auto rptManager = WifiManager::GetInstance().GetRptInterface(m_instId);
+    if (rptManager == nullptr || !rptManager->IsRptRunning()) {
+        return WIFI_OPT_SUCCESS;
+    }
+    std::vector<StationInfo> stations;
+    if (rptManager->GetStationList(stations) != WIFI_OPT_SUCCESS) {
+        WIFI_LOGE("KickRptStaNotInWhiteList: get station list failed");
+        return WIFI_OPT_FAILED;
+    }
+    for (const auto &sta : stations) {
+        if (WifiSettings::GetInstance().IsApWhiteListMacAllowed(sta.bssid)) {
+            continue;
+        }
+        WIFI_LOGW("kick rpt sta not in whitelist: %{public}s", MacAnonymize(sta.bssid).c_str());
+        rptManager->DisconnectSta(sta.bssid);
+    }
+    return WIFI_OPT_SUCCESS;
+#else
+    return WIFI_OPT_SUCCESS;
+#endif // FEATURE_RPT_SUPPORT
+}
+#endif // FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
 
 ErrCode WifiDeviceServiceImpl::CheckCanAddDeviceConfig(const bool isCandidate)
 {
@@ -2138,6 +2229,12 @@ ErrCode WifiDeviceServiceImpl::FactoryReset()
     /* Hotspot */
     WifiSettings::GetInstance().ClearHotspotConfig();
     WifiSettings::GetInstance().SyncHotspotConfig();
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+    WifiSettings::GetInstance().ClearWifiRestrictedListConfig(m_instId);
+    WifiSettings::GetInstance().SyncWifiRestrictedListConfig();
+    WifiSettings::GetInstance().ClearApMdmWhiteListConfig();
+    WifiSettings::GetInstance().SyncApMdmWhiteListConfig();
+#endif
     WIFI_LOGI("WifiDeviceServiceImpl FactoryReset ok!");
     return WIFI_OPT_SUCCESS;
 }

@@ -93,6 +93,7 @@ namespace Wifi {
 #define RPT_CMD_ON_STA_UNLINKED 0x40E
 #define RPT_CMD_START_RPT 0x40F
 #endif
+#define RPT_CMD_DISASSOC_STA 0x410
 
 #define STOP_WIFI_WAIT_TIME 100
 

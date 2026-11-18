@@ -46,6 +46,7 @@ public:
     std::string GetRptIfaceName() override;
     void AddBlock(const std::string &mac) override;
     void DelBlock(const std::string &mac) override;
+    void DisconnectSta(const std::string &mac) override;
 
     void OnP2pActionResult(P2pActionCallback action, ErrCode code) override;
     void OnP2pConnectionChanged(P2pConnectedState p2pConnState) override;

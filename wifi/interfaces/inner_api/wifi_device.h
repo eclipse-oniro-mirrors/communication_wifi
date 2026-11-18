@@ -675,7 +675,8 @@ public:
      * @param result - the result of wifi access list
      * @return ErrCode - operation result
      */
-    virtual ErrCode SetWifiRestrictedList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList) = 0;
+    virtual ErrCode SetWifiRestrictedList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList,
+        int mode = static_cast<int>(WifiListMode::STA_RESTRICTED_LIST)) = 0;
     
     /**
      * @Description Get Random Mac Disabeled.

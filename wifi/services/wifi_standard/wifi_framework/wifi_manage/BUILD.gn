@@ -404,6 +404,10 @@ if (defined(ohos_lite)) {
       defines += ["WIFI_EXCEPTION_RECORD_ENABLE"]
     }
 
+    if (wifi_feature_with_rpt) {
+      defines += [ "FEATURE_RPT_SUPPORT" ]
+    }
+
     external_deps = [
       "ability_base:want",
       "ability_runtime:app_manager",

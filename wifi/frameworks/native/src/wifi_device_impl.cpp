@@ -205,11 +205,11 @@ ErrCode WifiDeviceImpl::AddDeviceConfig(const WifiDeviceConfig &config, int &res
     return client_->AddDeviceConfig(config, result, isCandidate);
 }
 
-ErrCode WifiDeviceImpl::SetWifiRestrictedList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList)
+ErrCode WifiDeviceImpl::SetWifiRestrictedList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList, int mode)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     RETURN_IF_FAIL(GetWifiDeviceProxy());
-    return client_->SetWifiRestrictedList(wifiRestrictedInfoList);
+    return client_->SetWifiRestrictedList(wifiRestrictedInfoList, mode);
 }
 
 ErrCode WifiDeviceImpl::UpdateDeviceConfig(const WifiDeviceConfig &config, int &result)

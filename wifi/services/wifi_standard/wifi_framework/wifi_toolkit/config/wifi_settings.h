@@ -65,6 +65,7 @@ constexpr int WIFI_GET_SCAN_INFO_VALID_TIMESTAMP = 30 * 1000 * 1000;
 constexpr int HOTSPOT_IDLE_TIMEOUT_INTERVAL_MS = 10 * 60 * 1000;
 constexpr int WIFI_DISAPPEAR_TIMES = 3;
 constexpr int WIFI_MDM_RESTRICTED_MAX_NUM = 200;
+constexpr int WIFI_AP_MDM_WHITE_LIST_MAX_NUM = 1000;
 constexpr int HOTSPOT_NAME_MAX_LENGTH = 30;
 constexpr uint32_t COMPARE_MAC_OFFSET = 2;
 /* Plaintext string length */
@@ -88,6 +89,7 @@ inline constexpr char DUAL_WIFI_CONFIG_FILE_PATH[] = CONFIG_ROOR_DIR"/WifiConfig
 inline constexpr char DUAL_SOFTAP_CONFIG_FILE_PATH[] = CONFIG_ROOR_DIR"/WifiConfigStoreSoftAp.xml";
 inline constexpr char P2P_SUPPLICANT_CONFIG_FILE[] = CONFIG_ROOR_DIR"/wpa_supplicant/p2p_supplicant.conf";
 inline constexpr char WIFI_MDM_RESTRICTED_LIST[] = CONFIG_ROOR_DIR"/WifiMdmRestrictedList.conf";
+inline constexpr char AP_MDM_WHITE_LIST_FILE_PATH[] = CONFIG_ROOR_DIR"/ApMdmWhiteList.conf";
 
 namespace OHOS {
 namespace Wifi {
@@ -140,6 +142,16 @@ public:
     bool FindWifiWhiteListConfig(const std::string &ssid, const std::string &bssid, int instId = 0);
  
     bool WhetherSetWhiteListConfig();
+
+    ErrCode CheckApMdmWhiteList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList);
+
+    ErrCode ClearApMdmWhiteListConfig();
+
+    ErrCode AddApMdmWhiteListConfig(const WifiRestrictedInfo& wifiListInfo);
+
+    int SyncApMdmWhiteListConfig();
+
+    bool IsApWhiteListMacAllowed(const std::string &mac);
 #endif
 
     int RemoveDevice(int networkId, bool removeEapCert = true);
@@ -446,6 +458,7 @@ private:
     void InitDefaultWifiConfig();
 #ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
     void InitWifiMdmRestrictedListConfig();
+    void InitApMdmWhiteListConfig();
 #endif
     void InitWifiConfig();
     int SyncWifiConfig();
@@ -473,11 +486,10 @@ private:
     bool EncryptionWapiConfig(const WifiEncryptionInfo &wifiEncryptionInfo, WifiDeviceConfig &config) const;
 #endif
     void SyncAfterDecryped(WifiDeviceConfig &config);
-public:
 #ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
     std::vector<WifiRestrictedInfo> wifiRestrictedList_;
+    std::vector<WifiRestrictedInfo> apMdmWhiteList_;
 #endif
-private:
     // STA
     std::mutex mStaMutex;
     int mNetworkId;
@@ -489,6 +501,7 @@ private:
     std::vector<WifiStoreRandomMac> mWifiStoreRandomMac;
 #ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
     WifiConfigFileImpl<WifiRestrictedInfo> wifiMdmRestrictedListConfig_;
+    WifiConfigFileImpl<WifiRestrictedInfo> apMdmWhiteListConfig_;
 #endif
     WifiConfigFileImpl<WifiStoreRandomMac> mSavedWifiStoreRandomMac;
     std::unique_ptr<WifiEventHandler> mWifiEncryptionThread = nullptr;

@@ -28,6 +28,7 @@ namespace Wifi {
 constexpr int EDM_UID = 3057;
 constexpr int MAX_SIZE = 256;
 constexpr int MAX_MDM_RESTRICTED_SIZE = 200;
+constexpr int MAX_MDM_AP_WHITE_SIZE = 1000;
 std::atomic<int> g_bigDataRecvLen(0);
 constexpr int SIGNALARR_LENGTH = 6;
 constexpr int HUNDRED = 100;
@@ -547,12 +548,17 @@ ErrCode WifiDeviceProxy::RemoveDevice(int networkId)
     return ErrCode(reply.ReadInt32());
 }
 
-ErrCode WifiDeviceProxy::SetWifiRestrictedList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList)
+ErrCode WifiDeviceProxy::SetWifiRestrictedList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList, int mode)
 {
     WIFI_LOGI("wifi_device_proxy:: SetWifiRestrictedList");
     if (mRemoteDied) {
         WIFI_LOGE("failed to `%{public}s`,remote service is died!", __func__);
         return WIFI_OPT_FAILED;
+    }
+    if (mode != static_cast<int>(WifiListMode::STA_RESTRICTED_LIST) &&
+        mode != static_cast<int>(WifiListMode::AP_WHITE_LIST)) {
+        WIFI_LOGE("SetWifiRestrictedList invalid mode: %{public}d", mode);
+        return WIFI_OPT_INVALID_PARAM;
     }
     MessageOption option;
     MessageParcel data;
@@ -562,8 +568,11 @@ ErrCode WifiDeviceProxy::SetWifiRestrictedList(const std::vector<WifiRestrictedI
         return WIFI_OPT_FAILED;
     }
     data.WriteInt32(0);
+    data.WriteInt32(mode);
     int size = static_cast<int>(wifiRestrictedInfoList.size());
-    if (size > MAX_MDM_RESTRICTED_SIZE) {
+    int maxSize = (mode == static_cast<int>(WifiListMode::STA_RESTRICTED_LIST)) ?
+        MAX_MDM_RESTRICTED_SIZE : MAX_MDM_AP_WHITE_SIZE;
+    if (size > maxSize) {
         WIFI_LOGE("SetWifiRestrictedList size error: %{public}d", size);
         return WIFI_OPT_MDM_OUT_MAX_NUM;
     }

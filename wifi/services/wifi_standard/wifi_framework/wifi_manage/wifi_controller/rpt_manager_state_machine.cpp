@@ -40,7 +40,6 @@ DEFINE_WIFILOG_LABEL("RptManagerMachine");
 
 #ifdef FEATURE_WITH_GO_SIMULATION_AP
 std::string GetRptIfaceName();
-void DisAssSta(std::string mac);
 #endif
 
 int RptManagerMachine::mid{0};
@@ -398,6 +397,33 @@ bool RptManagerMachine::StartedState::ExecuteStateMsgEx(InternalMessagePtr msg)
 }
 #endif
 
+void RptManagerMachine::StartedState::ProcessCmdStationJoin(const std::string &mac)
+{
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+    if (!WifiSettings::GetInstance().IsApWhiteListMacAllowed(mac)) {
+        WIFI_LOGI("rpt kick sta not in ap whitelist:%{public}s", MacAnonymize(mac).c_str());
+        pRptManagerMachine->DisAssSta(mac);
+        return;
+    }
+    curAssocMacList.insert(mac);
+#endif
+#ifdef FEATURE_WITH_GO_SIMULATION_AP
+    ProcessCmdEnableRpt();
+#endif
+    pRptManagerMachine->BroadcastStationJoin(mac);
+}
+
+void RptManagerMachine::StartedState::ProcessCmdStationLeave(const std::string &mac)
+{
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+    if (curAssocMacList.erase(mac) == 0) {
+        WIFI_LOGW("rpt sta leave not reported before, ignore: %{public}s", MacAnonymize(mac).c_str());
+        return;
+    }
+#endif
+    pRptManagerMachine->BroadcastStationLeave(mac);
+}
+
 bool RptManagerMachine::StartedState::ExecuteStateMsg(InternalMessagePtr msg)
 {
     if (msg == nullptr || pRptManagerMachine == nullptr) {
@@ -415,18 +441,11 @@ bool RptManagerMachine::StartedState::ExecuteStateMsg(InternalMessagePtr msg)
         case RPT_CMD_ON_P2P_CLOSE:
             pRptManagerMachine->SwitchState(pRptManagerMachine->pStoppedState);
             break;
-        case RPT_CMD_ON_STATION_JOIN: {
-            auto mac = msg->GetStringFromMessage();
-#ifdef FEATURE_WITH_GO_SIMULATION_AP
-            ProcessCmdEnableRpt();
-#endif
-            pRptManagerMachine->BroadcastStationJoin(mac);
-        }
+        case RPT_CMD_ON_STATION_JOIN:
+            ProcessCmdStationJoin(msg->GetStringFromMessage());
             break;
-        case RPT_CMD_ON_STATION_LEAVE: {
-            auto mac = msg->GetStringFromMessage();
-            pRptManagerMachine->BroadcastStationLeave(mac);
-        }
+        case RPT_CMD_ON_STATION_LEAVE:
+            ProcessCmdStationLeave(msg->GetStringFromMessage());
             break;
         case RPT_CMD_ADD_BLOCK: {
             auto mac = msg->GetStringFromMessage();
@@ -436,6 +455,11 @@ bool RptManagerMachine::StartedState::ExecuteStateMsg(InternalMessagePtr msg)
         case RPT_CMD_DEL_BLOCK: {
             auto mac = msg->GetStringFromMessage();
             pRptManagerMachine->DelBlockList(mac);
+        }
+            break;
+        case RPT_CMD_DISASSOC_STA: {
+            auto mac = msg->GetStringFromMessage();
+            pRptManagerMachine->DisAssSta(mac);
         }
             break;
         default:
@@ -731,11 +755,14 @@ void RptManagerMachine::SetMacFilter(std::string mac)
     WifiP2PHalInterface::GetInstance().SetRptBlockList(p2pIfname, p2pInterfaceName, blockMacs);
 }
 
-void DisAssSta(std::string mac)
+void RptManagerMachine::DisAssSta(std::string mac)
 {
     std::string p2pIfname = WifiConfigCenter::GetInstance().GetP2pIfaceName();
     std::string p2pInterfaceName = GetRptIfaceName();
-    WifiP2PHalInterface::GetInstance().DisAssociateSta(p2pIfname, p2pInterfaceName, mac);
+    WifiErrorNo err = WifiP2PHalInterface::GetInstance().DisAssociateSta(p2pIfname, p2pInterfaceName, mac);
+    if (err != WIFI_HAL_OPT_OK) {
+        WIFI_LOGE("rpt disassociate sta failed");
+    }
 }
 
 void RptManagerMachine::InitBlockList()

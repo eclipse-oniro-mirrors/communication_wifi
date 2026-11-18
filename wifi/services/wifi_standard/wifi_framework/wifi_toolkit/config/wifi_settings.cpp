@@ -126,6 +126,7 @@ int WifiSettings::Init()
     mSavedWifiStoreRandomMac.SetConfigFilePath(WIFI_STA_RANDOM_MAC_FILE_PATH);
 #ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
     wifiMdmRestrictedListConfig_.SetConfigFilePath(WIFI_MDM_RESTRICTED_LIST);
+    apMdmWhiteListConfig_.SetConfigFilePath(AP_MDM_WHITE_LIST_FILE_PATH);
 #endif
 #ifndef OHOS_ARCH_LITE
     MergeWifiConfig();
@@ -137,6 +138,7 @@ int WifiSettings::Init()
     InitWifiConfig();
 #ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
     InitWifiMdmRestrictedListConfig();
+    InitApMdmWhiteListConfig();
 #endif
     ReloadDeviceConfig();
     InitHotspotConfig();
@@ -193,7 +195,7 @@ ErrCode WifiSettings::AddWifiRestrictedListConfig(int uid, const WifiRestrictedI
         return WIFI_OPT_INVALID_PARAM;
     }
     std::unique_lock<std::mutex> lock(mStaMutex);
-    if (wifiRestrictedList_.size() > WIFI_MDM_RESTRICTED_MAX_NUM) {
+    if (wifiRestrictedList_.size() >= WIFI_MDM_RESTRICTED_MAX_NUM) {
         LOGE("Add WifiRestrictedInfo exceeding the maximum value!");
         return WIFI_OPT_MDM_WHITELIST_OUT_MAX_NUM;
     }
@@ -310,7 +312,79 @@ bool WifiSettings::FindWifiWhiteListConfig(const std::string &ssid,
     }
     return false;
 }
-#endif
+
+ErrCode WifiSettings::CheckApMdmWhiteList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList)
+{
+    if (wifiRestrictedInfoList.size() > WIFI_AP_MDM_WHITE_LIST_MAX_NUM) {
+        LOGE("ap mdm whitelist exceed max num");
+        return WIFI_OPT_MDM_AP_WHITELIST_OUT_MAX_NUM;
+    }
+    for (const auto &item : wifiRestrictedInfoList) {
+        if (CheckMacIsValid(item.bssid) != 0) {
+            LOGE("ap mdm whitelist has invalid bssid");
+            return WIFI_OPT_MDM_AP_WHITELIST_MAC_INVALID;
+        }
+    }
+    return WIFI_OPT_SUCCESS;
+}
+
+ErrCode WifiSettings::ClearApMdmWhiteListConfig()
+{
+    std::unique_lock<std::mutex> lock(mApMutex);
+    LOGI("Clear ap mdm white list");
+    apMdmWhiteList_.clear();
+    return WIFI_OPT_SUCCESS;
+}
+
+ErrCode WifiSettings::AddApMdmWhiteListConfig(const WifiRestrictedInfo &wifiListInfo)
+{
+    std::unique_lock<std::mutex> lock(mApMutex);
+    if (apMdmWhiteList_.size() >= WIFI_AP_MDM_WHITE_LIST_MAX_NUM) {
+        LOGE("Add ApMdmWhiteList exceeding the maximum value!");
+        return WIFI_OPT_MDM_AP_WHITELIST_OUT_MAX_NUM;
+    }
+    apMdmWhiteList_.push_back(wifiListInfo);
+    return WIFI_OPT_SUCCESS;
+}
+
+int WifiSettings::SyncApMdmWhiteListConfig()
+{
+    std::unique_lock<std::mutex> lock(mApMutex);
+    std::vector<WifiRestrictedInfo> tmp;
+    for (size_t i = 0; i < apMdmWhiteList_.size(); i++) {
+        tmp.push_back(apMdmWhiteList_[i]);
+    }
+    apMdmWhiteListConfig_.SetValue(tmp);
+    return apMdmWhiteListConfig_.SaveConfig();
+}
+
+bool WifiSettings::IsApWhiteListMacAllowed(const std::string &mac)
+{
+    constexpr const char *MDM_AP_WHITE_LIST_PARAM = "persist.edm.is_hotspot_client_policy_enabled";
+    constexpr const char *PARAM_TRUE = "true";
+    constexpr const char *PARAM_FALSE = "false";
+    constexpr const uint32_t PARAM_TRUE_LEN = 4;
+    constexpr const uint32_t PARAM_FALSE_LEN = 5;
+
+    char preValue[PARAM_FALSE_LEN] = {0};
+    int errCode = GetParamValue(MDM_AP_WHITE_LIST_PARAM, PARAM_FALSE, preValue, PARAM_FALSE_LEN);
+    if (errCode <= 0 || strncmp(preValue, PARAM_TRUE, PARAM_TRUE_LEN) != 0) {
+        LOGI("hotspot client whitelist policy disabled, allow connect.");
+        return true;
+    }
+
+    std::unique_lock<std::mutex> lock(mApMutex);
+    if (apMdmWhiteList_.empty()) {
+        return true;
+    }
+    for (const auto &item : apMdmWhiteList_) {
+        if (item.bssid == mac) {
+            return true;
+        }
+    }
+    return false;
+}
+#endif // FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
 
 void WifiSettings::SyncAfterDecryped(WifiDeviceConfig &config)
 {
@@ -2513,6 +2587,21 @@ void WifiSettings::InitWifiMdmRestrictedListConfig()
     if (tmp.size() > 0) {
         for (size_t i = 0; i < tmp.size(); i++) {
             wifiRestrictedList_.push_back(tmp[i]);
+        }
+    }
+}
+
+void WifiSettings::InitApMdmWhiteListConfig()
+{
+    if (apMdmWhiteListConfig_.LoadConfig() < 0) {
+        LOGI("ap mdm whitelist loadConfig() return value < 0");
+        return;
+    }
+    std::vector<WifiRestrictedInfo> tmp;
+    apMdmWhiteListConfig_.GetValue(tmp);
+    if (tmp.size() > 0) {
+        for (size_t i = 0; i < tmp.size(); i++) {
+            apMdmWhiteList_.push_back(tmp[i]);
         }
     }
 }

@@ -132,6 +132,10 @@ ohos_shared_library("wifi_ap_service") {
     defines += [ "FEATURE_CARPLAY_SUPPORTED" ]
   }
 
+  if (wifi_feature_mdm_restricted_enable) {
+    defines += [ "FEATURE_WIFI_MDM_RESTRICTED_SUPPORT" ]
+  }
+
   version_script = "libwifi_ap_service.map"
   part_name = "wifi"
   subsystem_name = "communication"

@@ -30,6 +30,7 @@ public:
     virtual std::string GetRptIfaceName() = 0;
     virtual void AddBlock(const std::string &mac) = 0;
     virtual void DelBlock(const std::string &mac) = 0;
+    virtual void DisconnectSta(const std::string &mac) = 0;
 
     virtual void OnP2pActionResult(P2pActionCallback action, ErrCode code) = 0;
     virtual void OnP2pConnectionChanged(P2pConnectedState p2pConnState) = 0;

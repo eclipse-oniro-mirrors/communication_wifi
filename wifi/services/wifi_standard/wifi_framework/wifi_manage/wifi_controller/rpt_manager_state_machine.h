@@ -100,6 +100,11 @@ public:
         bool ExecuteStateMsgEx(InternalMessagePtr msg);
         void ProcessCmdEnableRpt();
 #endif
+        void ProcessCmdStationJoin(const std::string &mac);
+        void ProcessCmdStationLeave(const std::string &mac);
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+        std::set<std::string> curAssocMacList;
+#endif
         RptManagerMachine *pRptManagerMachine;
     };
 
@@ -155,7 +160,7 @@ private:
     void DisableRptNat();
     bool EnableRptNat();
 #endif
-
+    void DisAssSta(std::string mac);
     void SetMacFilter(std::string mac);
     void InitBlockList();
     void AddBlockList(std::string mac);

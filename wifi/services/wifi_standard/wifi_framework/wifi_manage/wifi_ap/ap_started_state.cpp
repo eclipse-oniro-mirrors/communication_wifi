@@ -301,6 +301,19 @@ void ApStartedState::ProcessCmdStationJoin(InternalMessagePtr msg)
         WIFI_LOGE("sta has removed.");
         return;
     }
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+    /* Fallback: policy changed within the 5s join window. */
+    if (!WifiSettings::GetInstance().IsApWhiteListMacAllowed(staInfo.bssid)) {
+        WIFI_LOGW("kick sta not in whitelist on delayed join: %{public}s",
+            MacAnonymize(staInfo.bssid).c_str());
+        WifiErrorNo err = WifiApHalInterface::GetInstance().DisAssociateSta(
+            WifiConfigCenter::GetInstance().GetApIfaceName(), staInfo.bssid);
+        if (err != WIFI_HAL_OPT_OK) {
+            WIFI_LOGE("kick sta on delayed join failed");
+        }
+        return;
+    }
+#endif
     WriteSoftApOperateHiSysEvent(static_cast<int>(SoftApChrEventType::SOFT_AP_CONN_CNT));
     m_ApStateMachine.m_ApStationsManager.StationJoin(staInfo);
 }
@@ -517,6 +530,17 @@ void ApStartedState::ProcessCmdAssociatedStaChanged(InternalMessagePtr msg)
     }
     WIFI_LOGI("%{public}s: associated station event: %{public}d", __func__, event);
     if (event == HAL_CBK_CMD_STA_JOIN) {
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+        if (!WifiSettings::GetInstance().IsApWhiteListMacAllowed(staInfo.bssid)) {
+            WIFI_LOGI("softap kick sta not in ap whitelist:%{public}s", MacAnonymize(staInfo.bssid).c_str());
+            WifiErrorNo err = WifiApHalInterface::GetInstance().DisAssociateSta(
+                WifiConfigCenter::GetInstance().GetApIfaceName(), staInfo.bssid);
+            if (err != WIFI_HAL_OPT_OK) {
+                WIFI_LOGE("softap kick sta not in ap whitelist failed");
+            }
+            return;
+        }
+#endif
         curAssocMacList.insert(staInfo.bssid);
         m_ApStateMachine.MessageExecutedLater(static_cast<int>(ApStatemachineEvent::CMD_STATION_JOIN),
             staInfo, STA_JOIN_HANDLE_DELAY);
@@ -526,8 +550,10 @@ void ApStartedState::ProcessCmdAssociatedStaChanged(InternalMessagePtr msg)
         if (curAssocMacList.find(staInfo.bssid) != curAssocMacList.end()) {
             curAssocMacList.erase(staInfo.bssid);
             WIFI_LOGI("%{public}s: delete station in curAssocMacList", __func__);
+            m_ApStateMachine.SendMessage(static_cast<int>(ApStatemachineEvent::CMD_STATION_LEAVE), staInfo);
+        } else {
+            WIFI_LOGI("%{public}s: station is not in curAssocMacList", __func__);
         }
-        m_ApStateMachine.SendMessage(static_cast<int>(ApStatemachineEvent::CMD_STATION_LEAVE), staInfo);
     }
     return;
 }

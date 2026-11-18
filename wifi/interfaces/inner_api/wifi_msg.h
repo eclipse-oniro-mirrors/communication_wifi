@@ -412,6 +412,12 @@ struct WifiRestrictedInfo {
     }
 };
 
+enum class WifiListMode {
+    STA_RESTRICTED_LIST = 0,
+    AP_WHITE_LIST = 1
+};
+
+
 /* use WPS type */
 enum class SetupMethod {
     PBC = 0,
