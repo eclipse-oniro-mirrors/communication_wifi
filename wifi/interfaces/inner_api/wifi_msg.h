@@ -417,7 +417,6 @@ enum class WifiListMode {
     AP_WHITE_LIST = 1
 };
 
-
 /* use WPS type */
 enum class SetupMethod {
     PBC = 0,

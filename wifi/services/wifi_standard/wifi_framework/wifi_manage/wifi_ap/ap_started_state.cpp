@@ -289,6 +289,22 @@ void ApStartedState::ProcessCmdFail(InternalMessagePtr msg) const
     m_ApStateMachine.SwitchState(&m_ApStateMachine.m_ApIdleState);
 }
 
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+bool KickStaIfNotInApWhiteList(const StationInfo &staInfo)
+{
+    if (WifiSettings::GetInstance().IsApWhiteListMacAllowed(staInfo.bssid)) {
+        return false;
+    }
+    WIFI_LOGW("softap kick sta not in ap whitelist: %{public}s", MacAnonymize(staInfo.bssid).c_str());
+    WifiErrorNo err = WifiApHalInterface::GetInstance().DisAssociateSta(
+        WifiConfigCenter::GetInstance().GetApIfaceName(), staInfo.bssid);
+    if (err != WIFI_HAL_OPT_OK) {
+        WIFI_LOGE("softap kick sta failed");
+    }
+    return true;
+}
+#endif
+
 void ApStartedState::ProcessCmdStationJoin(InternalMessagePtr msg)
 {
     WIFI_LOGI("Instance %{public}d %{public}s", m_id, __func__);
@@ -303,14 +319,7 @@ void ApStartedState::ProcessCmdStationJoin(InternalMessagePtr msg)
     }
 #ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
     /* Fallback: policy changed within the 5s join window. */
-    if (!WifiSettings::GetInstance().IsApWhiteListMacAllowed(staInfo.bssid)) {
-        WIFI_LOGW("kick sta not in whitelist on delayed join: %{public}s",
-            MacAnonymize(staInfo.bssid).c_str());
-        WifiErrorNo err = WifiApHalInterface::GetInstance().DisAssociateSta(
-            WifiConfigCenter::GetInstance().GetApIfaceName(), staInfo.bssid);
-        if (err != WIFI_HAL_OPT_OK) {
-            WIFI_LOGE("kick sta on delayed join failed");
-        }
+    if (KickStaIfNotInApWhiteList(staInfo)) {
         return;
     }
 #endif
@@ -531,13 +540,7 @@ void ApStartedState::ProcessCmdAssociatedStaChanged(InternalMessagePtr msg)
     WIFI_LOGI("%{public}s: associated station event: %{public}d", __func__, event);
     if (event == HAL_CBK_CMD_STA_JOIN) {
 #ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
-        if (!WifiSettings::GetInstance().IsApWhiteListMacAllowed(staInfo.bssid)) {
-            WIFI_LOGI("softap kick sta not in ap whitelist:%{public}s", MacAnonymize(staInfo.bssid).c_str());
-            WifiErrorNo err = WifiApHalInterface::GetInstance().DisAssociateSta(
-                WifiConfigCenter::GetInstance().GetApIfaceName(), staInfo.bssid);
-            if (err != WIFI_HAL_OPT_OK) {
-                WIFI_LOGE("softap kick sta not in ap whitelist failed");
-            }
+        if (KickStaIfNotInApWhiteList(staInfo)) {
             return;
         }
 #endif
