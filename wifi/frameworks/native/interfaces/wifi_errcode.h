@@ -56,6 +56,7 @@ enum ErrCode {
     WIFI_OPT_CONFIG_COUNT_EXCEED_LIMIT,  /* config count exceed limit*/
     WIFI_OPT_MDM_AP_WHITELIST_OUT_MAX_NUM, /*mdm ap whitelist over max num fail*/
     WIFI_OPT_MDM_AP_WHITELIST_MAC_INVALID, /*mdm ap whitelist mac invalid fail*/
+    WIFI_OPT_MDM_DEAUTH_FAILED, /*mdm deauth sta not in ap whitelist failed*/
 };
 }  // namespace Wifi
 }  // namespace OHOS

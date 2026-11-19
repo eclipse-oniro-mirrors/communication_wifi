@@ -267,11 +267,11 @@ private:
     void ReportWifiConfigStatus(WifiConfigReportType reportType);
     void CheckAndHandleVapConflict();
 #ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
-    ErrCode SetStaRestrictedList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList);
+    ErrCode SetStaMdmRestrictedList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList);
     ErrCode SetApMdmWhiteList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList);
-    ErrCode KickStaNotInApMdmWhiteList();
-    ErrCode KickSoftApStaNotInWhiteList();
-    ErrCode KickRptStaNotInWhiteList();
+    ErrCode DeauthStaNotInMdmApWhiteList();
+    ErrCode DeauthSoftApStaNotInMdmApWhiteList();
+    ErrCode DeauthRptStaNotInMdmApWhiteList();
 #endif
 
 private:

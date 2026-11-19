@@ -358,7 +358,7 @@ int WifiSettings::SyncApMdmWhiteListConfig()
     return apMdmWhiteListConfig_.SaveConfig();
 }
 
-bool WifiSettings::IsApWhiteListMacAllowed(const std::string &mac)
+bool WifiSettings::IsApMdmWhiteListMacAllowed(const std::string &mac)
 {
     constexpr const char *MDM_AP_WHITE_LIST_PARAM = "persist.edm.is_hotspot_client_policy_enabled";
     constexpr const char *PARAM_TRUE = "true";

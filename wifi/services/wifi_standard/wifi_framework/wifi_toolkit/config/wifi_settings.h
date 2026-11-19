@@ -151,7 +151,7 @@ public:
 
     int SyncApMdmWhiteListConfig();
 
-    bool IsApWhiteListMacAllowed(const std::string &mac);
+    bool IsApMdmWhiteListMacAllowed(const std::string &mac);
 #endif
 
     int RemoveDevice(int networkId, bool removeEapCert = true);

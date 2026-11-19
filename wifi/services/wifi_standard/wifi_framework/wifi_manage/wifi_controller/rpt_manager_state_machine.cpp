@@ -400,8 +400,8 @@ bool RptManagerMachine::StartedState::ExecuteStateMsgEx(InternalMessagePtr msg)
 void RptManagerMachine::StartedState::ProcessCmdStationJoin(const std::string &mac)
 {
 #ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
-    if (!WifiSettings::GetInstance().IsApWhiteListMacAllowed(mac)) {
-        WIFI_LOGI("rpt kick sta not in ap whitelist:%{public}s", MacAnonymize(mac).c_str());
+    if (!WifiSettings::GetInstance().IsApMdmWhiteListMacAllowed(mac)) {
+        WIFI_LOGI("rpt deauth sta not in mdm ap whitelist:%{public}s", MacAnonymize(mac).c_str());
         pRptManagerMachine->DisAssSta(mac);
         return;
     }

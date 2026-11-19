@@ -290,16 +290,17 @@ void ApStartedState::ProcessCmdFail(InternalMessagePtr msg) const
 }
 
 #ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
-bool KickStaIfNotInApWhiteList(const StationInfo &staInfo)
+bool DeauthStaIfNotAllowed(const StationInfo &staInfo)
 {
-    if (WifiSettings::GetInstance().IsApWhiteListMacAllowed(staInfo.bssid)) {
+    if (WifiSettings::GetInstance().IsApMdmWhiteListMacAllowed(staInfo.bssid)) {
         return false;
     }
-    WIFI_LOGW("softap kick sta not in ap whitelist: %{public}s", MacAnonymize(staInfo.bssid).c_str());
+    WIFI_LOGW("softap deauth sta not in mdm ap whitelist: %{public}s",
+        MacAnonymize(staInfo.bssid).c_str());
     WifiErrorNo err = WifiApHalInterface::GetInstance().DisAssociateSta(
         WifiConfigCenter::GetInstance().GetApIfaceName(), staInfo.bssid);
     if (err != WIFI_HAL_OPT_OK) {
-        WIFI_LOGE("softap kick sta failed");
+        WIFI_LOGE("softap deauth sta failed");
     }
     return true;
 }
@@ -319,7 +320,7 @@ void ApStartedState::ProcessCmdStationJoin(InternalMessagePtr msg)
     }
 #ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
     /* Fallback: policy changed within the 5s join window. */
-    if (KickStaIfNotInApWhiteList(staInfo)) {
+    if (DeauthStaIfNotAllowed(staInfo)) {
         return;
     }
 #endif
@@ -540,7 +541,7 @@ void ApStartedState::ProcessCmdAssociatedStaChanged(InternalMessagePtr msg)
     WIFI_LOGI("%{public}s: associated station event: %{public}d", __func__, event);
     if (event == HAL_CBK_CMD_STA_JOIN) {
 #ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
-        if (KickStaIfNotInApWhiteList(staInfo)) {
+        if (DeauthStaIfNotAllowed(staInfo)) {
             return;
         }
 #endif

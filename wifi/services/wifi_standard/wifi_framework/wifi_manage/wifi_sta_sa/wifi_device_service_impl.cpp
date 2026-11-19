@@ -669,7 +669,7 @@ ErrCode WifiDeviceServiceImpl::SetWifiRestrictedList(const std::vector<WifiRestr
     }
     switch (mode) {
         case static_cast<int>(WifiListMode::STA_RESTRICTED_LIST):
-            return SetStaRestrictedList(wifiRestrictedInfoList);
+            return SetStaMdmRestrictedList(wifiRestrictedInfoList);
         case static_cast<int>(WifiListMode::AP_WHITE_LIST):
             return SetApMdmWhiteList(wifiRestrictedInfoList);
         default:
@@ -682,7 +682,7 @@ ErrCode WifiDeviceServiceImpl::SetWifiRestrictedList(const std::vector<WifiRestr
 }
 
 #ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
-ErrCode WifiDeviceServiceImpl::SetStaRestrictedList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList)
+ErrCode WifiDeviceServiceImpl::SetStaMdmRestrictedList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList)
 {
     ErrCode checkResult = WifiSettings::GetInstance().CheckWifiMdmRestrictedList(wifiRestrictedInfoList);
     if (checkResult != WIFI_OPT_SUCCESS) {
@@ -713,48 +713,57 @@ ErrCode WifiDeviceServiceImpl::SetApMdmWhiteList(const std::vector<WifiRestricte
         WifiSettings::GetInstance().AddApMdmWhiteListConfig(item);
     }
     WifiSettings::GetInstance().SyncApMdmWhiteListConfig();
-    return KickStaNotInApMdmWhiteList();
+    return DeauthStaNotInMdmApWhiteList();
 }
 
-ErrCode WifiDeviceServiceImpl::KickStaNotInApMdmWhiteList()
+ErrCode WifiDeviceServiceImpl::DeauthStaNotInMdmApWhiteList()
 {
-    ErrCode softapRet = KickSoftApStaNotInWhiteList();
-    ErrCode rptRet = KickRptStaNotInWhiteList();
+    ErrCode softapRet = DeauthSoftApStaNotInMdmApWhiteList();
+    ErrCode rptRet = DeauthRptStaNotInMdmApWhiteList();
+    if (softapRet == WIFI_OPT_MDM_DEAUTH_FAILED || rptRet == WIFI_OPT_MDM_DEAUTH_FAILED) {
+        WIFI_LOGW("deauth sta not in mdm ap whitelist failed, softap:%{public}d rpt:%{public}d",
+            softapRet, rptRet);
+        return WIFI_OPT_MDM_DEAUTH_FAILED;
+    }
     if (softapRet != WIFI_OPT_SUCCESS || rptRet != WIFI_OPT_SUCCESS) {
-        WIFI_LOGW("kick sta not in whitelist partially failed, softap:%{public}d rpt:%{public}d",
+        WIFI_LOGW("deauth sta not in mdm ap whitelist partially failed, softap:%{public}d rpt:%{public}d",
             softapRet, rptRet);
         return WIFI_OPT_FAILED;
     }
     return WIFI_OPT_SUCCESS;
 }
 
-ErrCode WifiDeviceServiceImpl::KickSoftApStaNotInWhiteList()
+ErrCode WifiDeviceServiceImpl::DeauthSoftApStaNotInMdmApWhiteList()
 {
     if (WifiConfigCenter::GetInstance().GetApMidState(m_instId) != WifiOprMidState::RUNNING) {
         return WIFI_OPT_SUCCESS;
     }
     std::vector<StationInfo> stations;
+    /* Cached list lags join by 5s; new stations are checked on the join path. */
     WifiConfigCenter::GetInstance().GetStationList(stations);
     std::string ifName = WifiConfigCenter::GetInstance().GetApIfaceName();
     if (ifName.empty()) {
-        WIFI_LOGE("KickSoftApStaNotInWhiteList: ap iface name is empty");
+        WIFI_LOGE("DeauthSoftApStaNotInMdmApWhiteList: ap iface name is empty");
         return WIFI_OPT_FAILED;
     }
 
+    ErrCode ret = WIFI_OPT_SUCCESS;
     for (const auto &sta : stations) {
-        if (WifiSettings::GetInstance().IsApWhiteListMacAllowed(sta.bssid)) {
+        if (WifiSettings::GetInstance().IsApMdmWhiteListMacAllowed(sta.bssid)) {
             continue;
         }
-        WIFI_LOGW("kick softap sta not in whitelist: %{public}s", MacAnonymize(sta.bssid).c_str());
+        WIFI_LOGW("deauth softap sta not in mdm ap whitelist: %{public}s",
+            MacAnonymize(sta.bssid).c_str());
         WifiErrorNo err = WifiApHalInterface::GetInstance().DisAssociateSta(ifName, sta.bssid);
         if (err != WIFI_HAL_OPT_OK) {
-            WIFI_LOGE("kick softap sta failed");
+            WIFI_LOGE("deauth softap sta failed");
+            ret = WIFI_OPT_MDM_DEAUTH_FAILED;
         }
     }
-    return WIFI_OPT_SUCCESS;
+    return ret;
 }
 
-ErrCode WifiDeviceServiceImpl::KickRptStaNotInWhiteList()
+ErrCode WifiDeviceServiceImpl::DeauthRptStaNotInMdmApWhiteList()
 {
 #ifdef FEATURE_RPT_SUPPORT
     auto rptManager = WifiManager::GetInstance().GetRptInterface(m_instId);
@@ -763,14 +772,15 @@ ErrCode WifiDeviceServiceImpl::KickRptStaNotInWhiteList()
     }
     std::vector<StationInfo> stations;
     if (rptManager->GetStationList(stations) != WIFI_OPT_SUCCESS) {
-        WIFI_LOGE("KickRptStaNotInWhiteList: get station list failed");
+        WIFI_LOGE("DeauthRptStaNotInMdmApWhiteList: get station list failed");
         return WIFI_OPT_FAILED;
     }
     for (const auto &sta : stations) {
-        if (WifiSettings::GetInstance().IsApWhiteListMacAllowed(sta.bssid)) {
+        if (WifiSettings::GetInstance().IsApMdmWhiteListMacAllowed(sta.bssid)) {
             continue;
         }
-        WIFI_LOGW("kick rpt sta not in whitelist: %{public}s", MacAnonymize(sta.bssid).c_str());
+        WIFI_LOGW("deauth rpt sta not in mdm ap white list: %{public}s",
+            MacAnonymize(sta.bssid).c_str());
         rptManager->DisconnectSta(sta.bssid);
     }
     return WIFI_OPT_SUCCESS;
