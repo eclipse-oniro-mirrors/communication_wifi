@@ -248,6 +248,7 @@ WifiDeviceConfig WifiDeviceMgrServiceImpl::SvcMakeConfig(const std::vector<std::
     int ssidNum = 1;
     int keyMgmtNum = 2;
     int preSharedKeyNum = 3;
+    int hiddenFlagNum = preSharedKeyNum + 1;
     
     config.ssid = Str16ToStr8(args[ssidNum]);
     std::string keyMgmt = Str16ToStr8(args[keyMgmtNum]);
@@ -267,11 +268,22 @@ WifiDeviceConfig WifiDeviceMgrServiceImpl::SvcMakeConfig(const std::vector<std::
         config.preSharedKey = Str16ToStr8(args[preSharedKeyNum]);
     } else if (keyMgmt == "open") {
         config.keyMgmt = KEY_MGMT_NONE;
+        hiddenFlagNum = preSharedKeyNum;
     }
 
+    if (args.size() > static_cast<size_t>(hiddenFlagNum) && Str16ToStr8(args[hiddenFlagNum]) == "hidden") {
+        config.hiddenSSID = true;
+    }
+    
     int ret = WifiSettings::GetInstance().GetDeviceConfig(config.ssid, config.keyMgmt, outConfig, g_instIdWlan0);
     if (ret == 0) {
         WIFI_LOGE("find existed config.");
+        if (config.hiddenSSID) {
+            outConfig.hiddenSSID = true;
+        }
+        if (!config.preSharedKey.empty()) {
+            outConfig.preSharedKey = config.preSharedKey;
+        }
         return outConfig;
     }
     return config;
@@ -335,7 +347,7 @@ int32_t WifiDeviceMgrServiceImpl::OnSvcCmd(int32_t fd, const std::vector<std::u1
                 " svc wifi enable: enable wifi device\n"
                 " svc wifi disable: disable wifi device\n"
                 " svc wifi scan: start wifi scan\n"
-                " svc wifi connect <ssid> <type> <password>: connect to network\n"
+                " svc wifi connect <ssid> <type> <password> [hidden]: connect to network\n"
                 " svc wifi list-scan-result: list scan result\n";
     std::lock_guard<std::mutex> lock(g_initMutex);
     if (args.size() == 0) {
