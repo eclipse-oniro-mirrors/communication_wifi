@@ -382,6 +382,7 @@ void WifiDeviceProxy::WriteDeviceConfig(const WifiDeviceConfig &config, MessageP
     data.WriteString(config.wifiWapiConfig.wapiUserCertData);
     data.WriteBool(config.isAllowAutoConnect);
     data.WriteBool(config.showNoInternetDialog);
+    data.WriteInt32(config.meteredOverride);
 }
 
 ErrCode WifiDeviceProxy::RemoveCandidateConfig(const WifiDeviceConfig &config)
@@ -2287,6 +2288,7 @@ ErrCode WifiDeviceProxy::GetChangeDeviceConfig(ConfigChange &value, WifiDeviceCo
     config.callProcessName = reply.ReadString();
     config.ancoCallProcessName = reply.ReadString();
     config.keyMgmt = reply.ReadString();
+    config.meteredOverride = reply.ReadInt32();
     int ret = reply.ReadInt32();
     if (ret != WIFI_OPT_SUCCESS) {
         return ErrCode(ret);
@@ -2683,6 +2685,7 @@ void WifiDeviceProxy::ReadDeviceConfig(MessageParcel &reply, WifiDeviceConfig &c
 #ifdef WIFI_LOCAL_SECURITY_DETECT_ENABLE
     config.riskType = WifiRiskType(reply.ReadInt32());
 #endif
+    config.meteredOverride = reply.ReadInt32();
 }
 
 ErrCode WifiDeviceProxy::GetDeviceConfig(const int &networkId, WifiDeviceConfig &config)
