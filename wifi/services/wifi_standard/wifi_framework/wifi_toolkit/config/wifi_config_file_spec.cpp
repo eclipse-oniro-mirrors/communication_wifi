@@ -286,8 +286,7 @@ static int SetWifiDeviceConfigFirst(WifiDeviceConfig &item, const std::string &k
     } else if (key == "portalAuthTime") {
         item.portalAuthTime = CheckDataLegal(tmpValue);
     } else if (key == "meteredOverride") {
-        int tmpMetered = CheckDataLegal(tmpValue);
-        item.meteredOverride = (tmpMetered >= 0 && tmpMetered <= 2) ? tmpMetered : 0;
+        item.meteredOverride = CheckDataLegal(tmpValue);
     } else {
         return SetWifiDeviceConfigExternal(item, key, value);
     }
