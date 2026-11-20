@@ -172,6 +172,7 @@ ohos_unittest("WifiApServiceTest") {
     "AP_INSTANCE_MAX_NUM=$wifi_feature_with_ap_num",
     "private=public",
     "SUPPORT_NAT",
+    "FEATURE_WIFI_MDM_RESTRICTED_SUPPORT",
   ]
 
   if (wifi_feature_with_dhcp_disable) {

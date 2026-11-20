@@ -26,6 +26,7 @@ constexpr const char* FACTORY_WIFI_COUNTRY_CODE = "const.wifi.country_code.facto
 constexpr const char* OPERATOR_NUMERIC_KEY = "ril.operator.numeric";  // plmn cached
 constexpr const char* WIFI_COUNTRY_CODE_DYNAMIC_UPDATE_KEY = "persist.wifi.country_code.dynamic_update";
 constexpr const char* DEFAULT_REGION_KEY = "const.global.region";
+constexpr const char* MDM_AP_WHITE_LIST_PARAM = "persist.edm.is_hotspot_client_policy_enabled";
 const int INDEX_ZERO = 0;
 const int INDEX_ONE = 1;
 const int INDEX_TWO = 2;
@@ -76,6 +77,13 @@ int GetParamValue(const char *key, const char *def, char *value, uint32_t len)
         value[INDEX_ZERO] = 'J';
         value[INDEX_ONE] = 'P';
         return 1;  // success
+    } else if (strcasecmp(key, MDM_AP_WHITE_LIST_PARAM) == 0) {
+        WIFI_LOGI("GetParamValue MDM_AP_WHITE_LIST_PARAM");
+        value[INDEX_ZERO] = 't';
+        value[INDEX_ONE] = 'r';
+        value[INDEX_TWO] = 'u';
+        value[INDEX_THREE] = 'e';
+        return 1;
     } else {
         // nothing
     }

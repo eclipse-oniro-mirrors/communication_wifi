@@ -2579,7 +2579,7 @@ void WifiSettings::InitWifiConfig()
 void WifiSettings::InitWifiMdmRestrictedListConfig()
 {
     if (wifiMdmRestrictedListConfig_.LoadConfig() < 0) {
-        LOGI("the mdmRestrictedList loadConfig() return value < 0");
+        LOGE("the mdmRestrictedList loadConfig() return value < 0");
         return;
     }
     std::vector<WifiRestrictedInfo> tmp;
@@ -2594,7 +2594,7 @@ void WifiSettings::InitWifiMdmRestrictedListConfig()
 void WifiSettings::InitApMdmWhiteListConfig()
 {
     if (apMdmWhiteListConfig_.LoadConfig() < 0) {
-        LOGI("ap mdm whitelist loadConfig() return value < 0");
+        LOGE("ap mdm whitelist loadConfig() return value < 0");
         return;
     }
     std::vector<WifiRestrictedInfo> tmp;

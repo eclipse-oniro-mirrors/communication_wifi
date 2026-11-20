@@ -80,6 +80,7 @@ ohos_fuzztest("WifiDeviceStubFuzzTest") {
     "FEATURE_AP_SUPPORT",
     "FEATURE_STA_SUPPORT",
     "FEATURE_P2P_SUPPORT",
+    "FEATURE_WIFI_MDM_RESTRICTED_SUPPORT",
     "private=public",
   ]
 

@@ -203,10 +203,32 @@ void OnSetWifiRestrictedListFuzzTest()
         LOGE("WriteInterfaceToken failed!");
         return;
     }
-    int32_t tmpInt = FDP->ConsumeIntegral<int32_t>();
-    std::string tmpBuffer = FDP->ConsumeBytesAsString(NUM_BYTES);
-    datas.WriteInt32(tmpInt);
-    datas.WriteBuffer(tmpBuffer.c_str(), tmpBuffer.size());
+    int32_t mode = FDP->ConsumeIntegralInRange<int32_t>(
+        static_cast<int32_t>(WifiListMode::STA_RESTRICTED_LIST),
+        static_cast<int32_t>(WifiListMode::AP_WHITE_LIST));
+    int32_t size = FDP->ConsumeIntegralInRange<int32_t>(0, 4);
+    datas.WriteInt32(mode);
+    datas.WriteInt32(size);
+    for (int32_t i = 0; i < size; i++) {
+        datas.WriteString(FDP->ConsumeBytesAsString(NUM_BYTES));
+        datas.WriteString(FDP->ConsumeBytesAsString(NUM_BYTES));
+        datas.WriteInt32(FDP->ConsumeIntegral<int32_t>());
+        datas.WriteInt32(FDP->ConsumeIntegral<int32_t>());
+    }
+    OnRemoteRequest(static_cast<uint32_t>(DevInterfaceCode::WIFI_SVR_CMD_SET_WIFI_ACCESS_LIST), datas);
+}
+
+void OnSetWifiRestrictedListInvalidFuzzTest()
+{
+    MessageParcel datas;
+    if (!datas.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN)) {
+        LOGE("WriteInterfaceToken failed!");
+        return;
+    }
+    int32_t mode = FDP->ConsumeIntegral<int32_t>();
+    int32_t size = FDP->ConsumeIntegral<int32_t>();
+    datas.WriteInt32(mode);
+    datas.WriteInt32(size);
     OnRemoteRequest(static_cast<uint32_t>(DevInterfaceCode::WIFI_SVR_CMD_SET_WIFI_ACCESS_LIST), datas);
 }
 
@@ -1519,6 +1541,7 @@ void WifiDeviceFuzzTest()
     OHOS::Wifi::OnPutWifiProtectRefFuzzTest();
     OHOS::Wifi::OnIsHeldWifiProtectRefFuzzTest();
     OHOS::Wifi::OnSetWifiRestrictedListFuzzTest();
+    OHOS::Wifi::OnSetWifiRestrictedListInvalidFuzzTest();
     OHOS::Wifi::OnAddDeviceConfigFuzzTest();
     OHOS::Wifi::OnUpdateDeviceConfigFuzzTest();
     OHOS::Wifi::OnRemoveDeviceFuzzTest();

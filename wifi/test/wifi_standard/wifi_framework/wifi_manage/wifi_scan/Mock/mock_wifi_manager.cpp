@@ -72,8 +72,15 @@ std::unique_ptr<WifiHotspotManager>& WifiManager::GetWifiHotspotManager()
 
 std::shared_ptr<RptInterface> WifiManager::GetRptInterface(int id)
 {
-    return nullptr;
+    return mockRptInterface;
 }
+
+void WifiManager::SetMockRptInterface(const std::shared_ptr<RptInterface> &rpt)
+{
+    mockRptInterface = rpt;
+}
+
+std::shared_ptr<RptInterface> WifiManager::mockRptInterface = nullptr;
 
 std::unique_ptr<WifiEventSubscriberManager>& WifiManager::GetWifiEventSubscriberManager()
 {
