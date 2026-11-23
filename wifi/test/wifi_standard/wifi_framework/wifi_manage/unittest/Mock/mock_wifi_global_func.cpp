@@ -42,6 +42,13 @@ int GetParamValue(const char *key, const char *def, char *value, uint32_t len)
         value[INDEX_ZERO] = '3';
         value[INDEX_ONE] = '1';
         return 1;  // success
+    } else if (strcasecmp(key, MDM_AP_WHITE_LIST_PARAM) == 0) {
+        WIFI_LOGI("GetParamValue MDM_AP_WHITE_LIST_PARAM");
+        value[INDEX_ZERO] = 't';
+        value[INDEX_ONE] = 'r';
+        value[INDEX_TWO] = 'u';
+        value[INDEX_THREE] = 'e';
+        return 1;
     } else if (strcasecmp(key, WIFI_COUNTRY_CODE_RUN_MODE) == 0) {
         WIFI_LOGI("GetParamValue WIFI_COUNTRY_CODE_RUN_MODE");
         value[INDEX_ZERO] = 'f';
@@ -77,13 +84,6 @@ int GetParamValue(const char *key, const char *def, char *value, uint32_t len)
         value[INDEX_ZERO] = 'J';
         value[INDEX_ONE] = 'P';
         return 1;  // success
-    } else if (strcasecmp(key, MDM_AP_WHITE_LIST_PARAM) == 0) {
-        WIFI_LOGI("GetParamValue MDM_AP_WHITE_LIST_PARAM");
-        value[INDEX_ZERO] = 't';
-        value[INDEX_ONE] = 'r';
-        value[INDEX_TWO] = 'u';
-        value[INDEX_THREE] = 'e';
-        return 1;
     } else {
         // nothing
     }
