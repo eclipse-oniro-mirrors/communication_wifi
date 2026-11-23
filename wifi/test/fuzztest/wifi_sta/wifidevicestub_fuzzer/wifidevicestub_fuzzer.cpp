@@ -1540,8 +1540,6 @@ void WifiDeviceFuzzTest()
     OHOS::Wifi::OnGetWifiProtectRefFuzzTest();
     OHOS::Wifi::OnPutWifiProtectRefFuzzTest();
     OHOS::Wifi::OnIsHeldWifiProtectRefFuzzTest();
-    OHOS::Wifi::OnSetWifiRestrictedListFuzzTest();
-    OHOS::Wifi::OnSetWifiRestrictedListInvalidFuzzTest();
     OHOS::Wifi::OnAddDeviceConfigFuzzTest();
     OHOS::Wifi::OnUpdateDeviceConfigFuzzTest();
     OHOS::Wifi::OnRemoveDeviceFuzzTest();
@@ -1636,6 +1634,13 @@ void WifiDeviceFuzzTestPart2()
     OHOS::Wifi::GetSpecialWifiInfoTest();
     OHOS::Wifi::OnGetSpecialWifiTypeTest();
     OHOS::Wifi::GetSpecialWifiTypeTest();
+    OHOS::Wifi::OnSetWifiRestrictedListInvalidFuzzTest();
+}
+
+void WifiDeviceFuzzTestPart3()
+{
+    OHOS::Wifi::OnSetWifiRestrictedListFuzzTest();
+    OHOS::Wifi::OnSetWifiRestrictedListInvalidFuzzTest();
 }
 
 /* Fuzzer entry point */
@@ -1645,6 +1650,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Wifi::FDP = &fdp;
     OHOS::Wifi::WifiDeviceFuzzTest();
     OHOS::Wifi::WifiDeviceFuzzTestPart2();
+    OHOS::Wifi::WifiDeviceFuzzTestPart3();
     return 0;
 }
 }
