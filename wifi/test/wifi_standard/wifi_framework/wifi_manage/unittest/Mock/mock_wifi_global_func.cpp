@@ -15,6 +15,7 @@
 
 #include "mock_wifi_global_func.h"
 #include <cstring>
+#include "securec.h"
 #include "wifi_logger.h"
 
 namespace OHOS {
@@ -30,35 +31,35 @@ constexpr const char* DEFAULT_REGION_KEY = "const.global.region";
 constexpr const char* MDM_AP_WHITE_LIST_PARAM = "persist.edm.is_hotspot_client_policy_enabled";
 
 namespace {
-struct ParamStub {
-    const char *key;
-    const char *value;
-};
-
-constexpr ParamStub PARAM_STUBS[] = {
-    {WIFI_COUNTRY_CODE_CONFIG, "31"},
-    {MDM_AP_WHITE_LIST_PARAM, "true"},
-    {WIFI_COUNTRY_CODE_RUN_MODE, "factory"},
-    {FACTORY_WIFI_COUNTRY_CODE, "US"},
-    {OPERATOR_NUMERIC_KEY, "4600000"},
-    {WIFI_COUNTRY_CODE_DYNAMIC_UPDATE_KEY, "CN"},
-    {DEFAULT_REGION_KEY, "JP"},
-};
+int SetStub(char *value, uint32_t len, const char *text)
+{
+    return memcpy_s(value, len, text, strlen(text)) == EOK ? 1 : 0;
+}
 } // namespace
 
-int GetParamValue(const char *key, [[maybe_unused]] const char *def, char *value, uint32_t len)
+int GetParamValue(const char *key, const char *, char *value, uint32_t len)
 {
-    for (const auto &stub : PARAM_STUBS) {
-        if (strcasecmp(key, stub.key) != 0) {
-            continue;
-        }
-        WIFI_LOGI("GetParamValue %{public}s", stub.key);
-        size_t valueLen = strlen(stub.value);
-        if (value == nullptr || len < valueLen) {
-            return 0;
-        }
-        memcpy(value, stub.value, valueLen);
-        return 1;
+    if (strcasecmp(key, WIFI_COUNTRY_CODE_CONFIG) == 0) {
+        WIFI_LOGI("GetParamValue WIFI_COUNTRY_CODE_CONFIG");
+        return SetStub(value, len, "31");
+    } else if (strcasecmp(key, MDM_AP_WHITE_LIST_PARAM) == 0) {
+        WIFI_LOGI("GetParamValue MDM_AP_WHITE_LIST_PARAM");
+        return SetStub(value, len, "true");
+    } else if (strcasecmp(key, WIFI_COUNTRY_CODE_RUN_MODE) == 0) {
+        WIFI_LOGI("GetParamValue WIFI_COUNTRY_CODE_RUN_MODE");
+        return SetStub(value, len, "factory");
+    } else if (strcasecmp(key, FACTORY_WIFI_COUNTRY_CODE) == 0) {
+        WIFI_LOGI("GetParamValue FACTORY_WIFI_COUNTRY_CODE");
+        return SetStub(value, len, "US");
+    } else if (strcasecmp(key, OPERATOR_NUMERIC_KEY) == 0) {
+        WIFI_LOGI("GetParamValue OPERATOR_NUMERIC_KEY");
+        return SetStub(value, len, "4600000");
+    } else if (strcasecmp(key, WIFI_COUNTRY_CODE_DYNAMIC_UPDATE_KEY) == 0) {
+        WIFI_LOGI("GetParamValue WIFI_COUNTRY_CODE_DYNAMIC_UPDATE_KEY");
+        return SetStub(value, len, "CN");
+    } else if (strcasecmp(key, DEFAULT_REGION_KEY) == 0) {
+        WIFI_LOGI("GetParamValue DEFAULT_REGION_KEY");
+        return SetStub(value, len, "JP");
     }
     return 0;
 }
