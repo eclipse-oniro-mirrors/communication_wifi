@@ -925,6 +925,7 @@ struct WifiDeviceConfig {
     int dualStackNetState {-1};
     bool showNoInternetDialog { true };
     int64_t ipv6DisableTimestamp { 0 };
+    /* Metered override: 0-NONE 1-METERED 2-NOT_METERED */
     int meteredOverride { 0 };
 
     WifiDeviceConfig()
