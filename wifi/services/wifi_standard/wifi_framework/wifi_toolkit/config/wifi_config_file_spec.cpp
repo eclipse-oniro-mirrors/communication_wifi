@@ -59,6 +59,7 @@ static void ClearWifiDeviceConfig(WifiDeviceConfig &item)
     item.noInternetAccess = false;
     item.callProcessName.clear();
     item.ancoCallProcessName.clear();
+    item.meteredOverride = 0;
     item.randomizedMacSuccessEver = false;
     item.everConnected = false;
     item.acceptUnvalidated = false;
@@ -284,6 +285,8 @@ static int SetWifiDeviceConfigFirst(WifiDeviceConfig &item, const std::string &k
         item.macAddress = value;
     } else if (key == "portalAuthTime") {
         item.portalAuthTime = CheckDataLegal(tmpValue);
+    } else if (key == "meteredOverride") {
+        item.meteredOverride = CheckDataLegal(tmpValue);
     } else {
         return SetWifiDeviceConfigExternal(item, key, value);
     }
@@ -688,6 +691,7 @@ static std::string OutPutWifiDeviceConfig(WifiDeviceConfig &item)
     ss << "    " <<"acceptUnvalidated=" << item.acceptUnvalidated << std::endl;
     ss << "    " <<"macAddress=" << item.macAddress << std::endl;
     ss << "    " <<"lastUpdateTime=" << item.lastUpdateTime << std::endl;
+    ss << "    " <<"meteredOverride=" << item.meteredOverride << std::endl;
     ss << "    " <<"</WifiDeviceConfig>" << std::endl;
     return ss.str();
 }

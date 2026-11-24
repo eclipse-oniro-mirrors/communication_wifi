@@ -512,6 +512,7 @@ void WifiDeviceStub::ReadWifiDeviceConfig(MessageParcel &data, WifiDeviceConfig 
     config.wifiWapiConfig.wapiUserCertData = data.ReadString();
     config.isAllowAutoConnect = data.ReadBool();
     config.showNoInternetDialog = data.ReadBool();
+    config.meteredOverride = data.ReadInt32();
     return;
 }
 
@@ -623,6 +624,7 @@ void WifiDeviceStub::WriteWifiDeviceConfig(MessageParcel &reply, const WifiDevic
 #ifdef WIFI_LOCAL_SECURITY_DETECT_ENABLE
     reply.WriteInt32((int)config.riskType);
 #endif
+    reply.WriteInt32(config.meteredOverride);
     return;
 }
 
@@ -801,6 +803,7 @@ void WifiDeviceStub::OnGetChangeDeviceConfig(uint32_t code, MessageParcel &data,
     reply.WriteString(config.callProcessName);
     reply.WriteString(config.ancoCallProcessName);
     reply.WriteString(config.keyMgmt);
+    reply.WriteInt32(config.meteredOverride);
     reply.WriteInt32(ret);
     return;
 }
