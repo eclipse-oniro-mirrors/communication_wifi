@@ -746,6 +746,9 @@ void WifiDeviceServiceImpl::DeauthSoftApMdmNotAllowedSta()
         WIFI_LOGE("DeauthSoftApMdmNotAllowedSta: get station list failed");
         return;
     }
+    if (stations.empty()) {
+        return;
+    }
     ErrCode ret = pService->DeauthMdmNotAllowedSta(stations);
     if (ret != WIFI_OPT_SUCCESS) {
         WIFI_LOGE("DeauthSoftApMdmNotAllowedSta: send message failed, ret:%{public}d", ret);
@@ -762,6 +765,9 @@ void WifiDeviceServiceImpl::DeauthRptMdmNotAllowedSta()
     std::vector<StationInfo> stations;
     if (rptManager->GetStationList(stations) != WIFI_OPT_SUCCESS) {
         WIFI_LOGE("DeauthRptMdmNotAllowedSta: get station list failed");
+        return;
+    }
+    if (stations.empty()) {
         return;
     }
     ErrCode ret = rptManager->DeauthMdmNotAllowedSta(stations);
