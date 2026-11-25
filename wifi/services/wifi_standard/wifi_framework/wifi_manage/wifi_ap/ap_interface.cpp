@@ -145,5 +145,13 @@ void ApInterface::SetEnhanceService(IEnhanceService *enhanceService)
     return;
 }
 #endif
+
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+ErrCode ApInterface::DeauthMdmNotAllowedSta(const std::vector<StationInfo> &stations)
+{
+    std::lock_guard<std::mutex> lock(mutex);
+    return m_ApService.DeauthMdmNotAllowedSta(stations);
+}
+#endif
 }  // namespace Wifi
 }  // namespace OHOS

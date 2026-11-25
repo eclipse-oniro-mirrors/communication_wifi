@@ -100,9 +100,10 @@ public:
         bool ExecuteStateMsgEx(InternalMessagePtr msg);
         void ProcessCmdEnableRpt();
 #endif
-        void ProcessCmdStationJoin(const std::string &mac);
-        void ProcessCmdStationLeave(const std::string &mac);
+        void ProcessCmdStationJoin(InternalMessagePtr msg);
+        void ProcessCmdStationLeave(InternalMessagePtr msg);
 #ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+        void ProcessCmdDeauthMdmNotAllowedSta(InternalMessagePtr msg);
         std::set<std::string> curAssocMacList;
 #endif
         RptManagerMachine *pRptManagerMachine;

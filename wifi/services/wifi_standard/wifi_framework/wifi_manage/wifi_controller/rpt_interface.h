@@ -30,7 +30,9 @@ public:
     virtual std::string GetRptIfaceName() = 0;
     virtual void AddBlock(const std::string &mac) = 0;
     virtual void DelBlock(const std::string &mac) = 0;
-    virtual void DisconnectSta(const std::string &mac) = 0;
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+    virtual ErrCode DeauthMdmNotAllowedSta(const std::vector<StationInfo> &stations) = 0;
+#endif
 
     virtual void OnP2pActionResult(P2pActionCallback action, ErrCode code) = 0;
     virtual void OnP2pConnectionChanged(P2pConnectedState p2pConnState) = 0;

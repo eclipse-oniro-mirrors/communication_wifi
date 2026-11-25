@@ -171,6 +171,15 @@ private:
      */
     void ProcessCmdStationLeave(InternalMessagePtr msg);
 
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+    /**
+     * @Description  Process the deauth STA not allowed by MDM message received by the state machine.
+     * @param msg - Message body sent by the state machine
+     * @return None
+     */
+    void ProcessCmdDeauthMdmNotAllowedSta(InternalMessagePtr msg);
+#endif
+
     /**
      * @Description  Process the hotspot idle timeout message of the APP
                      received by the state machine.

@@ -152,12 +152,22 @@ void RptManager::DelBlock(const std::string &mac)
     pRptManagerMachine->SendMessage(msg);
 }
 
-void RptManager::DisconnectSta(const std::string &mac)
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+ErrCode RptManager::DeauthMdmNotAllowedSta(const std::vector<StationInfo> &stations)
 {
-    auto msg = pRptManagerMachine->CreateMessage(RPT_CMD_DISASSOC_STA);
-    msg->AddStringMessageBody(mac);
+    if (pRptManagerMachine == nullptr) {
+        WIFI_LOGE("pRptManagerMachine is null");
+        return WIFI_OPT_FAILED;
+    }
+    auto msg = pRptManagerMachine->CreateMessage(RPT_CMD_DEAUTH_MDM_NOT_ALLOWED_STA);
+    if (msg == nullptr) {
+        return WIFI_OPT_FAILED;
+    }
+    msg->SetMessageObj(stations);
     pRptManagerMachine->SendMessage(msg);
+    return WIFI_OPT_SUCCESS;
 }
+#endif
 
 ErrCode RptManager::GetStationList(std::vector<StationInfo> &result)
 {

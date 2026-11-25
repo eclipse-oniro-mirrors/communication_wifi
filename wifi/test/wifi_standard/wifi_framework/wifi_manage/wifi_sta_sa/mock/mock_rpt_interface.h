@@ -27,7 +27,9 @@ public:
     MOCK_METHOD0(GetRptIfaceName, std::string());
     MOCK_METHOD1(AddBlock, void(const std::string &mac));
     MOCK_METHOD1(DelBlock, void(const std::string &mac));
-    MOCK_METHOD1(DisconnectSta, void(const std::string &mac));
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+    MOCK_METHOD1(DeauthMdmNotAllowedSta, ErrCode(const std::vector<StationInfo> &stations));
+#endif
     MOCK_METHOD2(OnP2pActionResult, void(P2pActionCallback action, ErrCode code));
     MOCK_METHOD1(OnP2pConnectionChanged, void(P2pConnectedState p2pConnState));
     MOCK_METHOD1(OnStationJoin, void(std::string mac));

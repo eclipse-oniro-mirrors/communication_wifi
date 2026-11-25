@@ -93,8 +93,9 @@ namespace Wifi {
 #define RPT_CMD_ON_STA_UNLINKED 0x40E
 #define RPT_CMD_START_RPT 0x40F
 #endif
-#define RPT_CMD_DISASSOC_STA 0x410
-
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+#define RPT_CMD_DEAUTH_MDM_NOT_ALLOWED_STA 0x410
+#endif
 #define STOP_WIFI_WAIT_TIME 100
 
 struct ConcreteModeCallback {

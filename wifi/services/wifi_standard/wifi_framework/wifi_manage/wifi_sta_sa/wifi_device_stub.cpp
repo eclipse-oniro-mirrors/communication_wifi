@@ -438,9 +438,6 @@ void WifiDeviceStub::OnSetWifiRestrictedList(uint32_t code, MessageParcel &data,
 
     reply.WriteInt32(0);
     reply.WriteInt32(ret);
-    if (ret == WIFI_OPT_SUCCESS) {
-        reply.WriteInt32(INVALID_NETWORK_ID);
-    }
     return;
 }
 

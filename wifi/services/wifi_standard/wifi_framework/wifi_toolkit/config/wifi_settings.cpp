@@ -360,19 +360,6 @@ int WifiSettings::SyncApMdmWhiteListConfig()
 
 bool WifiSettings::IsApMdmWhiteListMacAllowed(const std::string &mac)
 {
-    constexpr const char *MDM_AP_WHITE_LIST_PARAM = "persist.edm.is_hotspot_client_policy_enabled";
-    constexpr const char *PARAM_TRUE = "true";
-    constexpr const char *PARAM_FALSE = "false";
-    constexpr const uint32_t PARAM_TRUE_LEN = 4;
-    constexpr const uint32_t PARAM_FALSE_LEN = 5;
-
-    char preValue[PARAM_FALSE_LEN] = {0};
-    int errCode = GetParamValue(MDM_AP_WHITE_LIST_PARAM, PARAM_FALSE, preValue, PARAM_FALSE_LEN);
-    if (errCode <= 0 || strncmp(preValue, PARAM_TRUE, PARAM_TRUE_LEN) != 0) {
-        LOGI("hotspot client whitelist policy disabled, allow connect.");
-        return true;
-    }
-
     std::unique_lock<std::mutex> lock(mApMutex);
     if (apMdmWhiteList_.empty()) {
         return true;

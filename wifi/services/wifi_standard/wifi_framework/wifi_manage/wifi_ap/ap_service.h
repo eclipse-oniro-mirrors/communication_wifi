@@ -161,6 +161,15 @@ public:
      */
     void SetEnhanceService(IEnhanceService* enhanceService);
 #endif
+
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+    /**
+     * @Description  Send a message to the AP state machine to deauth STAs not allowed by MDM.
+     * @param stations - current connected station list
+     * @return ErrCode - success: WIFI_OPT_SUCCESS    failed: ERROR_CODE
+     */
+    ErrCode DeauthMdmNotAllowedSta(const std::vector<StationInfo> &stations) const;
+#endif
 private:
     class WifiCountryCodeChangeObserver : public IWifiCountryCodeChangeListener {
     public:
