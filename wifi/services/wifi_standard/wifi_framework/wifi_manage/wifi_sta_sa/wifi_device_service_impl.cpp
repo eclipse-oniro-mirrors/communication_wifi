@@ -708,11 +708,11 @@ ErrCode WifiDeviceServiceImpl::SetApMdmWhiteList(const std::vector<WifiRestricte
     if (ret != WIFI_OPT_SUCCESS) {
         return ret;
     }
-    WifiSettings::GetInstance().ClearApMdmWhiteListConfig();
-    for (const auto &item : wifiRestrictedInfoList) {
-        WifiSettings::GetInstance().AddApMdmWhiteListConfig(item);
+    ret = WifiSettings::GetInstance().SetApMdmWhiteListConfig(wifiRestrictedInfoList);
+    if (ret != WIFI_OPT_SUCCESS) {
+        WIFI_LOGE("SetApMdmWhiteList: save ap mdm whitelist failed, ret:%{public}d", ret);
+        return ret;
     }
-    WifiSettings::GetInstance().SyncApMdmWhiteListConfig();
     DeauthMdmNotAllowedSta();
     return WIFI_OPT_SUCCESS;
 }
@@ -2230,8 +2230,7 @@ ErrCode WifiDeviceServiceImpl::FactoryReset()
 #ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
     WifiSettings::GetInstance().ClearWifiRestrictedListConfig(m_instId);
     WifiSettings::GetInstance().SyncWifiRestrictedListConfig();
-    WifiSettings::GetInstance().ClearApMdmWhiteListConfig();
-    WifiSettings::GetInstance().SyncApMdmWhiteListConfig();
+    WifiSettings::GetInstance().SetApMdmWhiteListConfig(std::vector<WifiRestrictedInfo>());
 #endif
     WIFI_LOGI("WifiDeviceServiceImpl FactoryReset ok!");
     return WIFI_OPT_SUCCESS;

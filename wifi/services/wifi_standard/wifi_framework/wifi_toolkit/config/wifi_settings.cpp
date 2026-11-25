@@ -328,34 +328,16 @@ ErrCode WifiSettings::CheckApMdmWhiteList(const std::vector<WifiRestrictedInfo> 
     return WIFI_OPT_SUCCESS;
 }
 
-ErrCode WifiSettings::ClearApMdmWhiteListConfig()
+ErrCode WifiSettings::SetApMdmWhiteListConfig(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList)
 {
     std::unique_lock<std::mutex> lock(mApMutex);
-    LOGI("Clear ap mdm white list");
-    apMdmWhiteList_.clear();
-    return WIFI_OPT_SUCCESS;
-}
-
-ErrCode WifiSettings::AddApMdmWhiteListConfig(const WifiRestrictedInfo &wifiListInfo)
-{
-    std::unique_lock<std::mutex> lock(mApMutex);
-    if (apMdmWhiteList_.size() >= WIFI_AP_MDM_WHITE_LIST_MAX_NUM) {
-        LOGE("Add ApMdmWhiteList exceeding the maximum value!");
-        return WIFI_OPT_MDM_AP_WHITELIST_OUT_MAX_NUM;
+    apMdmWhiteList_ = wifiRestrictedInfoList;
+    apMdmWhiteListConfig_.SetValue(apMdmWhiteList_);
+    if (apMdmWhiteListConfig_.SaveConfig() != 0) {
+        LOGE("save ap mdm white list config failed");
+        return WIFI_OPT_FAILED;
     }
-    apMdmWhiteList_.push_back(wifiListInfo);
     return WIFI_OPT_SUCCESS;
-}
-
-int WifiSettings::SyncApMdmWhiteListConfig()
-{
-    std::unique_lock<std::mutex> lock(mApMutex);
-    std::vector<WifiRestrictedInfo> tmp;
-    for (size_t i = 0; i < apMdmWhiteList_.size(); i++) {
-        tmp.push_back(apMdmWhiteList_[i]);
-    }
-    apMdmWhiteListConfig_.SetValue(tmp);
-    return apMdmWhiteListConfig_.SaveConfig();
 }
 
 bool WifiSettings::IsApMdmWhiteListMacAllowed(const std::string &mac)

@@ -132,9 +132,7 @@ public:
     virtual int SyncWifiRestrictedListConfig() = 0;
     virtual bool WhetherSetWhiteListConfig() = 0;
     virtual ErrCode CheckApMdmWhiteList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList) = 0;
-    virtual ErrCode ClearApMdmWhiteListConfig() = 0;
-    virtual ErrCode AddApMdmWhiteListConfig(const WifiRestrictedInfo &wifiListInfo) = 0;
-    virtual int SyncApMdmWhiteListConfig() = 0;
+    virtual ErrCode SetApMdmWhiteListConfig(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList) = 0;
     virtual bool IsApMdmWhiteListMacAllowed(const std::string &mac) = 0;
     virtual int SetDeviceEphemeral(int networkId, bool isEphemeral) = 0;
     virtual void SetDeviceNameApSsid(std::string ssid) = 0;
@@ -164,9 +162,7 @@ public:
     MOCK_METHOD0(SyncWifiRestrictedListConfig, int());
     MOCK_METHOD0(WhetherSetWhiteListConfig, bool());
     MOCK_METHOD1(CheckApMdmWhiteList, ErrCode(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList));
-    MOCK_METHOD0(ClearApMdmWhiteListConfig, ErrCode());
-    MOCK_METHOD1(AddApMdmWhiteListConfig, ErrCode(const WifiRestrictedInfo &wifiListInfo));
-    MOCK_METHOD0(SyncApMdmWhiteListConfig, int());
+    MOCK_METHOD1(SetApMdmWhiteListConfig, ErrCode(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList));
     MOCK_METHOD1(IsApMdmWhiteListMacAllowed, bool(const std::string &mac));
     MOCK_METHOD2(GetDeviceConfig, int(std::vector<WifiDeviceConfig> &results, int));
     MOCK_METHOD3(GetDeviceConfig, int(const int &networkId, WifiDeviceConfig &config, int));

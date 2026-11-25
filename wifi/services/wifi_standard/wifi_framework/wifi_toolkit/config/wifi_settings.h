@@ -145,11 +145,7 @@ public:
 
     ErrCode CheckApMdmWhiteList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList);
 
-    ErrCode ClearApMdmWhiteListConfig();
-
-    ErrCode AddApMdmWhiteListConfig(const WifiRestrictedInfo& wifiListInfo);
-
-    int SyncApMdmWhiteListConfig();
+    ErrCode SetApMdmWhiteListConfig(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList);
 
     bool IsApMdmWhiteListMacAllowed(const std::string &mac);
 #endif
