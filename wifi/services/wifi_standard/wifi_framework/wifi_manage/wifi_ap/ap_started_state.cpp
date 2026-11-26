@@ -518,8 +518,13 @@ void ApStartedState::ProcessCmdAssociatedStaChanged(InternalMessagePtr msg)
     WIFI_LOGI("%{public}s: associated station event: %{public}d", __func__, event);
     if (event == HAL_CBK_CMD_STA_JOIN) {
         curAssocMacList.insert(staInfo.bssid);
-        m_ApStateMachine.MessageExecutedLater(static_cast<int>(ApStatemachineEvent::CMD_STATION_JOIN),
-            staInfo, STA_JOIN_HANDLE_DELAY);
+        if (GetDeviceType() == ProductDeviceType::GLASSES) {
+            m_ApStateMachine.SendMessage(static_cast<int>(ApStatemachineEvent::CMD_STATION_JOIN), staInfo);
+        } else {
+            m_ApStateMachine.MessageExecutedLater(static_cast<int>(ApStatemachineEvent::CMD_STATION_JOIN),
+                staInfo, STA_JOIN_HANDLE_DELAY);
+        }
+
         return;
     }
     if (event == HAL_CBK_CMD_STA_LEAVE) {
