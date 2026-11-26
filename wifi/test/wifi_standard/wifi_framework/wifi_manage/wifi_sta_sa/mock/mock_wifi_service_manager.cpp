@@ -35,6 +35,9 @@
 namespace OHOS {
 namespace Wifi {
 DEFINE_WIFILOG_LABEL("WifiServiceManager");
+#ifdef FEATURE_AP_SUPPORT
+IApService *g_utApService = nullptr;
+#endif
 WifiServiceManager &WifiServiceManager::GetInstance()
 {
     static WifiServiceManager gWifiServiceManager;
@@ -155,7 +158,7 @@ bool WifiServiceManager::ApServiceSetHotspotConfig(const HotspotConfig &config, 
 
 IApService *WifiServiceManager::GetApServiceInst(int id)
 {
-    return nullptr;
+    return g_utApService;
 }
 #endif
 

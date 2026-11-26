@@ -47,6 +47,7 @@ public:
     virtual WifiErrorNo RemoveStation(const std::string &mac, int id = 0) = 0;
     virtual WifiErrorNo RegisterApEvent(IWifiApMonitorEventCallback callback, int id = 0) = 0;
     virtual WifiErrorNo DisconnectStaByMac(const std::string &mac, int id = 0) = 0;
+    virtual WifiErrorNo DisAssociateSta(const std::string &ifaceName, const std::string &mac) = 0;
     virtual const IWifiApMonitorEventCallback &GetApCallbackInst(int id = 0) const = 0;
     virtual WifiErrorNo GetPowerModel(int& model, int id = 0) const = 0;
     virtual WifiErrorNo SetPowerModel(const std::string &ifaceName, int model) = 0;
@@ -72,6 +73,7 @@ public:
     MOCK_METHOD2(RemoveStation, WifiErrorNo(const std::string &mac, int id));
     MOCK_METHOD2(RegisterApEvent, WifiErrorNo(IWifiApMonitorEventCallback callback, int id));
     MOCK_METHOD2(DisconnectStaByMac, WifiErrorNo(const std::string &mac, int id));
+    MOCK_METHOD2(DisAssociateSta, WifiErrorNo(const std::string &ifaceName, const std::string &mac));
     MOCK_CONST_METHOD1(GetApCallbackInst, IWifiApMonitorEventCallback &(int id));
     MOCK_CONST_METHOD2(GetPowerModel, WifiErrorNo(int& model, int id));
     MOCK_METHOD2(SetPowerModel, WifiErrorNo(const std::string &ifaceName, int model));

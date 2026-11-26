@@ -697,7 +697,7 @@ public:
      * @param result - the result of wifi access list
      * @return ErrCode - operation result
      */
-    ErrCode SetWifiRestrictedList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList) override;
+    ErrCode SetWifiRestrictedList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList, int mode) override;
     
     /**
      * @Description Is Random Mac Disabled.

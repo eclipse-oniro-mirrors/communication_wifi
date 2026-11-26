@@ -282,5 +282,20 @@ void ApService::SetEnhanceService(IEnhanceService* enhanceService)
     enhanceService_ = enhanceService;
 }
 #endif
+
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+ErrCode ApService::DeauthMdmNotAllowedSta(const std::vector<StationInfo> &stations) const
+{
+    WIFI_LOGI("Instance %{public}d %{public}s", m_id, __func__);
+    InternalMessagePtr msg = m_ApStateMachine.CreateMessage();
+    if (msg == nullptr) {
+        return ErrCode::WIFI_OPT_FAILED;
+    }
+    msg->SetMessageName(static_cast<int>(ApStatemachineEvent::CMD_DEAUTH_MDM_NOT_ALLOWED_STA));
+    msg->SetMessageObj(stations);
+    m_ApStateMachine.SendMessage(msg);
+    return ErrCode::WIFI_OPT_SUCCESS;
+}
+#endif
 }  // namespace Wifi
 }  // namespace OHOS

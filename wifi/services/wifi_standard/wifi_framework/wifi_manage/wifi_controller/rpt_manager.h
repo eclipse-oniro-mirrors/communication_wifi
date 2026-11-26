@@ -46,7 +46,9 @@ public:
     std::string GetRptIfaceName() override;
     void AddBlock(const std::string &mac) override;
     void DelBlock(const std::string &mac) override;
-
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+    ErrCode DeauthMdmNotAllowedSta(const std::vector<StationInfo> &stations) override;
+#endif
     void OnP2pActionResult(P2pActionCallback action, ErrCode code) override;
     void OnP2pConnectionChanged(P2pConnectedState p2pConnState) override;
     void OnStationJoin(std::string mac) override;

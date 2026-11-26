@@ -486,6 +486,9 @@
         "OHOS::Wifi::WifiSettings::AddWifiRestrictedListConfig(int, OHOS::Wifi::WifiRestrictedInfo const&)";
         "OHOS::Wifi::WifiSettings::SyncWifiRestrictedListConfig()";
         "OHOS::Wifi::BlockConnectService::UpdateNetworkSelectStatusForMdmRestrictedList()";
+        "OHOS::Wifi::WifiSettings::CheckApMdmWhiteList(std::__h::vector<OHOS::Wifi::WifiRestrictedInfo, std::__h::allocator<OHOS::Wifi::WifiRestrictedInfo>> const&)";
+        "OHOS::Wifi::WifiSettings::SetApMdmWhiteListConfig(std::__h::vector<OHOS::Wifi::WifiRestrictedInfo, std::__h::allocator<OHOS::Wifi::WifiRestrictedInfo>> const&)";
+        "OHOS::Wifi::WifiSettings::IsApMdmWhiteListMacAllowed(std::__h::basic_string<char, std::__h::char_traits<char>, std::__h::allocator<char>> const&)";
         "OHOS::Wifi::WifiChannelHelper::GetAvailableScanFreqs(OHOS::Wifi::ScanBandType, std::__h::vector<int, std::__h::allocator<int>>&)";
         "OHOS::Wifi::WifiChannelHelper::UpdateValidFreqs()";
         "OHOS::Wifi::ApConfigUse::GetInstance()";

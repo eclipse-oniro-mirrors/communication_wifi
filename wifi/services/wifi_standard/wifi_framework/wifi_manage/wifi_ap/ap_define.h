@@ -56,6 +56,9 @@ enum class ApStatemachineEvent {
     CMD_ASSOCIATED_STATIONS_CHANGED, /* associated stations changed */
     CMD_START_HOTSPOT_TIMEOUT,       /* start timeout */
                                      /* (asynchronous result) */
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+    CMD_DEAUTH_MDM_NOT_ALLOWED_STA, /* deauth sta not allowed by mdm */
+#endif
 };
 
 using HandlerApMethod = void(ApStatemachineEvent, int, int, const std::any &);

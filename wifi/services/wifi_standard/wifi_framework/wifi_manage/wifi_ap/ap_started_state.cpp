@@ -99,6 +99,10 @@ void ApStartedState::Init()
         [this](InternalMessagePtr msg) { this->ProcessCmdStationJoin(msg); }));
     mProcessFunMap.insert(std::make_pair(ApStatemachineEvent::CMD_STATION_LEAVE,
         [this](InternalMessagePtr msg) { this->ProcessCmdStationLeave(msg); }));
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+    mProcessFunMap.insert(std::make_pair(ApStatemachineEvent::CMD_DEAUTH_MDM_NOT_ALLOWED_STA,
+        [this](InternalMessagePtr msg) { this->ProcessCmdDeauthMdmNotAllowedSta(msg); }));
+#endif
     mProcessFunMap.insert(std::make_pair(ApStatemachineEvent::CMD_UPDATE_HOTSPOTCONFIG_RESULT,
         [this](InternalMessagePtr msg) { this->ProcessCmdUpdateConfigResult(msg); }));
     mProcessFunMap.insert(std::make_pair(ApStatemachineEvent::CMD_ADD_BLOCK_LIST,
@@ -289,6 +293,23 @@ void ApStartedState::ProcessCmdFail(InternalMessagePtr msg) const
     m_ApStateMachine.SwitchState(&m_ApStateMachine.m_ApIdleState);
 }
 
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+bool DeauthStaIfNotAllowed(const StationInfo &staInfo)
+{
+    if (WifiSettings::GetInstance().IsApMdmWhiteListMacAllowed(staInfo.bssid)) {
+        return false;
+    }
+    WIFI_LOGW("softap deauth sta not in mdm ap whitelist: %{public}s",
+        MacAnonymize(staInfo.bssid).c_str());
+    WifiErrorNo err = WifiApHalInterface::GetInstance().DisAssociateSta(
+        WifiConfigCenter::GetInstance().GetApIfaceName(), staInfo.bssid);
+    if (err != WIFI_HAL_OPT_OK) {
+        WIFI_LOGE("softap deauth sta failed: %{public}s", MacAnonymize(staInfo.bssid).c_str());
+    }
+    return true;
+}
+#endif
+
 void ApStartedState::ProcessCmdStationJoin(InternalMessagePtr msg)
 {
     WIFI_LOGI("Instance %{public}d %{public}s", m_id, __func__);
@@ -301,6 +322,12 @@ void ApStartedState::ProcessCmdStationJoin(InternalMessagePtr msg)
         WIFI_LOGE("sta has removed.");
         return;
     }
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+    /* Fallback: policy changed within the 5s join window. */
+    if (DeauthStaIfNotAllowed(staInfo)) {
+        return;
+    }
+#endif
     WriteSoftApOperateHiSysEvent(static_cast<int>(SoftApChrEventType::SOFT_AP_CONN_CNT));
     m_ApStateMachine.m_ApStationsManager.StationJoin(staInfo);
 }
@@ -316,6 +343,21 @@ void ApStartedState::ProcessCmdStationLeave(InternalMessagePtr msg)
         WIFI_LOGE("failed to get station info.");
     }
 }
+
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+void ApStartedState::ProcessCmdDeauthMdmNotAllowedSta(InternalMessagePtr msg)
+{
+    WIFI_LOGI("Instance %{public}d %{public}s", m_id, __func__);
+    std::vector<StationInfo> stations;
+    if (!msg->GetMessageObj(stations)) {
+        WIFI_LOGE("failed to get station list.");
+        return;
+    }
+    for (const auto &sta : stations) {
+        DeauthStaIfNotAllowed(sta);
+    }
+}
+#endif
 
 void ApStartedState::ProcessCmdUpdateConfigResult(InternalMessagePtr msg) const
 {
@@ -517,6 +559,11 @@ void ApStartedState::ProcessCmdAssociatedStaChanged(InternalMessagePtr msg)
     }
     WIFI_LOGI("%{public}s: associated station event: %{public}d", __func__, event);
     if (event == HAL_CBK_CMD_STA_JOIN) {
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+        if (DeauthStaIfNotAllowed(staInfo)) {
+            return;
+        }
+#endif
         curAssocMacList.insert(staInfo.bssid);
         m_ApStateMachine.MessageExecutedLater(static_cast<int>(ApStatemachineEvent::CMD_STATION_JOIN),
             staInfo, STA_JOIN_HANDLE_DELAY);
@@ -526,8 +573,10 @@ void ApStartedState::ProcessCmdAssociatedStaChanged(InternalMessagePtr msg)
         if (curAssocMacList.find(staInfo.bssid) != curAssocMacList.end()) {
             curAssocMacList.erase(staInfo.bssid);
             WIFI_LOGI("%{public}s: delete station in curAssocMacList", __func__);
+            m_ApStateMachine.SendMessage(static_cast<int>(ApStatemachineEvent::CMD_STATION_LEAVE), staInfo);
+        } else {
+            WIFI_LOGI("%{public}s: station is not in curAssocMacList", __func__);
         }
-        m_ApStateMachine.SendMessage(static_cast<int>(ApStatemachineEvent::CMD_STATION_LEAVE), staInfo);
     }
     return;
 }

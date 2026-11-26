@@ -48,12 +48,14 @@ enum ErrCode {
     WIFI_OPT_ENTERPRISE_DENIED = 203, /* mdm forbidden */
     WIFI_OPT_MDM_BLOCKLIST_OUT_MAX_NUM,  /* mdm blocklist over max num fail */
     WIFI_OPT_MDM_WHITELIST_OUT_MAX_NUM,  /* mdm whitelist over max num fail */
-    WIFI_OPT_MDM_OUT_MAX_NUM,  /* mdm block and white list totail size over max num fail */
+    WIFI_OPT_MDM_OUT_MAX_NUM,  /* mdm sta restricted list or ap white list over max num fail */
     WIFI_OPT_USER_DOES_NOT_RESPOND,   /* user does not respond */
     WIFI_OPT_USER_REFUSE_THE_ACTION,  /* user refuse the action */
     WIFI_OPT_INVALID_PARAM_NEW,       /* invalid params since API-18 */
     WIFI_OPT_P2P_INVALID_PASSWORD,    /* invalid p2p password */
     WIFI_OPT_CONFIG_COUNT_EXCEED_LIMIT,  /* config count exceed limit*/
+    WIFI_OPT_MDM_AP_WHITELIST_OUT_MAX_NUM, /*mdm ap whitelist over max num fail*/
+    WIFI_OPT_MDM_AP_WHITELIST_MAC_INVALID, /*mdm ap whitelist mac invalid fail*/
 };
 }  // namespace Wifi
 }  // namespace OHOS

@@ -83,6 +83,8 @@ public:
     std::unique_ptr<WifiTogglerManager>& GetWifiTogglerManager();
     std::unique_ptr<WifiHotspotManager>& GetWifiHotspotManager();
     std::shared_ptr<RptInterface> GetRptInterface(int id = ANY_ID);
+    static void SetMockRptInterface(const std::shared_ptr<RptInterface> &rpt);
+    static std::shared_ptr<RptInterface> mockRptInterface;
     std::unique_ptr<WifiEventSubscriberManager>& GetWifiEventSubscriberManager();
     std::unique_ptr<WifiMultiVapManager>& GetWifiMultiVapManager();
 #ifdef FEATURE_P2P_SUPPORT

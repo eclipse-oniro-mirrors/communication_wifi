@@ -669,13 +669,15 @@ public:
     virtual ErrCode GetMultiLinkedInfo(std::vector<WifiLinkedInfo> &multiLinkedInfo) = 0;
 
     /**
-     * @Description Add wifi block list and wifi white list
+     * @Description Set the Wi-Fi restricted list (MDM policy).
+     *              The list replaces the previous configuration.
      *
-     * @param config - WifiRestrictedInfo object
-     * @param result - the result of wifi access list
+     * @param wifiRestrictedInfoList - restricted list entries
+     * @param mode - WifiListMode::STA_RESTRICTED_LIST (default) or WifiListMode::AP_WHITE_LIST
      * @return ErrCode - operation result
      */
-    virtual ErrCode SetWifiRestrictedList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList) = 0;
+    virtual ErrCode SetWifiRestrictedList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList,
+        int mode = static_cast<int>(WifiListMode::STA_RESTRICTED_LIST)) = 0;
     
     /**
      * @Description Get Random Mac Disabeled.

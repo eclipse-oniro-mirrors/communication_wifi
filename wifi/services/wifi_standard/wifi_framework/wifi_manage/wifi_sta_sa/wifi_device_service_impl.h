@@ -217,7 +217,7 @@ public:
  
     ErrCode GetVoWifiDetectPeriod(int &period) override;
 
-    ErrCode SetWifiRestrictedList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList) override;
+    ErrCode SetWifiRestrictedList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList, int mode) override;
 
     ErrCode SetRandomMacDisabled(bool isRandomMacDisabled) override;
 
@@ -266,6 +266,13 @@ private:
     bool IsDisableWifiProhibitedByEdm(void);
     void ReportWifiConfigStatus(WifiConfigReportType reportType);
     void CheckAndHandleVapConflict();
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+    ErrCode SetStaMdmRestrictedList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList);
+    ErrCode SetApMdmWhiteList(const std::vector<WifiRestrictedInfo> &wifiRestrictedInfoList);
+    void DeauthMdmNotAllowedSta();
+    void DeauthSoftApMdmNotAllowedSta();
+    void DeauthRptMdmNotAllowedSta();
+#endif
 
 private:
     static constexpr int MAX_PRESHAREDKEY_LEN = 63;

@@ -157,6 +157,15 @@ public:
      */
     void SetEnhanceService(IEnhanceService* enhanceService) override;
 #endif
+
+#ifdef FEATURE_WIFI_MDM_RESTRICTED_SUPPORT
+    /**
+     * @Description  Send a message to the AP state machine to deauth STAs not allowed by MDM.
+     * @param stations - current connected station list
+     * @return ErrCode - success: WIFI_OPT_SUCCESS    failed: ERROR_CODE
+     */
+    virtual ErrCode DeauthMdmNotAllowedSta(const std::vector<StationInfo> &stations) override;
+#endif
 private:
     ApRootState m_ApRootState;
     ApStartedState m_ApStartedState;

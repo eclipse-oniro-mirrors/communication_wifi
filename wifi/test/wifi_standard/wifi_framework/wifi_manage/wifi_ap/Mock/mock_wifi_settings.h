@@ -44,6 +44,7 @@ public:
     virtual void SetDefaultFrequenciesByCountryBand(const BandType band, std::vector<int> &frequencies,
         int instId = 0) = 0;
     virtual int SyncHotspotConfig() = 0;
+    virtual bool IsApMdmWhiteListMacAllowed(const std::string &mac) = 0;
     virtual std::string GetPackageName(std::string tag) = 0;
     virtual int GetDeviceConfig(const int &networkId, WifiDeviceConfig &config, int instId) = 0;
     virtual int GetPackageInfoByName(std::string name, std::vector<PackageInfo> &packageInfo) = 0;
@@ -64,6 +65,7 @@ public:
     MOCK_METHOD0(GetApMaxConnNum, int());
     MOCK_METHOD3(SetDefaultFrequenciesByCountryBand, void(const BandType band, std::vector<int> &frequencies, int));
     MOCK_METHOD0(SyncHotspotConfig, int());
+    MOCK_METHOD1(IsApMdmWhiteListMacAllowed, bool(const std::string &mac));
     MOCK_METHOD1(GetPackageName, std::string(std::string tag));
     MOCK_METHOD3(GetDeviceConfig, int(const int &networkId, WifiDeviceConfig &config, int instId));
     MOCK_METHOD2(GetPackageInfoByName, int(std::string name, std::vector<PackageInfo> &packageInfo));
